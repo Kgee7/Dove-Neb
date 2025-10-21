@@ -3,7 +3,7 @@
 import { useParams, notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Building, Globe, MapPin, Briefcase, Loader2, Heart, Share2, Mail, MessageCircle } from "lucide-react";
+import { ArrowLeft, Building, Globe, MapPin, Briefcase, Loader2, Mail, MessageCircle, Heart, Share2 } from "lucide-react";
 import { doc } from "firebase/firestore";
 import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 

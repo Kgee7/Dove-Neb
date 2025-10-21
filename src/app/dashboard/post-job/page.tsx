@@ -133,6 +133,9 @@ function PostJobPageContent() {
       requirements: '',
       applicationEmail: '',
       applicationWhatsApp: '',
+      category: 'Engineering',
+      jobType: 'Full-time',
+      workArrangement: 'On-site',
     },
   });
 
@@ -173,7 +176,8 @@ function PostJobPageContent() {
 
         const jobData: any = {
             ...values,
-            // id: jobId, // This is the important part
+            id: jobId,
+            type: values.jobType,
             location: values.workArrangement === 'Remote' ? 'Remote' : values.location,
             employerId: user.uid,
             postedDate: editJobId && jobToEdit ? jobToEdit.postedDate : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric'}),
@@ -191,7 +195,7 @@ function PostJobPageContent() {
             jobData.logoBg = `bg-indigo-100`;
         }
         
-        await setDocument(jobDocRef, { ...jobData, id: jobId }, { merge: true });
+        await setDocument(jobDocRef, jobData, { merge: true });
         
         toast({
             title: `Job ${editJobId ? 'Updated' : 'Posted'}!`,
