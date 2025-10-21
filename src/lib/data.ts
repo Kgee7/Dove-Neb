@@ -15,6 +15,9 @@ export type Job = {
   category: 'Engineering' | 'Design' | 'Marketing' | 'Sales' | 'Product';
   description: string;
   requirements: string[];
+  applicationEmail?: string;
+  applicationWhatsApp?: string;
+  closingDate: string;
 };
 
 const findImage = (id: string) => PlaceHolderImages.find(img => img.id === id)?.imageUrl || '';
@@ -33,6 +36,7 @@ export let jobs: Job[] = [
     category: 'Engineering',
     description: 'We are looking for a seasoned Frontend Developer to build and maintain our web applications. You will be responsible for creating a top-tier user experience.',
     requirements: ['5+ years of experience with React', 'Expertise in TypeScript, HTML, and CSS', 'Experience with GraphQL', 'Strong understanding of web performance'],
+    closingDate: '2025-12-31',
   },
   {
     id: '2',
@@ -47,6 +51,7 @@ export let jobs: Job[] = [
     category: 'Design',
     description: 'Join our team to design beautiful and intuitive interfaces for our suite of creative tools. You will work closely with product managers and engineers.',
     requirements: ['Proven experience as a Product Designer', 'Strong portfolio of design projects', 'Proficiency in Figma or Sketch', 'Excellent communication skills'],
+    closingDate: '2025-12-31',
   },
   {
     id: '3',
@@ -61,6 +66,7 @@ export let jobs: Job[] = [
     category: 'Marketing',
     description: 'We are seeking a results-driven Digital Marketing Manager to lead our online marketing efforts, including SEO/SEM, email marketing, and social media campaigns.',
     requirements: ['5+ years in digital marketing', 'Experience with Google Analytics and AdWords', 'Strong analytical skills', 'Proven track record of successful campaigns'],
+    closingDate: '2025-12-31',
   },
   {
     id: '4',
@@ -75,6 +81,7 @@ export let jobs: Job[] = [
     category: 'Engineering',
     description: 'Seeking a Backend Engineer to develop and manage our server-side logic. You will be responsible for the core services that power our applications.',
     requirements: ['3+ years of experience with Node.js', 'Experience with RESTful APIs and microservices', 'Knowledge of databases like PostgreSQL or MongoDB', 'Familiarity with AWS or GCP'],
+    closingDate: '2025-12-31',
   },
   {
     id: '5',
@@ -89,6 +96,7 @@ export let jobs: Job[] = [
     category: 'Sales',
     description: 'We are looking for a motivated Account Executive to drive sales and build strong relationships with clients. You will manage the full sales cycle.',
     requirements: ['2+ years of B2B sales experience', 'Excellent negotiation and communication skills', 'Track record of meeting or exceeding sales quotas', 'Familiarity with CRM software'],
+    closingDate: '2025-12-31',
   },
   {
     id: '6',
@@ -103,6 +111,7 @@ export let jobs: Job[] = [
     category: 'Design',
     description: 'Join our research team to uncover user needs and behaviors. Your insights will directly shape product strategy and design decisions.',
     requirements: ['Experience with qualitative and quantitative research methods', 'Ability to synthesize research findings into actionable insights', 'Strong empathy for users', 'Excellent collaboration skills'],
+    closingDate: '2025-12-31',
   },
 ];
 
@@ -135,3 +144,5 @@ export async function getJob(id: string): Promise<Job | undefined> {
   const jobs = await getJobs();
   return jobs.find(job => job.id === id);
 }
+
+    

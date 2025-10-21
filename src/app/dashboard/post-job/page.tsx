@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFirestore, useUser, setDocument, useDoc, useMemoFirebase, addDocument } from '@/firebase';
+import { useFirestore, useUser, setDocument, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import React, { useEffect } from 'react';
@@ -22,6 +22,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -59,6 +60,8 @@ const formSchema = z.object({
   closingDate: z.date({
     required_error: "A closing date is required.",
   }),
+  applicationEmail: z.string().email({ message: "Please enter a valid email." }).optional().or(z.literal('')),
+  applicationWhatsApp: z.string().optional(),
 });
 
 function PostJobPageContent() {
@@ -86,6 +89,8 @@ function PostJobPageContent() {
       salary: '',
       description: '',
       requirements: '',
+      applicationEmail: '',
+      applicationWhatsApp: '',
     },
   });
 
@@ -100,6 +105,8 @@ function PostJobPageContent() {
         description: jobToEdit.description,
         requirements: Array.isArray(jobToEdit.requirements) ? jobToEdit.requirements.join('\n') : '',
         closingDate: new Date(jobToEdit.closingDate),
+        applicationEmail: jobToEdit.applicationEmail || '',
+        applicationWhatsApp: jobToEdit.applicationWhatsApp || '',
       });
     }
   }, [jobToEdit, form]);
@@ -297,6 +304,39 @@ function PostJobPageContent() {
                   </FormItem>
                 )}
               />
+              <FormField
+                  control={form.control}
+                  name="applicationEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Application Email (Optional)</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="hr@example.com" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Job seekers will be directed to this email address to apply.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="applicationWhatsApp"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>WhatsApp Number (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="+1234567890" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Provide a number for applicants to contact you via WhatsApp.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                <FormField
                 control={form.control}
                 name="closingDate"
