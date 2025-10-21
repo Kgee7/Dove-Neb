@@ -115,7 +115,7 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     // Force the auth domain to ensure it matches the authorized domain in Firebase Console.
     provider.setCustomParameters({
-      authDomain: firebaseConfig.authDomain,
+      authDomain: `${firebaseConfig.projectId}.firebaseapp.com`,
     });
     try {
       const result = await signInWithPopup(auth, provider);
