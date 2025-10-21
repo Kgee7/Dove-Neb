@@ -8,6 +8,7 @@ import { z } from "zod";
 import { useAuth, useUser } from "@/firebase";
 import { initiateEmailSignIn } from "@/firebase/non-blocking-login";
 import { useToast } from "@/hooks/use-toast";
+import { FirebaseError } from "firebase/app";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -57,23 +58,48 @@ export default function LoginPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
-    try {
-      initiateEmailSignIn(auth, values.email, values.password);
-      // Non-blocking, relying on onAuthStateChanged to redirect
-      // We can show a toast as immediate feedback
-      toast({
-        title: "Signing In...",
-        description: "You will be redirected shortly.",
+    initiateEmailSignIn(auth, values.email, values.password)
+      .then(() => {
+        toast({
+          title: "Signing In...",
+          description: "You will be redirected shortly.",
+        });
+        // Let the onAuthStateChanged listener handle redirection
+      })
+      .catch((error: any) => {
+        let title = "Sign-in Failed";
+        let description = "An unexpected error occurred.";
+
+        if (error instanceof FirebaseError) {
+          switch (error.code) {
+            case 'auth/invalid-credential':
+              title = "Invalid Credentials";
+              description = "The email or password you entered is incorrect. Please try again.";
+              break;
+            case 'auth/user-not-found':
+              title = "User Not Found";
+              description = "No account found with this email address.";
+              break;
+            case 'auth/wrong-password':
+               title = "Incorrect Password";
+              description = "The password you entered is incorrect. Please try again.";
+              break;
+            default:
+              description = error.message;
+              break;
+          }
+        }
+        
+        console.error(error);
+        toast({
+          variant: "destructive",
+          title: title,
+          description: description,
+        });
+      })
+      .finally(() => {
+        setLoading(false);
       });
-    } catch (error: any) {
-      console.error(error);
-      toast({
-        variant: "destructive",
-        title: "Sign-in Failed",
-        description: error.message || "An unexpected error occurred.",
-      });
-      setLoading(false);
-    }
   }
 
   if (isUserLoading || user) {
