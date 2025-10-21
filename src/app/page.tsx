@@ -188,7 +188,7 @@ export default function Home() {
                       </Badge>
                     </div>
                     <p className="mt-4 text-sm text-muted-foreground">
-                      {job.salary}
+                      {job.currencySymbol}{job.salary}
                     </p>
                   </CardContent>
                 </Card>
@@ -234,3 +234,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

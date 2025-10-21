@@ -55,7 +55,8 @@ const formSchema = z.object({
   type: z.enum(['Full-time', 'Part-time', 'Contract']),
   workArrangement: z.enum(['On-site', 'Remote', 'Hybrid']),
   location: z.string().min(2, { message: 'Location is required.' }),
-  salary: z.string().min(3, { message: 'Salary is required.' }),
+  salary: z.string().min(1, { message: 'Salary is required.' }),
+  currency: z.enum(['USD', 'EUR', 'GBP', 'JPY', 'CAD']),
   description: z.string().min(50, { message: 'Description must be at least 50 characters.' }),
   requirements: z.string().min(20, { message: 'Requirements must be at least 20 characters.' }),
   closingDate: z.date({
@@ -64,6 +65,17 @@ const formSchema = z.object({
   applicationEmail: z.string().email({ message: "Please enter a valid email." }).optional().or(z.literal('')),
   applicationWhatsApp: z.string().optional(),
 });
+
+function getCurrencySymbol(currency: string) {
+    switch (currency) {
+      case 'USD': return '$';
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      case 'JPY': return '¥';
+      case 'CAD': return 'CA$';
+      default: return '$';
+    }
+  }
 
 function PostJobPageContent() {
   const firestore = useFirestore();
@@ -88,6 +100,7 @@ function PostJobPageContent() {
       title: '',
       location: '',
       salary: '',
+      currency: 'USD',
       description: '',
       requirements: '',
       applicationEmail: '',
@@ -106,6 +119,7 @@ function PostJobPageContent() {
         workArrangement: jobToEdit.workArrangement || 'On-site',
         location: jobToEdit.location,
         salary: jobToEdit.salary,
+        currency: jobToEdit.currency as any || 'USD',
         description: jobToEdit.description,
         requirements: Array.isArray(jobToEdit.requirements) ? jobToEdit.requirements.join('\n') : '',
         closingDate: new Date(jobToEdit.closingDate),
@@ -130,6 +144,7 @@ function PostJobPageContent() {
         closingDate: values.closingDate.toISOString().split('T')[0],
         requirements: values.requirements.split('\n').filter(req => req.trim() !== ''),
         company: user.displayName || 'A Great Company',
+        currencySymbol: getCurrencySymbol(values.currency),
     };
     
     try {
@@ -292,19 +307,46 @@ function PostJobPageContent() {
                 />
               )}
             </div>
-             <FormField
-                control={form.control}
-                name="salary"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Salary</FormLabel>
-                    <FormControl>
-                    <Input placeholder="e.g., $120,000 - $160,000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <FormField
+                    control={form.control}
+                    name="salary"
+                    render={({ field }) => (
+                    <FormItem className="sm:col-span-2">
+                        <FormLabel>Salary Range / Rate</FormLabel>
+                        <FormControl>
+                        <Input placeholder="e.g., 120,000 - 160,000 or 70 - 90 / hour" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="currency"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Currency</FormLabel>
+                         <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Select a currency" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="USD">USD ($)</SelectItem>
+                                <SelectItem value="EUR">EUR (€)</SelectItem>
+                                <SelectItem value="GBP">GBP (£)</SelectItem>
+                                <SelectItem value="JPY">JPY (¥)</SelectItem>
+                                <SelectItem value="CAD">CAD (CA$)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
 
               <FormField
                 control={form.control}
@@ -430,3 +472,5 @@ export default function PostJobPage() {
         </React.Suspense>
     )
 }
+
+    

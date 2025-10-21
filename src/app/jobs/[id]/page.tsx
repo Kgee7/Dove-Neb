@@ -6,7 +6,7 @@ import { useParams, notFound } from "next/navigation";
 import { ArrowLeft, Briefcase, MapPin, Building, Share2, Heart, Loader2, Mail, MessageCircle, Globe } from "lucide-react";
 import { doc } from 'firebase/firestore';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { Job } from "@/lib/data";
 import { cn } from "@/lib/utils";
@@ -18,7 +18,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function JobDetailPage() {
   const firestore = useFirestore();
   const params = useParams();
-  const id = params.id as string;
+  const [id, setId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (params?.id) {
+      setId(params.id as string);
+    }
+  }, [params]);
+
 
   const jobRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
@@ -37,7 +44,16 @@ export default function JobDetailPage() {
   }
 
   if (!job) {
-    notFound();
+    // We show a not found page, but only if we are not loading and have an id.
+    if (!isLoading && id) {
+        notFound();
+    }
+    // if we are here, it's because we're still waiting for the id, so show a loader.
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
   }
   
   const hasDirectApply = job.applicationEmail || job.applicationWhatsApp;
@@ -91,7 +107,7 @@ export default function JobDetailPage() {
                     <span>{job.type}</span>
                   </div>
                 </div>
-                 <p className="mt-3 text-lg font-semibold text-primary">{job.salary}</p>
+                 <p className="mt-3 text-lg font-semibold text-primary">{job.currencySymbol}{job.salary}</p>
               </div>
               <div className="flex w-full shrink-0 flex-col items-stretch gap-2 sm:w-auto sm:items-end">
                 <div className="flex flex-col items-stretch gap-2">
@@ -169,7 +185,7 @@ export default function JobDetailPage() {
                         </div>
                         <div className="flex justify-between">
                             <span className="font-medium text-muted-foreground">Salary:</span>
-                            <span className="text-right">{job.salary}</span>
+                            <span className="text-right">{job.currencySymbol}{job.salary}</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -181,3 +197,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    

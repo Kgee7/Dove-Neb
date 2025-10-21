@@ -12,6 +12,8 @@ export type Job = {
   type: 'Full-time' | 'Part-time' | 'Contract';
   workArrangement: 'On-site' | 'Remote' | 'Hybrid';
   salary: string;
+  currency: string;
+  currencySymbol: string;
   postedDate: string;
   category: 'Engineering' | 'Design' | 'Marketing' | 'Sales' | 'Product';
   description: string;
@@ -33,7 +35,9 @@ export let jobs: Job[] = [
     location: 'San Francisco, CA',
     type: 'Full-time',
     workArrangement: 'Hybrid',
-    salary: '$120,000 - $160,000',
+    salary: '120,000 - 160,000',
+    currency: 'USD',
+    currencySymbol: '$',
     postedDate: '2d ago',
     category: 'Engineering',
     description: 'We are looking for a seasoned Frontend Developer to build and maintain our web applications. You will be responsible for creating a top-tier user experience.',
@@ -49,7 +53,9 @@ export let jobs: Job[] = [
     location: 'New York, NY',
     type: 'Full-time',
     workArrangement: 'On-site',
-    salary: '$90,000 - $130,000',
+    salary: '90,000 - 130,000',
+    currency: 'USD',
+    currencySymbol: '$',
     postedDate: '4d ago',
     category: 'Design',
     description: 'Join our team to design beautiful and intuitive interfaces for our suite of creative tools. You will work closely with product managers and engineers.',
@@ -65,7 +71,9 @@ export let jobs: Job[] = [
     location: 'Remote',
     type: 'Full-time',
     workArrangement: 'Remote',
-    salary: '$85,000 - $110,000',
+    salary: '85,000 - 110,000',
+    currency: 'USD',
+    currencySymbol: '$',
     postedDate: '1w ago',
     category: 'Marketing',
     description: 'We are seeking a results-driven Digital Marketing Manager to lead our online marketing efforts, including SEO/SEM, email marketing, and social media campaigns.',
@@ -81,7 +89,9 @@ export let jobs: Job[] = [
     location: 'Austin, TX',
     type: 'Contract',
     workArrangement: 'Hybrid',
-    salary: '$70 - $90 / hour',
+    salary: '70 - 90 / hour',
+    currency: 'USD',
+    currencySymbol: '$',
     postedDate: '3d ago',
     category: 'Engineering',
     description: 'Seeking a Backend Engineer to develop and manage our server-side logic. You will be responsible for the core services that power our applications.',
@@ -97,7 +107,9 @@ export let jobs: Job[] = [
     location: 'Chicago, IL',
     type: 'Full-time',
     workArrangement: 'On-site',
-    salary: '$75,000 + Commission',
+    salary: '75,000 + Commission',
+    currency: 'USD',
+    currencySymbol: '$',
     postedDate: '5d ago',
     category: 'Sales',
     description: 'We are looking for a motivated Account Executive to drive sales and build strong relationships with clients. You will manage the full sales cycle.',
@@ -113,7 +125,9 @@ export let jobs: Job[] = [
     location: 'Remote',
     type: 'Part-time',
     workArrangement: 'Remote',
-    salary: '$40 - $60 / hour',
+    salary: '40 - 60 / hour',
+    currency: 'USD',
+    currencySymbol: '$',
     postedDate: '10d ago',
     category: 'Design',
     description: 'Join our research team to uncover user needs and behaviors. Your insights will directly shape product strategy and design decisions.',
@@ -151,3 +165,5 @@ export async function getJob(id: string): Promise<Job | undefined> {
   const jobs = await getJobs();
   return jobs.find(job => job.id === id);
 }
+
+    

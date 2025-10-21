@@ -145,7 +145,7 @@ export default function JobsPage() {
                     <Badge variant="secondary">{job.category}</Badge>
                   </div>
                   <p className="mt-4 text-sm font-semibold text-foreground">
-                    {job.salary}
+                    {job.currencySymbol}{job.salary}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                       Posted {job.postedDate}
@@ -159,3 +159,5 @@ export default function JobsPage() {
     </div>
   );
 }
+
+    
