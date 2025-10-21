@@ -40,19 +40,21 @@ export function SiteHeader() {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
   const handleSignOut = async () => {
-    await auth.signOut();
+    if (auth) {
+      await auth.signOut();
+    }
     router.push("/");
   };
 
-  const getInitials = (firstName?: string | null, lastName?: string | null, email?: string | null) => {
+  const getInitials = (firstName?: string, lastName?: string) => {
     if (firstName && lastName) {
       return `${firstName[0]}${lastName[0]}`;
     }
     if (firstName) {
       return firstName.substring(0, 2);
     }
-    if (email) {
-      return email.substring(0, 2);
+    if (user?.email) {
+        return user.email.substring(0, 2).toUpperCase();
     }
     return "U";
   };
@@ -63,7 +65,7 @@ export function SiteHeader() {
     { href: "/dashboard", label: "Dashboard", protected: true },
   ];
 
-  const fullName = userProfile ? `${userProfile.firstName} ${userProfile.lastName}`.trim() : "My Account";
+  const fullName = userProfile ? `${userProfile.firstName} ${userProfile.lastName}`.trim() : user?.displayName || "My Account";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -107,7 +109,7 @@ export function SiteHeader() {
                       alt={fullName}
                     />
                     <AvatarFallback>
-                      {getInitials(userProfile?.firstName, userProfile?.lastName, user.email)}
+                      {getInitials(userProfile?.firstName, userProfile?.lastName)}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -137,7 +139,7 @@ export function SiteHeader() {
             </DropdownMenu>
           ) : (
             <>
-               <Link href="/dashboard/post-job">
+               <Link href="/dashboard">
                 <Button className="hidden sm:inline-flex" variant="outline">
                     Post a Job
                 </Button>
