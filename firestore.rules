@@ -1,0 +1,109 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Grants access to user profiles.
+     * @path /users/{userId}
+     * @allow (create) - User with matching ID can create their profile.
+     * @allow (get, update, delete) - User can access their own profile.
+     * @deny (create, update, delete) - Other users cannot access this profile.
+     * @principle Enforces document ownership for user profiles.
+     */
+    match /users/{userId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if request.auth.uid == userId;
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    /**
+     * @description Grants access to job listings created by employers.
+     * @path /users/{userId}/jobListings/{jobListingId}
+     * @allow (create) - Employer can create job listings under their profile.
+     * @allow (get, update, delete) - Employer can access their own job listings.
+     * @deny (create, update, delete) - Other users cannot access this job listing.
+     * @principle Enforces document ownership for job listings under the employer profile.
+     */
+    match /users/{userId}/jobListings/{jobListingId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    /**
+     * @description Grants access to job applications submitted by job seekers.
+     * @path /users/{userId}/jobApplications/{jobApplicationId}
+     * @allow (create) - Job Seeker can create job applications under their profile.
+     * @allow (get, update, delete) - Job Seeker can access their own job applications.
+     * @deny (create, update, delete) - Other users cannot access this job application.
+     * @principle Enforces document ownership for job applications under the job seeker profile.
+     */
+    match /users/{userId}/jobApplications/{jobApplicationId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    /**
+     * @description Grants access to messages exchanged between users.
+     * @path /users/{userId}/messages/{messageId}
+     * @allow (create) - Sender can create messages under their profile.
+     * @allow (get, update, delete) - Sender and Receiver can access messages.
+     * @deny (create, update, delete) - Other users cannot access this message.
+     * @principle Enforces document ownership for messages under the user profile.
+     */
+    match /users/{userId}/messages/{messageId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      function isSenderOrReceiver(userId) {
+        return (request.auth.uid == userId);
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if false;
+      allow delete: if isOwner(userId);
+    }
+
+        /**
+     * @description Grants access to top level job listings for public listing.
+     * @path /jobListings/{jobListingId}
+     * @allow (get, list) - Public can view job listings.
+     * @allow (create, update, delete) - Only the owner (employer) can create, update, or delete.
+     * @principle Allows public read access with owner-only writes for job listings.
+     */
+    match /jobListings/{jobListingId} {
+      function isOwner(employerId) {
+        return request.auth != null && request.auth.uid == employerId;
+      }
+
+
+      allow get: if true;
+      allow list: if true;
+      allow create: if request.auth.uid == request.resource.data.employerId;
+      allow update: if request.auth.uid == request.resource.data.employerId;
+      allow delete: if request.auth.uid == request.resource.data.employerId;
+    }
+  }
+}
