@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemoFirebase, useCollection, useFirestore, useUser, deleteDocument } from '@/firebase';
-import { collection, query, where, doc } from 'firebase/firestore';
+import { useMemoFirebase, useCollection, useFirestore, useUser } from '@/firebase';
+import { collection, query, where, doc, deleteDoc } from 'firebase/firestore';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Briefcase, Loader2, Edit, Trash2 } from "lucide-react";
 import {
@@ -11,7 +11,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter
 } from "@/components/ui/card";
 import {
     AlertDialog,
@@ -26,6 +25,7 @@ import {
   } from "@/components/ui/alert-dialog"
 import { Job } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
+import { deleteDocument } from '@/firebase/non-blocking-updates';
 
 export default function EmployerDashboard() {
   const { user } = useUser();
@@ -111,7 +111,7 @@ export default function EmployerDashboard() {
                                     <Link href={`/jobs/${job.id}`}>
                                         <Button variant="outline" size="sm">View</Button>
                                     </Link>
-                                    <Link href={`/jobs/${job.id}`}>
+                                    <Link href={`/dashboard/post-job?edit=${job.id}`}>
                                         <Button variant="ghost" size="icon" className="h-9 w-9">
                                             <Edit className="h-4 w-4"/>
                                         </Button>

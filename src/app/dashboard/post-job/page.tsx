@@ -1,14 +1,15 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFirestore, useUser, addDocument } from '@/firebase';
-import { collection, doc, setDoc } from 'firebase/firestore';
+import { useFirestore, useUser, setDocument, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Job } from '@/lib/data';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -60,14 +61,22 @@ const formSchema = z.object({
   }),
 });
 
-export default function PostJobPage() {
+function PostJobPageContent() {
   const firestore = useFirestore();
   const { user } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [loading, setLoading] = React.useState(false);
-  const companyLogos = PlaceHolderImages.filter(img => img.id.startsWith('company-logo'));
+  
+  const editJobId = searchParams.get('edit');
+  
+  const jobRef = useMemoFirebase(() => {
+    if (!firestore || !editJobId) return null;
+    return doc(firestore, 'jobListings', editJobId);
+  }, [firestore, editJobId]);
 
+  const { data: jobToEdit, isLoading: isJobLoading } = useDoc<Job>(jobRef);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -80,31 +89,54 @@ export default function PostJobPage() {
     },
   });
 
+  useEffect(() => {
+    if (jobToEdit) {
+      form.reset({
+        title: jobToEdit.title,
+        category: jobToEdit.category,
+        type: jobToEdit.type,
+        location: jobToEdit.location,
+        salary: jobToEdit.salary,
+        description: jobToEdit.description,
+        requirements: Array.isArray(jobToEdit.requirements) ? jobToEdit.requirements.join('\n') : '',
+        closingDate: new Date(jobToEdit.closingDate),
+      });
+    }
+  }, [jobToEdit, form]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!user) {
+    if (!user || !firestore) {
         toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to post a job.' });
         return;
     }
     setLoading(true);
+
+    const jobData = {
+        ...values,
+        employerId: user.uid,
+        postedDate: editJobId && jobToEdit ? jobToEdit.postedDate : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric'}),
+        closingDate: values.closingDate.toISOString().split('T')[0],
+        requirements: values.requirements.split('\n').filter(req => req.trim() !== ''),
+        company: user.displayName || 'A Great Company',
+    };
+    
     try {
-        const jobCollection = collection(firestore, 'jobListings');
-        const newDocRef = doc(jobCollection); // Create a new doc with a generated id
-        const randomLogo = companyLogos[Math.floor(Math.random() * companyLogos.length)];
-        const newJob = {
-            ...values,
-            id: newDocRef.id,
-            employerId: user.uid,
-            postedDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric'}),
-            closingDate: values.closingDate.toISOString().split('T')[0],
-            requirements: values.requirements.split('\n').filter(req => req.trim() !== ''),
-            company: user.displayName || 'A Great Company',
-            logoUrl: randomLogo.imageUrl,
-            logoBg: `bg-indigo-100`, // Example, could be randomized
-        };
-        await setDoc(newDocRef, newJob);
+        let jobDocRef;
+        if(editJobId) {
+            jobDocRef = doc(firestore, 'jobListings', editJobId);
+        } else {
+            jobDocRef = doc(collection(firestore, 'jobListings'));
+            const companyLogos = PlaceHolderImages.filter(img => img.id.startsWith('company-logo'));
+            const randomLogo = companyLogos[Math.floor(Math.random() * companyLogos.length)];
+            jobData.logoUrl = randomLogo.imageUrl;
+            jobData.logoBg = `bg-indigo-100`; // Example, could be randomized
+        }
+        
+        await setDocument(jobDocRef, { ...jobData, id: jobDocRef.id }, { merge: true });
+
         toast({
-            title: 'Job Posted!',
-            description: 'Your job listing has been successfully created.',
+            title: `Job ${editJobId ? 'Updated' : 'Posted'}!`,
+            description: `Your job listing has been successfully ${editJobId ? 'updated' : 'created'}.`,
         });
         router.push('/dashboard');
     } catch (error: any) {
@@ -112,20 +144,28 @@ export default function PostJobPage() {
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
-        description: error.message || 'Could not post job.',
+        description: error.message || 'Could not save job.',
       });
     } finally {
         setLoading(false);
     }
   }
 
+  if (isJobLoading) {
+    return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    )
+  }
+
   return (
     <div className="container max-w-3xl py-12">
       <Card>
         <CardHeader>
-          <CardTitle>Post a New Job</CardTitle>
+          <CardTitle>{editJobId ? 'Edit Job' : 'Post a New Job'}</CardTitle>
           <CardDescription>
-            Fill out the details below to create a new job listing.
+            {editJobId ? 'Update the details for your job listing.' : 'Fill out the details below to create a new job listing.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -152,7 +192,7 @@ export default function PostJobPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a category" />
@@ -177,7 +217,7 @@ export default function PostJobPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Job Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a job type" />
@@ -296,7 +336,7 @@ export default function PostJobPage() {
               <div className="flex justify-end">
                 <Button type="submit" className="bg-accent hover:bg-accent/90" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {loading ? 'Posting...' : 'Post Job'}
+                  {loading ? 'Saving...' : (editJobId ? 'Save Changes' : 'Post Job')}
                 </Button>
               </div>
             </form>
@@ -305,4 +345,13 @@ export default function PostJobPage() {
       </Card>
     </div>
   );
+}
+
+
+export default function PostJobPage() {
+    return (
+        <React.Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+            <PostJobPageContent />
+        </React.Suspense>
+    )
 }
