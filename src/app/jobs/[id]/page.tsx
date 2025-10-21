@@ -9,7 +9,7 @@ import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 
 import { Job } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { PlaceHolderImages }from '@/lib/placeholder-images';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
