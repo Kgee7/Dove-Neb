@@ -1,30 +1,53 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemoFirebase, useCollection, useFirestore, useUser } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useMemoFirebase, useCollection, useFirestore, useUser, deleteDocument } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Briefcase, Loader2 } from "lucide-react";
+import { PlusCircle, Briefcase, Loader2, Edit, Trash2 } from "lucide-react";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from "@/components/ui/card";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+  } from "@/components/ui/alert-dialog"
 import { Job } from '@/lib/data';
+import { useToast } from '@/hooks/use-toast';
 
 export default function EmployerDashboard() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const employerJobsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    // Query jobListings where employerId matches the current user's UID
     return query(collection(firestore, 'jobListings'), where("employerId", "==", user.uid));
   }, [firestore, user]);
 
   const { data: jobs, isLoading } = useCollection<Job>(employerJobsQuery);
+
+  const handleDelete = (jobId: string) => {
+    if (!firestore) return;
+    const jobDocRef = doc(firestore, 'jobListings', jobId);
+    deleteDocument(jobDocRef);
+    toast({
+        title: "Job Deleted",
+        description: "The job posting has been removed.",
+    })
+  }
 
   return (
     <div className="container py-10">
@@ -79,15 +102,43 @@ export default function EmployerDashboard() {
                 <div className="grid gap-4">
                     {jobs.map(job => (
                         <Card key={job.id}>
-                            <CardHeader className="flex flex-row items-center justify-between">
+                            <div className="flex items-center justify-between p-4">
                                 <div>
-                                    <CardTitle className="text-lg">{job.title}</CardTitle>
-                                    <CardDescription>{job.location} &middot; {job.type}</CardDescription>
+                                    <h3 className="text-lg font-semibold">{job.title}</h3>
+                                    <p className="text-sm text-muted-foreground">{job.location} &middot; {job.type}</p>
                                 </div>
-                                <Link href={`/jobs/${job.id}`}>
-                                    <Button variant="outline">View</Button>
-                                </Link>
-                            </CardHeader>
+                                <div className="flex items-center gap-2">
+                                    <Link href={`/jobs/${job.id}`}>
+                                        <Button variant="outline" size="sm">View</Button>
+                                    </Link>
+                                    <Link href={`/jobs/${job.id}`}>
+                                        <Button variant="ghost" size="icon" className="h-9 w-9">
+                                            <Edit className="h-4 w-4"/>
+                                        </Button>
+                                    </Link>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                                                <Trash2 className="h-4 w-4"/>
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure you want to delete this job?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete the job posting.
+                                            </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDelete(job.id)} className="bg-destructive hover:bg-destructive/90">
+                                                Delete
+                                            </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+                            </div>
                         </Card>
                     ))}
                 </div>

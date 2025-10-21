@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useFirestore, useUser, addDocument } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, doc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -88,9 +88,11 @@ export default function PostJobPage() {
     setLoading(true);
     try {
         const jobCollection = collection(firestore, 'jobListings');
+        const newDocRef = doc(jobCollection); // Create a new doc with a generated id
         const randomLogo = companyLogos[Math.floor(Math.random() * companyLogos.length)];
         const newJob = {
             ...values,
+            id: newDocRef.id,
             employerId: user.uid,
             postedDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric'}),
             closingDate: values.closingDate.toISOString().split('T')[0],
@@ -99,7 +101,7 @@ export default function PostJobPage() {
             logoUrl: randomLogo.imageUrl,
             logoBg: `bg-indigo-100`, // Example, could be randomized
         };
-        await addDocument(jobCollection, newJob);
+        await setDoc(newDocRef, newJob);
         toast({
             title: 'Job Posted!',
             description: 'Your job listing has been successfully created.',
