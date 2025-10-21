@@ -46,23 +46,3 @@ async function seedJobs() {
 if (typeof window !== 'undefined') {
     // seedJobs();
 }
-
-export async function getJobs(): Promise<Job[]> {
-    const { firestore } = initializeFirebase();
-    const jobCollection = collection(firestore, 'jobListings');
-    const jobSnapshot = await getDocs(jobCollection);
-    const jobList = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
-    return jobList;
-}
-
-export async function getJob(id: string): Promise<Job | null> {
-  const { firestore } = initializeFirebase();
-  const jobDocRef = doc(firestore, 'jobListings', id);
-  const jobSnapshot = await getDoc(jobDocRef);
-  
-  if (jobSnapshot.exists()) {
-    return { id: jobSnapshot.id, ...jobSnapshot.data() } as Job;
-  }
-  
-  return null;
-}

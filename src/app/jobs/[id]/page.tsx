@@ -1,23 +1,81 @@
 
-import { notFound } from "next/navigation";
+'use client';
+
+import { useParams, notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Building, Globe, MapPin, Briefcase } from "lucide-react";
+import { ArrowLeft, Building, Globe, MapPin, Briefcase, Loader2, Heart, Share2, Mail, MessageCircle } from "lucide-react";
+import { doc } from "firebase/firestore";
+import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 
-import { getJob, type Job } from "@/lib/data";
+import type { Job } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import JobDetailClientContent from "./job-detail-client-content";
+import { Button } from "@/components/ui/button";
 
-export default async function JobDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
-  const job = await getJob(id);
+function JobDetailClientContent({ job }: { job: Job }) {
+  const hasDirectApply = job.applicationEmail || job.applicationWhatsApp;
+
+  return (
+    <div className="flex w-full shrink-0 flex-col items-stretch gap-2 sm:w-auto sm:items-end">
+      <div className="flex flex-col items-stretch gap-2">
+        {hasDirectApply ? (
+          <>
+            {job.applicationEmail && (
+              <Button asChild className="w-full bg-accent hover:bg-accent/90">
+                <a href={`mailto:${job.applicationEmail}?subject=Application for ${job.title}`}>
+                  <Mail className="mr-2" /> Apply via Email
+                </a>
+              </Button>
+            )}
+            {job.applicationWhatsApp && (
+              <Button asChild variant="outline" className="w-full">
+                <a href={`https://wa.me/${job.applicationWhatsApp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="mr-2" /> Apply on WhatsApp
+                </a>
+              </Button>
+            )}
+          </>
+        ) : (
+          <Link href={`/jobs/apply/${job.id}`} className="w-full">
+            <Button className="w-full bg-accent hover:bg-accent/90">Apply Now</Button>
+          </Link>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="icon"><Heart className="h-4 w-4" /></Button>
+        <Button variant="outline" size="icon"><Share2 className="h-4 w-4" /></Button>
+      </div>
+    </div>
+  );
+}
+
+
+export default function JobDetailPage() {
+  const firestore = useFirestore();
+  const params = useParams();
+  const id = params.id as string;
+
+  const jobRef = useMemoFirebase(() => {
+    if (!firestore || !id) return null;
+    return doc(firestore, 'jobListings', id);
+  }, [firestore, id]);
+
+  const { data: job, isLoading } = useDoc<Job>(jobRef);
   const headerImage = PlaceHolderImages.find((img) => img.id === "job-detail-header");
+  
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!job) {
-    notFound();
+    return notFound();
   }
 
   return (
