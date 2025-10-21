@@ -5,7 +5,7 @@ import React, { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFirestore, useUser, useDoc, useMemoFirebase, getStorage, ref, uploadBytes, getDownloadURL, updateProfile, setDoc, useFirebaseApp } from '@/firebase';
+import { useFirebaseApp, useFirestore, useUser, useDoc, useMemoFirebase, getStorage, ref, uploadBytes, getDownloadURL, updateProfile, setDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,8 +26,10 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, Edit } from 'lucide-react';
+import { Loader2, Edit, FileText, Upload } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Textarea } from '@/components/ui/textarea';
+import Link from 'next/link';
 
 type UserProfile = {
     userType: 'seeker' | 'employer';
@@ -37,6 +39,9 @@ type UserProfile = {
     phone?: string;
     companyName?: string;
     photoURL?: string;
+    resumeURL?: string;
+    skills?: string[];
+    experience?: string;
 };
 
 const profileSchema = z.object({
@@ -44,6 +49,8 @@ const profileSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   phone: z.string().optional(),
   companyName: z.string().optional(),
+  skills: z.string().optional(),
+  experience: z.string().optional(),
 });
 
 export default function ProfilePage() {
@@ -53,7 +60,10 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [loading, setLoading] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
+  const [uploadingResume, setUploadingResume] = React.useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -69,6 +79,8 @@ export default function ProfilePage() {
       lastName: '',
       phone: '',
       companyName: '',
+      skills: '',
+      experience: '',
     },
   });
 
@@ -79,6 +91,8 @@ export default function ProfilePage() {
         lastName: userProfile.lastName,
         phone: userProfile.phone || '',
         companyName: userProfile.companyName || '',
+        skills: userProfile.skills?.join(', ') || '',
+        experience: userProfile.experience || '',
       });
     }
   }, [userProfile, form]);
@@ -103,6 +117,7 @@ export default function ProfilePage() {
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user || !userDocRef || !firebaseApp) return;
+
     setUploading(true);
 
     try {
@@ -111,13 +126,8 @@ export default function ProfilePage() {
       const snapshot = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
 
-      // Update Firebase Auth profile
       await updateProfile(user, { photoURL: downloadURL });
-
-      // Force a reload of the user object to get the new photoURL
-      await refreshUser();
-
-      // Update Firestore document
+      await user.reload(); 
       await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
 
       toast({
@@ -136,6 +146,45 @@ export default function ProfilePage() {
     }
   };
 
+  const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user || !userDocRef || !firebaseApp) return;
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+            variant: 'destructive',
+            title: 'File Too Large',
+            description: 'Resume file must be less than 5MB.',
+        });
+        return;
+    }
+
+    setUploadingResume(true);
+
+    try {
+      const storage = getStorage(firebaseApp);
+      const storageRef = ref(storage, `resumes/${user.uid}/${file.name}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      await setDoc(userDocRef, { resumeURL: downloadURL }, { merge: true });
+
+      toast({
+        title: 'Resume Uploaded',
+        description: 'Your resume has been saved successfully.',
+      });
+    } catch (error: any) {
+      console.error('Error uploading resume:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Upload Failed',
+        description: error.message || 'Could not upload your resume.',
+      });
+    } finally {
+      setUploadingResume(false);
+    }
+  };
+
   async function onSubmit(values: z.infer<typeof profileSchema>) {
     if (!userDocRef) return;
     setLoading(true);
@@ -149,6 +198,12 @@ export default function ProfilePage() {
     if (userProfile?.userType === 'employer') {
         dataToUpdate.companyName = values.companyName;
     }
+
+    if (userProfile?.userType === 'seeker') {
+        dataToUpdate.skills = values.skills?.split(',').map(s => s.trim()).filter(Boolean) || [];
+        dataToUpdate.experience = values.experience;
+    }
+
 
     try {
       await setDoc(userDocRef, dataToUpdate, { merge: true });
@@ -284,9 +339,68 @@ export default function ProfilePage() {
                         )}
                     />
                 )}
+
+                {userProfile?.userType === 'seeker' && (
+                    <>
+                        <FormField
+                            control={form.control}
+                            name="skills"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Skills</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="e.g., React, TypeScript, Node.js" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="experience"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Work Experience</FormLabel>
+                                <FormControl>
+                                    <Textarea placeholder="Describe your professional experience..." className="min-h-[150px]" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormItem>
+                            <FormLabel>Resume/CV</FormLabel>
+                            <div className="flex items-center gap-4">
+                                <Button type="button" variant="outline" onClick={() => resumeInputRef.current?.click()} disabled={uploadingResume}>
+                                    {uploadingResume ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                                    {userProfile?.resumeURL ? 'Upload New Resume' : 'Upload Resume'}
+                                </Button>
+                                {userProfile?.resumeURL && (
+                                    <Link href={userProfile.resumeURL} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
+                                        <FileText className="h-4 w-4" />
+                                        View Current Resume
+                                    </Link>
+                                )}
+                            </div>
+                            <FormControl>
+                                <input
+                                    type="file"
+                                    ref={resumeInputRef}
+                                    onChange={handleResumeFileChange}
+                                    className="hidden"
+                                    accept=".pdf,.doc,.docx"
+                                />
+                            </FormControl>
+                             <FormDescription>
+                                PDF, DOC, or DOCX file (Max 5MB).
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    </>
+                )}
               
               <div className="flex justify-end">
-                <Button type="submit" className="bg-accent hover:bg-accent/90" disabled={loading || uploading}>
+                <Button type="submit" className="bg-accent hover:bg-accent/90" disabled={loading || uploading || uploadingResume}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {loading ? 'Saving...' : 'Save Changes'}
                 </Button>
@@ -298,3 +412,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    

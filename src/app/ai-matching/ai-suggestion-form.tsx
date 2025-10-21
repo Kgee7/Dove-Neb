@@ -1,10 +1,13 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { suggestJobs, type SuggestJobsOutput } from "@/ai/flows/ai-suggested-jobs";
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 import {
   Card,
@@ -25,6 +28,13 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Loader2, Wand2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+
+type UserProfile = {
+    skills?: string[];
+    experience?: string;
+};
 
 const formSchema = z.object({
   profile: z.string().min(50, "Please provide more details about your skills and experience."),
@@ -34,6 +44,15 @@ const formSchema = z.object({
 export default function AISuggestionForm() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SuggestJobsOutput | null>(null);
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -42,6 +61,20 @@ export default function AISuggestionForm() {
       searchHistory: "",
     },
   });
+
+  useEffect(() => {
+    if (userProfile) {
+        const profileParts = [];
+        if (userProfile.skills && userProfile.skills.length > 0) {
+            profileParts.push(`Skills: ${userProfile.skills.join(', ')}.`);
+        }
+        if (userProfile.experience) {
+            profileParts.push(`Experience: ${userProfile.experience}`);
+        }
+        const fullProfile = profileParts.join('\n');
+        form.setValue('profile', fullProfile);
+    }
+  }, [userProfile, form]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
@@ -57,6 +90,30 @@ export default function AISuggestionForm() {
     }
   }
 
+  if (isProfileLoading) {
+      return (
+          <Card>
+            <CardHeader>
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-full max-w-sm" />
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-24 w-full" />
+                </div>
+                 <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-20 w-full" />
+                </div>
+            </CardContent>
+            <CardFooter>
+                 <Skeleton className="h-10 w-full" />
+            </CardFooter>
+          </Card>
+      )
+  }
+
   return (
     <Card>
       <Form {...form}>
@@ -64,7 +121,7 @@ export default function AISuggestionForm() {
           <CardHeader>
             <CardTitle>Your Details</CardTitle>
             <CardDescription>
-              The more detail you provide, the better the recommendations.
+              We've pre-filled this form from your profile. Add any other details to improve recommendations.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -73,10 +130,10 @@ export default function AISuggestionForm() {
               name="profile"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Your Profile</FormLabel>
+                  <FormLabel>Your Profile (Skills & Experience)</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="e.g., 'Experienced frontend developer with 5 years in React and TypeScript. Passionate about building accessible user interfaces. Looking for a remote role in a fast-growing startup.'"
+                      placeholder="e.g., 'Experienced frontend developer with 5 years in React and TypeScript...'"
                       className="min-h-[120px]"
                       {...field}
                     />
@@ -90,7 +147,7 @@ export default function AISuggestionForm() {
               name="searchHistory"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Recent Job Searches</FormLabel>
+                  <FormLabel>Recent Job Searches or Interests</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="e.g., 'Senior React Developer', 'Remote UI/UX Designer', 'Product Manager San Francisco'"
@@ -139,3 +196,5 @@ export default function AISuggestionForm() {
     </Card>
   );
 }
+
+    
