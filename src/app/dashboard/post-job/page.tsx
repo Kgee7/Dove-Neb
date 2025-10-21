@@ -53,6 +53,7 @@ const formSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
   category: z.enum(['Engineering', 'Design', 'Marketing', 'Sales', 'Product']),
   type: z.enum(['Full-time', 'Part-time', 'Contract']),
+  workArrangement: z.enum(['On-site', 'Remote', 'Hybrid']),
   location: z.string().min(2, { message: 'Location is required.' }),
   salary: z.string().min(3, { message: 'Salary is required.' }),
   description: z.string().min(50, { message: 'Description must be at least 50 characters.' }),
@@ -94,12 +95,15 @@ function PostJobPageContent() {
     },
   });
 
+  const workArrangement = form.watch('workArrangement');
+
   useEffect(() => {
     if (jobToEdit) {
       form.reset({
         title: jobToEdit.title,
         category: jobToEdit.category,
         type: jobToEdit.type,
+        workArrangement: jobToEdit.workArrangement || 'On-site',
         location: jobToEdit.location,
         salary: jobToEdit.salary,
         description: jobToEdit.description,
@@ -120,6 +124,7 @@ function PostJobPageContent() {
 
     const jobData = {
         ...values,
+        location: values.workArrangement === 'Remote' ? 'Remote' : values.location,
         employerId: user.uid,
         postedDate: editJobId && jobToEdit ? jobToEdit.postedDate : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric'}),
         closingDate: values.closingDate.toISOString().split('T')[0],
@@ -133,16 +138,16 @@ function PostJobPageContent() {
             await setDocument(jobDocRef, jobData, { merge: true });
         } else {
             const jobsCollection = collection(firestore, 'jobListings');
-            const newDocRef = doc(jobsCollection); // Create a new doc ref with a generated ID
+            const newDocRef = doc(jobsCollection);
             
             const companyLogos = PlaceHolderImages.filter(img => img.id.startsWith('company-logo'));
             const randomLogo = companyLogos[Math.floor(Math.random() * companyLogos.length)];
             
             const fullJobData = {
               ...jobData,
-              id: newDocRef.id, // Explicitly save the generated ID in the document
+              id: newDocRef.id,
               logoUrl: randomLogo.imageUrl,
-              logoBg: `bg-indigo-100` // Example, could be randomized
+              logoBg: `bg-indigo-100`
             }
             await setDocument(newDocRef, fullJobData);
         }
@@ -250,6 +255,29 @@ function PostJobPageContent() {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <FormField
+                control={form.control}
+                name="workArrangement"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Work Arrangement</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select work arrangement" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="On-site">On-site</SelectItem>
+                        <SelectItem value="Remote">Remote</SelectItem>
+                        <SelectItem value="Hybrid">Hybrid</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {workArrangement !== 'Remote' && (
+                <FormField
                     control={form.control}
                     name="location"
                     render={({ field }) => (
@@ -262,20 +290,21 @@ function PostJobPageContent() {
                     </FormItem>
                     )}
                 />
-                 <FormField
-                    control={form.control}
-                    name="salary"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Salary</FormLabel>
-                        <FormControl>
-                        <Input placeholder="e.g., $120,000 - $160,000" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+              )}
             </div>
+             <FormField
+                control={form.control}
+                name="salary"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Salary</FormLabel>
+                    <FormControl>
+                    <Input placeholder="e.g., $120,000 - $160,000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
 
               <FormField
                 control={form.control}
@@ -401,5 +430,3 @@ export default function PostJobPage() {
         </React.Suspense>
     )
 }
-
-    

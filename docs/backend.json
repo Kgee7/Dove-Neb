@@ -78,7 +78,12 @@
         },
         "location": {
           "type": "string",
-          "description": "The location where the job is based."
+          "description": "The location where the job is based. Can be 'Remote' if workArrangement is 'Remote'."
+        },
+        "workArrangement": {
+          "type": "string",
+          "description": "The work arrangement for the job.",
+          "enum": ["On-site", "Remote", "Hybrid"]
         },
         "salary": {
           "type": "number",
@@ -118,6 +123,7 @@
         "title",
         "description",
         "location",
+        "workArrangement",
         "salary",
         "category",
         "jobType",
@@ -311,4 +317,3 @@
     "reasoning": "The Firestore structure for Dove Jobs is designed for secure and scalable management of users, job listings, applications, and messages, adhering to the principles of Authorization Independence, Structural Segregation, Access Modeling, and Data Clarity. Path-based ownership is favored for private user data, while membership maps are used for collaborative access.  \n\n*   **Authorization Independence**:  Achieved by denormalizing authorization data (e.g., `employerId` on job listings) to avoid `get()` calls in security rules.\n*   **Structural Segregation**:  Different data types (users, jobs, applications) are stored in separate collections, each with clearly defined security requirements. User-owned data (job listings, applications, messages) is stored in subcollections under the user's document.\n*   **Access Modeling**: Path-based ownership is used to define clear ownership and roles.\n*   **QAPs (Rules are not Filters)**: The segregation of data into different collections based on access needs ensures secure list operations. Only the data that the user has access to will be present in the collection that the user queries.\n*   **Data Clarity**: Explicit state modeling using a status field in the `JobApplication` ensures that the state of application is predictable and easy to manage.\n\nThis structure facilitates simple, robust, and easily debuggable security rules, ensuring that data access is controlled and secure."
   }
 }
-    

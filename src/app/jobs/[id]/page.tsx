@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, notFound } from "next/navigation";
-import { ArrowLeft, Briefcase, MapPin, Building, Share2, Heart, Loader2, Mail, MessageCircle } from "lucide-react";
+import { ArrowLeft, Briefcase, MapPin, Building, Share2, Heart, Loader2, Mail, MessageCircle, Globe } from "lucide-react";
 import { doc } from 'firebase/firestore';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import React from 'react';
@@ -82,8 +82,8 @@ export default function JobDetailPage() {
                     <Building className="h-4 w-4" />
                     <span>{job.company}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
+                   <div className="flex items-center gap-2">
+                    {job.workArrangement === 'Remote' ? <Globe className="h-4 w-4" /> : <MapPin className="h-4 w-4" />}
                     <span>{job.location}</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -161,7 +161,7 @@ export default function JobDetailPage() {
                         </div>
                         <div className="flex justify-between">
                             <span className="font-medium text-muted-foreground">Location:</span>
-                            <span>{job.location}</span>
+                             <span className="text-right">{job.location} ({job.workArrangement})</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="font-medium text-muted-foreground">Job Type:</span>
@@ -181,5 +181,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    

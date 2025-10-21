@@ -12,6 +12,7 @@ import {
   Heart,
   Sparkles,
   Loader2,
+  Globe,
 } from "lucide-react";
 import { collection } from "firebase/firestore";
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -182,7 +183,8 @@ export default function Home() {
                     <div className="flex flex-wrap gap-2 text-sm">
                       <Badge variant="outline">{job.type}</Badge>
                       <Badge variant="outline" className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {job.location}
+                        {job.workArrangement === 'Remote' ? <Globe className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
+                        {job.location}
                       </Badge>
                     </div>
                     <p className="mt-4 text-sm text-muted-foreground">

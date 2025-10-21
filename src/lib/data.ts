@@ -10,6 +10,7 @@ export type Job = {
   logoBg: string;
   location: string;
   type: 'Full-time' | 'Part-time' | 'Contract';
+  workArrangement: 'On-site' | 'Remote' | 'Hybrid';
   salary: string;
   postedDate: string;
   category: 'Engineering' | 'Design' | 'Marketing' | 'Sales' | 'Product';
@@ -31,6 +32,7 @@ export let jobs: Job[] = [
     logoBg: 'bg-indigo-100',
     location: 'San Francisco, CA',
     type: 'Full-time',
+    workArrangement: 'Hybrid',
     salary: '$120,000 - $160,000',
     postedDate: '2d ago',
     category: 'Engineering',
@@ -46,6 +48,7 @@ export let jobs: Job[] = [
     logoBg: 'bg-pink-100',
     location: 'New York, NY',
     type: 'Full-time',
+    workArrangement: 'On-site',
     salary: '$90,000 - $130,000',
     postedDate: '4d ago',
     category: 'Design',
@@ -61,6 +64,7 @@ export let jobs: Job[] = [
     logoBg: 'bg-green-100',
     location: 'Remote',
     type: 'Full-time',
+    workArrangement: 'Remote',
     salary: '$85,000 - $110,000',
     postedDate: '1w ago',
     category: 'Marketing',
@@ -76,6 +80,7 @@ export let jobs: Job[] = [
     logoBg: 'bg-purple-100',
     location: 'Austin, TX',
     type: 'Contract',
+    workArrangement: 'Hybrid',
     salary: '$70 - $90 / hour',
     postedDate: '3d ago',
     category: 'Engineering',
@@ -91,6 +96,7 @@ export let jobs: Job[] = [
     logoBg: 'bg-blue-100',
     location: 'Chicago, IL',
     type: 'Full-time',
+    workArrangement: 'On-site',
     salary: '$75,000 + Commission',
     postedDate: '5d ago',
     category: 'Sales',
@@ -106,6 +112,7 @@ export let jobs: Job[] = [
     logoBg: 'bg-yellow-100',
     location: 'Remote',
     type: 'Part-time',
+    workArrangement: 'Remote',
     salary: '$40 - $60 / hour',
     postedDate: '10d ago',
     category: 'Design',
@@ -144,5 +151,3 @@ export async function getJob(id: string): Promise<Job | undefined> {
   const jobs = await getJobs();
   return jobs.find(job => job.id === id);
 }
-
-    
