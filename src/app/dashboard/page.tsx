@@ -1,21 +1,29 @@
-
 'use client';
 import { useRouter } from 'next/navigation';
 import React from 'react';
-import { useUser } from '@/firebase';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2, Briefcase } from "lucide-react";
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { Loader2 } from "lucide-react";
+import EmployerDashboard from './employer-dashboard';
+import SeekerDashboard from './seeker-dashboard';
+
+type UserProfile = {
+  userType: 'seeker' | 'employer';
+  firstName: string;
+  lastName: string;
+};
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const router = useRouter();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
   React.useEffect(() => {
     if (!isUserLoading && !user) {
@@ -23,7 +31,7 @@ export default function DashboardPage() {
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || !user) {
+  if (isUserLoading || isProfileLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -31,37 +39,19 @@ export default function DashboardPage() {
     );
   }
 
+  if (userProfile?.userType === 'employer') {
+    return <EmployerDashboard />;
+  }
 
+  if (userProfile?.userType === 'seeker') {
+    return <SeekerDashboard userProfile={userProfile} />;
+  }
+
+  // Fallback or a generic dashboard if userType is not set
   return (
-    <div className="container py-10">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-            <h1 className="text-3xl font-bold font-headline">Employer Dashboard</h1>
-            <p className="text-muted-foreground">Manage your job postings and applicants.</p>
-        </div>
-        <Button className="bg-accent hover:bg-accent/90">
-            <PlusCircle className="mr-2 h-4 w-4"/>
-            Post a New Job
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Job Postings</CardTitle>
-          <CardDescription>
-            You have no active job postings.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center text-center p-12 border-2 border-dashed rounded-lg">
-            <Briefcase className="w-12 h-12 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold">No Jobs Posted Yet</h3>
-            <p className="text-muted-foreground mb-4">Get started by posting your first job opening.</p>
-            <Button className="bg-accent hover:bg-accent/90">
-                <PlusCircle className="mr-2 h-4 w-4"/>
-                Post a Job
-            </Button>
-        </CardContent>
-      </Card>
+    <div className="container py-10 text-center">
+        <h1 className="text-3xl font-bold font-headline">Welcome!</h1>
+        <p className="text-muted-foreground">Loading your dashboard...</p>
     </div>
   );
 }
