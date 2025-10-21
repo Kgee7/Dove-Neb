@@ -146,7 +146,7 @@ export function SiteHeader() {
             </DropdownMenu>
           ) : (
             <>
-               <Link href="/dashboard">
+               <Link href="/dashboard/post-job">
                 <Button className="hidden sm:inline-flex" variant="outline">
                     Post a Job
                 </Button>
