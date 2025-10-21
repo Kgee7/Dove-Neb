@@ -27,7 +27,7 @@ export default function JobDetailPage() {
   const { data: job, isLoading } = useDoc<Job>(jobRef);
   const headerImage = PlaceHolderImages.find((img) => img.id === "job-detail-header");
 
-  if (isLoading) {
+  if (isLoading || !id) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
