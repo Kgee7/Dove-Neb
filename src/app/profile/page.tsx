@@ -112,6 +112,9 @@ export default function ProfilePage() {
 
       // Update Firebase Auth profile
       await updateProfile(user, { photoURL: downloadURL });
+      
+      // Force a reload of the user object to get the new photoURL
+      await user.reload();
 
       // Update Firestore document
       await setDocument(userDocRef, { photoURL: downloadURL }, { merge: true });
