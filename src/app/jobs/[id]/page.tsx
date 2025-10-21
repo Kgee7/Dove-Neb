@@ -1,194 +1,98 @@
-'use client';
-
-import { useParams, notFound } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
-import { ArrowLeft, Building, Globe, MapPin, Briefcase, Loader2, Mail, MessageCircle, Heart, Share2 } from "lucide-react";
-import { doc } from "firebase/firestore";
-import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
-
-import type { Job } from "@/lib/data";
-import { cn } from "@/lib/utils";
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+tsx
+import { notFound } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import Link from 'next/link';
 
-function JobDetailClientContent({ job }: { job: Job }) {
-  const hasDirectApply = job.applicationEmail || job.applicationWhatsApp;
+// NOTE: Replace this DUMMY_JOBS data with actual data fetched from your Firebase backend or API.
+const DUMMY_JOBS = [
+  {
+    id: '1',
+    title: 'Senior Frontend Developer',
+    company: 'Tech Solutions Inc.',
+    location: 'Remote',
+    description: 'We are looking for a passionate Senior Frontend Developer to join our growing team. You will be responsible for developing and implementing user interface components using React.js workflows. Experience with Next.js and TypeScript is a plus.',
+    requirements: ['5+ years React experience', 'Strong HTML/CSS/JS', 'Experience with REST APIs'],
+    responsibilities: ['Build new features', 'Maintain existing codebase', 'Collaborate with UX/UI designers'],
+    postedDate: '2025-10-15',
+  },
+  {
+    id: '2',
+    title: 'AI/ML Engineer',
+    company: 'Innovate AI',
+    location: 'San Francisco, CA',
+    description: 'Join our cutting-edge AI team to develop and deploy machine learning models. You will work on various aspects of our AI platform, from data pipeline development to model optimization and deployment.',
+    requirements: ['3+ years ML engineering', 'Python, TensorFlow/PyTorch', 'Cloud platforms (AWS/GCP/Azure)'],
+    responsibilities: ['Design and implement ML models', 'Optimize model performance', 'Integrate models into production systems'],
+    postedDate: '2025-10-20',
+  },
+  // Add more dummy job data or integrate with your actual data source
+];
 
-  return (
-    <div className="flex w-full shrink-0 flex-col items-stretch gap-2 sm:w-auto sm:items-end">
-      <div className="flex flex-col items-stretch gap-2">
-        {hasDirectApply ? (
-          <>
-            {job.applicationEmail && (
-              <Button asChild className="w-full bg-accent hover:bg-accent/90">
-                <a href={`mailto:${job.applicationEmail}?subject=Application for ${job.title}`}>
-                  <Mail className="mr-2 h-4 w-4" /> Apply via Email
-                </a>
-              </Button>
-            )}
-            {job.applicationWhatsApp && (
-              <Button asChild variant="outline" className="w-full">
-                <a href={`https://wa.me/${job.applicationWhatsApp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="mr-2 h-4 w-4" /> Apply on WhatsApp
-                </a>
-              </Button>
-            )}
-          </>
-        ) : (
-          <Link href={`/jobs/apply/${job.id}`} className="w-full">
-            <Button className="w-full bg-accent hover:bg-accent/90">Apply Now</Button>
-          </Link>
-        )}
-      </div>
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="icon"><Heart className="h-4 w-4" /></Button>
-        <Button variant="outline" size="icon"><Share2 className="h-4 w-4" /></Button>
-      </div>
-    </div>
-  );
+// Function to fetch job details (IMPORTANT: Replace with your actual API call or Firebase data fetching logic)
+async function getJobDetails(jobId: string) {
+  // Example for fetching from an API endpoint:
+  // const response = await fetch(`/api/jobs/${jobId}`);
+  // if (!response.ok) {
+  //   return null; // Or throw an error
+  // }
+  // return response.json();
+
+  // For now, using dummy data:
+  return DUMMY_JOBS.find(job => job.id === jobId);
 }
 
-
-export default function JobDetailPage() {
-  const firestore = useFirestore();
-  const params = useParams();
-  const id = params.id as string;
-
-  const jobRef = useMemoFirebase(() => {
-    if (!firestore || !id) return null;
-    return doc(firestore, 'jobListings', id);
-  }, [firestore, id]);
-
-  const { data: job, isLoading } = useDoc<Job>(jobRef);
-  const headerImage = PlaceHolderImages.find((img) => img.id === "job-detail-header");
-  
-  if (isLoading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
+export default async function JobDetailsPage({ params }: { params: { id: string } }) {
+  const jobId = params.id;
+  const job = await getJobDetails(jobId);
 
   if (!job) {
-    return notFound();
+    notFound(); // This will show a 404 page if the job is not found
   }
 
   return (
-    <div>
-      <div className="relative h-48 w-full">
-        {headerImage && (
-          <Image
-            src={headerImage.imageUrl}
-            alt={headerImage.description}
-            data-ai-hint={headerImage.imageHint}
-            fill
-            className="object-cover"
-          />
-        )}
-        <div className="absolute inset-0 bg-black/50" />
-      </div>
-      <div className="container -mt-24 pb-16">
-        <div className="relative">
-          <Link href="/jobs" className={cn("absolute -top-12 left-0 inline-flex items-center gap-2 text-sm font-medium text-white hover:text-primary-foreground/80 transition-colors")}>
-            <ArrowLeft className="h-4 w-4" />
-            Back to Jobs
+    <div className="container max-w-3xl py-12">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-3xl font-bold">{job.title}</CardTitle>
+          <CardDescription className="text-lg text-muted-foreground">{job.company} - {job.location}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <h4 className="font-semibold text-xl mb-2">Job Description</h4>
+            <p className="text-gray-700 dark:text-gray-300">{job.description}</p>
+          </div>
+          {job.requirements && job.requirements.length > 0 && (
+            <div>
+              <h4 className="font-semibold text-xl mb-2">Requirements</h4>
+              <ul className="list-disc list-inside space-y-1">
+                {job.requirements.map((req, index) => (
+                  <li key={index}>{req}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {job.responsibilities && job.responsibilities.length > 0 && (
+            <div>
+              <h4 className="font-semibold text-xl mb-2">Responsibilities</h4>
+              <ul className="list-disc list-inside space-y-1">
+                {job.responsibilities.map((res, index) => (
+                  <li key={index}>{res}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {job.postedDate && (
+            <p className="text-sm text-muted-foreground">Posted on: {job.postedDate}</p>
+          )}
+        </CardContent>
+        <CardFooter className="flex justify-end pt-6">
+          {/* Example of an apply button */}
+          <Link href={`/apply/${job.id}`}>
+            <Button size="lg">Apply Now</Button>
           </Link>
-          <Card className="overflow-hidden">
-            <CardHeader className="flex flex-col items-start gap-6 p-6 sm:flex-row">
-              <div className={cn("flex h-20 w-20 shrink-0 items-center justify-center rounded-lg sm:h-24 sm:w-24", job.logoBg)}>
-                <Image
-                  src={job.logoUrl}
-                  alt={`${job.company} logo`}
-                  width={64}
-                  height={64}
-                  className="h-16 w-16 rounded-md object-contain sm:h-20 sm:w-20"
-                />
-              </div>
-              <div className="flex-1">
-                <Badge variant="secondary" className="mb-2">{job.category}</Badge>
-                <h1 className="text-2xl font-bold md:text-3xl font-headline">{job.title}</h1>
-                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <Building className="h-4 w-4" />
-                    <span>{job.company}</span>
-                  </div>
-                   <div className="flex items-center gap-2">
-                    {job.workArrangement === 'Remote' ? <Globe className="h-4 w-4" /> : <MapPin className="h-4 w-4" />}
-                    <span>{job.location}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Briefcase className="h-4 w-4" />
-                    <span>{job.type}</span>
-                  </div>
-                </div>
-                 <p className="mt-3 text-lg font-semibold text-primary">{job.currencySymbol}{job.salary}</p>
-              </div>
-              
-              <JobDetailClientContent job={job} />
-
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-12 p-6 pt-0 md:grid-cols-3">
-              <div className="space-y-8 md:col-span-2">
-                <div>
-                  <h2 className="text-xl font-semibold mb-4 font-headline">Job Description</h2>
-                  <p className="text-muted-foreground whitespace-pre-line">{job.description}</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-semibold mb-4 font-headline">Requirements</h2>
-                  <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
-                    {Array.isArray(job.requirements) && job.requirements.map((req, index) => (
-                      <li key={index}>{req}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-              <div className="space-y-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg font-headline">About {job.company}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-muted-foreground">
-                            {job.company} is a leading innovator in the tech industry, committed to creating solutions that change the world. Join our dynamic team and make an impact.
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg font-headline">Job Overview</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3 text-sm">
-                        <div className="flex justify-between">
-                            <span className="font-medium text-muted-foreground">Posted:</span>
-                            <span>{job.postedDate}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="font-medium text-muted-foreground">Location:</span>
-                             <span className="text-right">{job.location} ({job.workArrangement})</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="font-medium text-muted-foreground">Job Type:</span>
-                            <span>{job.type}</span>
-                        </div>
-                         <div className="flex justify-between">
-                            <span className="font-medium text-muted-foreground">Closing Date:</span>
-                            <span>{job.closingDate}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="font-medium text-muted-foreground">Salary:</span>
-                            <span className="text-right">{job.currencySymbol}{job.salary}</span>
-                        </div>
-                    </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
