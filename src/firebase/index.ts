@@ -3,7 +3,13 @@
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { getFirestore, setDoc, addDoc, updateDoc, deleteDoc, collection, doc } from 'firebase/firestore'
+import { getFirestore, setDoc, addDoc, updateDoc, deleteDoc, collection, doc } from 'firebase/firestore';
+import { 
+  setDocumentNonBlocking,
+  addDocumentNonBlocking,
+  updateDocumentNonBlocking,
+  deleteDocumentNonBlocking
+} from './non-blocking-updates';
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {

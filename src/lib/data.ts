@@ -1,6 +1,6 @@
 import { PlaceHolderImages } from "./placeholder-images";
 import { collection, getDocs, getFirestore } from 'firebase/firestore';
-import { initializeFirebase } from "@/firebase";
+import { initializeFirebase, addDocumentNonBlocking } from "@/firebase";
 
 export type Job = {
   id: string;
@@ -113,7 +113,7 @@ async function seedJobs() {
     if (jobSnapshot.empty) {
         console.log("Seeding jobs...");
         for (const job of jobs) {
-            await addDoc(jobCollection, job);
+            addDocumentNonBlocking(jobCollection, job);
         }
     }
 }
