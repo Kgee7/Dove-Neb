@@ -16,10 +16,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function JobDetailPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
+  const id = params.id;
   const jobRef = useMemoFirebase(() => {
     if (!firestore) return null;
-    return doc(firestore, 'jobListings', params.id);
-  }, [firestore, params.id]);
+    return doc(firestore, 'jobListings', id);
+  }, [firestore, id]);
 
   const { data: job, isLoading } = useDoc<Job>(jobRef);
   const headerImage = PlaceHolderImages.find((img) => img.id === "job-detail-header");
