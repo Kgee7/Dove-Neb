@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, notFound } from "next/navigation";
@@ -26,14 +25,14 @@ function JobDetailClientContent({ job }: { job: Job }) {
             {job.applicationEmail && (
               <Button asChild className="w-full bg-accent hover:bg-accent/90">
                 <a href={`mailto:${job.applicationEmail}?subject=Application for ${job.title}`}>
-                  <Mail className="mr-2" /> Apply via Email
+                  <Mail className="mr-2 h-4 w-4" /> Apply via Email
                 </a>
               </Button>
             )}
             {job.applicationWhatsApp && (
               <Button asChild variant="outline" className="w-full">
                 <a href={`https://wa.me/${job.applicationWhatsApp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="mr-2" /> Apply on WhatsApp
+                  <MessageCircle className="mr-2 h-4 w-4" /> Apply on WhatsApp
                 </a>
               </Button>
             )}
