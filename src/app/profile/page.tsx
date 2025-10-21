@@ -5,7 +5,7 @@ import React, { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFirestore, useUser, useDoc, useMemoFirebase, setDocument, getStorage, ref, uploadBytes, getDownloadURL, updateProfile } from '@/firebase';
+import { useFirestore, useUser, useDoc, useMemoFirebase, getStorage, ref, uploadBytes, getDownloadURL, updateProfile, setDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -117,7 +117,7 @@ export default function ProfilePage() {
       await user.reload();
 
       // Update Firestore document
-      await setDocument(userDocRef, { photoURL: downloadURL }, { merge: true });
+      await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
 
       toast({
         title: 'Profile Picture Updated',
@@ -150,7 +150,7 @@ export default function ProfilePage() {
     }
 
     try {
-      await setDocument(userDocRef, dataToUpdate, { merge: true });
+      await setDoc(userDocRef, dataToUpdate, { merge: true });
       toast({
         title: 'Profile Updated',
         description: 'Your profile information has been saved successfully.',
