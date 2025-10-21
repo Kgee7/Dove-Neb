@@ -1,6 +1,6 @@
 'use client';
 
-import { notFound } from "next/navigation";
+import { notFound, useParams } from "next/navigation";
 import Image from "next/image";
 import { doc } from "firebase/firestore";
 import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
@@ -14,9 +14,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
-export default function ApplyPage({ params }: { params: { id: string } }) {
+export default function ApplyPage() {
     const firestore = useFirestore();
-    const id = params.id;
+    const params = useParams();
+    const id = params.id as string;
+    
     const jobRef = useMemoFirebase(() => {
         if (!firestore || !id) return null;
         return doc(firestore, 'jobListings', id);

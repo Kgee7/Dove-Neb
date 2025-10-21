@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, useParams } from "next/navigation";
 import { ArrowLeft, Briefcase, MapPin, Building, Share2, Heart, Loader2 } from "lucide-react";
 import { doc } from 'firebase/firestore';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
@@ -14,9 +14,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function JobDetailPage({ params }: { params: { id: string } }) {
+export default function JobDetailPage() {
   const firestore = useFirestore();
-  const id = params.id;
+  const params = useParams();
+  const id = params.id as string;
+
   const jobRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
     return doc(firestore, 'jobListings', id);
