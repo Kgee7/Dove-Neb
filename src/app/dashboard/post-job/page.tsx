@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFirestore, useUser, setDocument, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useUser, useDoc, useMemoFirebase, setDoc } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import React, { useEffect } from 'react';
@@ -87,12 +88,12 @@ function getCurrencySymbol(currency: string) {
         'HNL': 'L', 'HRK': 'kn', 'HTG': 'G', 'HUF': 'Ft', 'IDR': 'Rp', 'ILS': '₪', 'INR': '₹',
         'IQD': 'ع.د', 'IRR': '﷼', 'ISK': 'kr', 'JMD': 'J$', 'JOD': 'JD', 'KGS': 'сом', 'KHR': '៛',
         'KWD': 'K.D.', 'KZT': '₸', 'LAK': '₭', 'LBP': 'L£', 'LKR': 'Rs', 'MDL': 'L', 'MKD': 'ден',
-        'MMK': 'K', 'MNT': '₮', 'MOP': 'P', 'MVR': 'Rf', 'MXN': 'Mex$', 'MYR': 'RM', 'NIO': 'C$',
+        'MMK': 'K', 'MNT': '₮', 'MOP': 'P', 'MRU': 'UM', 'MUR': '₨', 'MVR': 'Rf', 'MXN': 'Mex$', 'MYR': 'RM', 'NIO': 'C$',
         'NOK': 'kr', 'NPR': '₨', 'NZD': 'NZ$', 'OMR': '﷼', 'PAB': 'B/.', 'PEN': 'S/', 'PGK': 'K',
         'PHP': '₱', 'PKR': '₨', 'PLN': 'zł', 'PYG': '₲', 'QAR': '﷼', 'RON': 'lei', 'RSD': 'дин',
         'RUB': '₽', 'SAR': '﷼', 'SBD': 'Si$', 'SEK': 'kr', 'SGD': 'S$', 'SHP': '£', 'SRD': '$',
         'SYP': '£S', 'THB': '฿', 'TJS': 'SM', 'TMT': 'T', 'TOP': 'T$', 'TRY': '₺', 'TTD': 'TT$',
-        'TWD': 'NT$', 'UAH': '₴', 'UYU': '$U', 'UZS': 'soʻm', 'VES': 'Bs.', 'VND': '₫', 'VUV': 'Vt',
+        'TWD': 'NT$', 'UAH': '₴', 'UGX': 'USh', 'USD': '$', 'UYU': '$U', 'UZS': 'soʻm', 'VES': 'Bs.', 'VND': '₫', 'VUV': 'Vt',
         'WST': 'T', 'YER': '﷼'
     };
     return symbols[currency] || '$';
@@ -195,7 +196,7 @@ function PostJobPageContent() {
             jobData.logoBg = `bg-indigo-100`;
         }
         
-        await setDocument(jobDocRef, jobData, { merge: true });
+        await setDoc(jobDocRef, jobData, { merge: true });
         
         toast({
             title: `Job ${editJobId ? 'Updated' : 'Posted'}!`,
