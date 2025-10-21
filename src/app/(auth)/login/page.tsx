@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -5,10 +6,13 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useAuth, useUser } from "@/firebase";
+import { useAuth, useUser, setDocument, GoogleAuthProvider, signInWithPopup } from "@/firebase";
 import { initiateEmailSignIn } from "@/firebase/non-blocking-login";
 import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
+import { useFirestore } from "@/firebase";
+import { doc, getDoc } from 'firebase/firestore';
+
 
 import { Button } from "@/components/ui/button";
 import {
@@ -37,10 +41,12 @@ const formSchema = z.object({
 
 export default function LoginPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = React.useState(false);
+  const [googleLoading, setGoogleLoading] = React.useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -102,6 +108,48 @@ export default function LoginPage() {
       });
   }
 
+  async function handleGoogleSignIn() {
+    if (!auth || !firestore) return;
+    setGoogleLoading(true);
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      const userDocRef = doc(firestore, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists()) {
+        const [firstName, ...lastName] = (user.displayName || "").split(" ");
+        const userData = {
+          id: user.uid,
+          userType: "seeker",
+          firstName: firstName || "",
+          lastName: lastName.join(" "),
+          email: user.email,
+          createdAt: new Date().toISOString(),
+        };
+        await setDocument(userDocRef, userData);
+      }
+      
+      toast({
+        title: "Signed in with Google!",
+        description: "You will be redirected shortly.",
+      });
+
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Google Sign-in Failed",
+        description: error.message || "Could not sign in with Google.",
+      });
+    } finally {
+        setGoogleLoading(false);
+    }
+  }
+
+
   if (isUserLoading || user) {
     return (
       <div className="flex h-full w-full items-center justify-center">
@@ -155,11 +203,12 @@ export default function LoginPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={loading}>
+            <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={loading || googleLoading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
-            <Button variant="outline" className="w-full" disabled={loading}>
+            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={loading || googleLoading}>
+              {googleLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign in with Google
             </Button>
           </CardContent>

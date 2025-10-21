@@ -1,8 +1,9 @@
+
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { getFirestore, setDoc, addDoc, updateDoc, deleteDoc, collection, doc } from 'firebase/firestore';
 import { 
   setDocumentNonBlocking,
@@ -66,4 +67,6 @@ export {
   collection,
   doc,
   setDoc,
+  GoogleAuthProvider,
+  signInWithPopup
 };
