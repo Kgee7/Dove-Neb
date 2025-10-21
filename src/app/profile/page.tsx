@@ -5,7 +5,8 @@ import React, { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFirebaseApp, useFirestore, useUser, useDoc, useMemoFirebase, getStorage, ref, uploadBytes, getDownloadURL, updateProfile, setDoc } from '@/firebase';
+import { useUser, useDoc, useMemoFirebase, initializeFirebase, updateProfile, setDoc } from '@/firebase';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -55,9 +56,8 @@ const profileSchema = z.object({
 });
 
 export default function ProfilePage() {
-  const { user, refreshUser, isRefreshing } = useUser();
-  const firestore = useFirestore();
-  const firebaseApp = useFirebaseApp();
+  const { user, isUserLoading } = useUser();
+  const { firestore } = initializeFirebase();
   const { toast } = useToast();
   const [loading, setLoading] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
@@ -117,11 +117,12 @@ export default function ProfilePage() {
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user || !userDocRef || !firebaseApp) return;
+    if (!file || !user || !userDocRef) return;
 
     setUploading(true);
 
     try {
+      const { firebaseApp } = initializeFirebase();
       const storage = getStorage(firebaseApp);
       const storageRef = ref(storage, `profile-pictures/${user.uid}`);
       const snapshot = await uploadBytes(storageRef, file);
@@ -149,7 +150,7 @@ export default function ProfilePage() {
 
   const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user || !userDocRef || !firebaseApp) return;
+    if (!file || !user || !userDocRef) return;
 
     if (file.size > 5 * 1024 * 1024) { // 5MB limit
         toast({
@@ -163,6 +164,7 @@ export default function ProfilePage() {
     setUploadingResume(true);
 
     try {
+      const { firebaseApp } = initializeFirebase();
       const storage = getStorage(firebaseApp);
       const storageRef = ref(storage, `resumes/${user.uid}/${file.name}`);
       const snapshot = await uploadBytes(storageRef, file);
@@ -224,7 +226,7 @@ export default function ProfilePage() {
     }
   }
 
-  if (isProfileLoading) {
+  if (isProfileLoading || isUserLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -250,7 +252,7 @@ export default function ProfilePage() {
                         {getInitials(userProfile?.firstName, userProfile?.lastName)}
                     </AvatarFallback>
                 </Avatar>
-                {(uploading || isRefreshing) && (
+                {uploading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
                         <Loader2 className="h-8 w-8 animate-spin text-white" />
                     </div>
@@ -260,7 +262,7 @@ export default function ProfilePage() {
                     size="icon"
                     className="absolute bottom-0 right-0 rounded-full h-8 w-8 bg-muted group-hover:bg-accent group-hover:text-accent-foreground"
                     onClick={handleAvatarClick}
-                    disabled={uploading || isRefreshing}
+                    disabled={uploading}
                 >
                     <Edit className="h-4 w-4" />
                 </Button>
@@ -352,6 +354,9 @@ export default function ProfilePage() {
                                 <FormControl>
                                     <Input placeholder="e.g., React, TypeScript, Node.js" {...field} />
                                 </FormControl>
+                                <FormDescription>
+                                    Separate skills with a comma.
+                                </FormDescription>
                                 <FormMessage />
                                 </FormItem>
                             )}
