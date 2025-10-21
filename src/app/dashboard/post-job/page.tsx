@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFirestore, useUser, setDocument, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useUser, setDocument, addDocument, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import React, { useEffect } from 'react';
@@ -124,16 +124,20 @@ function PostJobPageContent() {
         let jobDocRef;
         if(editJobId) {
             jobDocRef = doc(firestore, 'jobListings', editJobId);
+            await setDocument(jobDocRef, { ...jobData, id: jobDocRef.id }, { merge: true });
         } else {
-            jobDocRef = doc(collection(firestore, 'jobListings'));
+            const newDocRef = doc(collection(firestore, 'jobListings'));
             const companyLogos = PlaceHolderImages.filter(img => img.id.startsWith('company-logo'));
             const randomLogo = companyLogos[Math.floor(Math.random() * companyLogos.length)];
-            jobData.logoUrl = randomLogo.imageUrl;
-            jobData.logoBg = `bg-indigo-100`; // Example, could be randomized
+            const fullJobData = {
+              ...jobData,
+              id: newDocRef.id,
+              logoUrl: randomLogo.imageUrl,
+              logoBg: `bg-indigo-100` // Example, could be randomized
+            }
+            await setDocument(newDocRef, fullJobData);
         }
         
-        await setDocument(jobDocRef, { ...jobData, id: jobDocRef.id }, { merge: true });
-
         toast({
             title: `Job ${editJobId ? 'Updated' : 'Posted'}!`,
             description: `Your job listing has been successfully ${editJobId ? 'updated' : 'created'}.`,
@@ -151,7 +155,7 @@ function PostJobPageContent() {
     }
   }
 
-  if (isJobLoading) {
+  if (editJobId && isJobLoading) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -322,7 +326,7 @@ function PostJobPageContent() {
                           selected={field.value}
                           onSelect={field.onChange}
                           disabled={(date) =>
-                            date < new Date()
+                            date < new Date() || date < new Date("1900-01-01")
                           }
                           initialFocus
                         />
