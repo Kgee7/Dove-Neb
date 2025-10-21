@@ -47,7 +47,7 @@ const profileSchema = z.object({
 });
 
 export default function ProfilePage() {
-  const { user } = useUser();
+  const { user, refreshUser, isRefreshing } = useUser();
   const firestore = useFirestore();
   const firebaseApp = useFirebaseApp();
   const { toast } = useToast();
@@ -113,9 +113,9 @@ export default function ProfilePage() {
 
       // Update Firebase Auth profile
       await updateProfile(user, { photoURL: downloadURL });
-      
+
       // Force a reload of the user object to get the new photoURL
-      await user.reload();
+      await refreshUser();
 
       // Update Firestore document
       await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
@@ -194,7 +194,7 @@ export default function ProfilePage() {
                         {getInitials(userProfile?.firstName, userProfile?.lastName)}
                     </AvatarFallback>
                 </Avatar>
-                {uploading && (
+                {(uploading || isRefreshing) && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
                         <Loader2 className="h-8 w-8 animate-spin text-white" />
                     </div>
@@ -204,7 +204,7 @@ export default function ProfilePage() {
                     size="icon"
                     className="absolute bottom-0 right-0 rounded-full h-8 w-8 bg-muted group-hover:bg-accent group-hover:text-accent-foreground"
                     onClick={handleAvatarClick}
-                    disabled={uploading}
+                    disabled={uploading || isRefreshing}
                 >
                     <Edit className="h-4 w-4" />
                 </Button>
