@@ -5,8 +5,7 @@ import React, { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useDoc, useMemoFirebase, initializeFirebase, updateProfile, setDoc } from '@/firebase';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useUser, useDoc, useMemoFirebase, useFirestore, useFirebaseApp, updateProfile, setDoc, getStorage, ref, uploadBytes, getDownloadURL } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -57,7 +56,8 @@ const profileSchema = z.object({
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
-  const { firestore } = initializeFirebase();
+  const firestore = useFirestore();
+  const firebaseApp = useFirebaseApp();
   const { toast } = useToast();
   const [loading, setLoading] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
@@ -122,7 +122,6 @@ export default function ProfilePage() {
     setUploading(true);
 
     try {
-      const { firebaseApp } = initializeFirebase();
       const storage = getStorage(firebaseApp);
       const storageRef = ref(storage, `profile-pictures/${user.uid}`);
       const snapshot = await uploadBytes(storageRef, file);
@@ -164,7 +163,6 @@ export default function ProfilePage() {
     setUploadingResume(true);
 
     try {
-      const { firebaseApp } = initializeFirebase();
       const storage = getStorage(firebaseApp);
       const storageRef = ref(storage, `resumes/${user.uid}/${file.name}`);
       const snapshot = await uploadBytes(storageRef, file);
@@ -418,3 +416,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
