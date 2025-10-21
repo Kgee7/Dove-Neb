@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -48,6 +49,10 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 
+type UserProfile = {
+    companyName?: string;
+};
+
 
 const formSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
@@ -56,7 +61,7 @@ const formSchema = z.object({
   workArrangement: z.enum(['On-site', 'Remote', 'Hybrid']),
   location: z.string().min(2, { message: 'Location is required.' }),
   salary: z.string().min(1, { message: 'Salary is required.' }),
-  currency: z.enum(['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'DZD', 'AOA', 'XOF', 'BWP', 'BIF', 'CVE', 'XAF', 'KMF', 'CDF', 'DJF', 'EGP', 'GQE', 'ERN', 'SZL', 'ETB', 'GMD', 'GHS', 'GNF', 'GWP', 'KES', 'LSL', 'LRD', 'LYD', 'MGA', 'MWK', 'MRU', 'MUR', 'MAD', 'MZN', 'NAD', 'NGN', 'RWF', 'STN', 'SCR', 'SLL', 'SOS', 'ZAR', 'SSP', 'SDG', 'TZS', 'TND', 'UGX', 'ZMW', 'ZWL', 'AED', 'AFN', 'ALL', 'AMD', 'ANG', 'ARS', 'AUD', 'AWG', 'AZN', 'BAM', 'BBD', 'BDT', 'BGN', 'BHD', 'BMD', 'BND', 'BOB', 'BRL', 'BSD', 'BTN', 'BYN', 'BZD', 'CHF', 'CLP', 'CNY', 'COP', 'CRC', 'CUP', 'CZK', 'DKK', 'DOP', 'FJD', 'GEL', 'GIP', 'GTQ', 'GYD', 'HKD', 'HNL', 'HRK', 'HTG', 'HUF', 'IDR', 'ILS', 'INR', 'IQD', 'IRR', 'ISK', 'JMD', 'JOD', 'KGS', 'KHR', 'KWD', 'KZT', 'LAK', 'LBP', 'LKR', 'MDL', 'MKD', 'MMK', 'MNT', 'MOP', 'MVR', 'MXN', 'MYR', 'NIO', 'NOK', 'NPR', 'NZD', 'OMR', 'PAB', 'PEN', 'PGK', 'PHP', 'PKR', 'PLN', 'PYG', 'QAR', 'RON', 'RSD', 'RUB', 'SAR', 'SBD', 'SEK', 'SGD', 'SHP', 'SRD', 'SYP', 'THB', 'TJS', 'TMT', 'TOP', 'TRY', 'TTD', 'TWD', 'UAH', 'UYU', 'UZS', 'VES', 'VND', 'VUV', 'WST', 'YER']),
+  currency: z.enum(['AED', 'AFN', 'ALL', 'AMD', 'ANG', 'AOA', 'ARS', 'AUD', 'AWG', 'AZN', 'BAM', 'BBD', 'BDT', 'BGN', 'BHD', 'BIF', 'BMD', 'BND', 'BOB', 'BRL', 'BSD', 'BTN', 'BWP', 'BYN', 'BZD', 'CAD', 'CDF', 'CHF', 'CLP', 'CNY', 'COP', 'CRC', 'CUP', 'CVE', 'CZK', 'DJF', 'DKK', 'DOP', 'DZD', 'EGP', 'ERN', 'ETB', 'EUR', 'FJD', 'GBP', 'GEL', 'GHS', 'GIP', 'GMD', 'GNF', 'GQE', 'GTQ', 'GYD', 'HKD', 'HNL', 'HRK', 'HTG', 'HUF', 'IDR', 'ILS', 'INR', 'IQD', 'IRR', 'ISK', 'JMD', 'JOD', 'JPY', 'KES', 'KGS', 'KHR', 'KMF', 'KWD', 'KZT', 'LAK', 'LBP', 'LKR', 'LRD', 'LSL', 'LYD', 'MAD', 'MDL', 'MGA', 'MKD', 'MMK', 'MNT', 'MOP', 'MRU', 'MUR', 'MVR', 'MWK', 'MXN', 'MYR', 'MZN', 'NAD', 'NGN', 'NIO', 'NOK', 'NPR', 'NZD', 'OMR', 'PAB', 'PEN', 'PGK', 'PHP', 'PKR', 'PLN', 'PYG', 'QAR', 'RON', 'RSD', 'RUB', 'RWF', 'SAR', 'SBD', 'SCR', 'SDG', 'SEK', 'SGD', 'SHP', 'SLL', 'SOS', 'SRD', 'SSP', 'STN', 'SYP', 'SZL', 'THB', 'TJS', 'TMT', 'TND', 'TOP', 'TRY', 'TTD', 'TWD', 'TZS', 'UAH', 'UGX', 'USD', 'UYU', 'UZS', 'VES', 'VND', 'VUV', 'WST', 'XAF', 'XOF', 'YER', 'ZAR', 'ZMW', 'ZWL']),
   description: z.string().min(50, { message: 'Description must be at least 50 characters.' }),
   requirements: z.string().min(20, { message: 'Requirements must be at least 20 characters.' }),
   closingDate: z.date({
@@ -111,6 +116,13 @@ function PostJobPageContent() {
 
   const { data: jobToEdit, isLoading: isJobLoading } = useDoc<Job>(jobRef);
 
+  const userProfileRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -154,7 +166,12 @@ function PostJobPageContent() {
     setLoading(true);
     
     try {
-        let jobId = editJobId;
+        const jobsCollection = collection(firestore, 'jobListings');
+        const jobDocRef = editJobId ? doc(jobsCollection, editJobId) : doc(jobsCollection);
+        const jobId = jobDocRef.id;
+
+        const companyName = userProfile?.companyName || 'A Great Company';
+
         const jobData = {
             ...values,
             location: values.workArrangement === 'Remote' ? 'Remote' : values.location,
@@ -162,32 +179,25 @@ function PostJobPageContent() {
             postedDate: editJobId && jobToEdit ? jobToEdit.postedDate : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric'}),
             closingDate: values.closingDate.toISOString().split('T')[0],
             requirements: values.requirements.split('\n').filter(req => req.trim() !== ''),
-            company: user.displayName || 'A Great Company',
+            company: companyName,
             currencySymbol: getCurrencySymbol(values.currency),
+            id: jobId,
         };
         
-        let fullJobData;
+        let fullJobData = { ...jobData };
         
-        if(editJobId) {
-            const jobDocRef = doc(firestore, 'jobListings', editJobId);
-            fullJobData = { ...jobData, id: editJobId };
-            await setDocument(jobDocRef, fullJobData, { merge: true });
-        } else {
-            const jobsCollection = collection(firestore, 'jobListings');
-            const newDocRef = doc(jobsCollection);
-            jobId = newDocRef.id;
-            
+        if(!editJobId) {
             const companyLogos = PlaceHolderImages.filter(img => img.id.startsWith('company-logo'));
             const randomLogo = companyLogos[Math.floor(Math.random() * companyLogos.length)];
             
             fullJobData = {
               ...jobData,
-              id: jobId,
               logoUrl: randomLogo.imageUrl,
               logoBg: `bg-indigo-100`
             }
-            await setDocument(newDocRef, fullJobData);
         }
+        
+        await setDocument(jobDocRef, fullJobData, { merge: true });
         
         toast({
             title: `Job ${editJobId ? 'Updated' : 'Posted'}!`,
@@ -357,60 +367,12 @@ function PostJobPageContent() {
                                 </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                                <SelectItem value="USD">USD ($)</SelectItem>
-                                <SelectItem value="EUR">EUR (€)</SelectItem>
-                                <SelectItem value="GBP">GBP (£)</SelectItem>
-                                <SelectItem value="JPY">JPY (¥)</SelectItem>
-                                <SelectItem value="CAD">CAD (CA$)</SelectItem>
-                                <SelectItem value="DZD">DZD (DA)</SelectItem>
-                                <SelectItem value="AOA">AOA (Kz)</SelectItem>
-                                <SelectItem value="XOF">XOF (CFA)</SelectItem>
-                                <SelectItem value="BWP">BWP (P)</SelectItem>
-                                <SelectItem value="BIF">BIF (FBu)</SelectItem>
-                                <SelectItem value="CVE">CVE (Esc)</SelectItem>
-                                <SelectItem value="XAF">XAF (CFA)</SelectItem>
-                                <SelectItem value="KMF">KMF (CF)</SelectItem>
-                                <SelectItem value="CDF">CDF (FC)</SelectItem>
-                                <SelectItem value="DJF">DJF (Fdj)</SelectItem>
-                                <SelectItem value="EGP">EGP (E£)</SelectItem>
-                                <SelectItem value="GQE">GQE (CFA)</SelectItem>
-                                <SelectItem value="ERN">ERN (Nfk)</SelectItem>
-                                <SelectItem value="SZL">SZL (L)</SelectItem>
-                                <SelectItem value="ETB">ETB (Br)</SelectItem>
-                                <SelectItem value="GMD">GMD (D)</SelectItem>
-                                <SelectItem value="GHS">GHS (GH₵)</SelectItem>
-                                <SelectItem value="GNF">GNF (FG)</SelectItem>
-                                <SelectItem value="GWP">GWP (CFA)</SelectItem>
-                                <SelectItem value="KES">KES (KSh)</SelectItem>
-                                <SelectItem value="LSL">LSL (L)</SelectItem>
-                                <SelectItem value="LRD">LRD (L$)</SelectItem>
-                                <SelectItem value="LYD">LYD (LD)</SelectItem>
-                                <SelectItem value="MGA">MGA (Ar)</SelectItem>
-                                <SelectItem value="MWK">MWK (MK)</SelectItem>
-                                <SelectItem value="MRU">MRU (UM)</SelectItem>
-                                <SelectItem value="MUR">MUR (₨)</SelectItem>
-                                <SelectItem value="MAD">MAD (DH)</SelectItem>
-                                <SelectItem value="MZN">MZN (MT)</SelectItem>
-                                <SelectItem value="NAD">NAD (N$)</SelectItem>
-                                <SelectItem value="NGN">NGN (₦)</SelectItem>
-                                <SelectItem value="RWF">RWF (FRw)</SelectItem>
-                                <SelectItem value="STN">STN (Db)</SelectItem>
-                                <SelectItem value="SCR">SCR (₨)</SelectItem>
-                                <SelectItem value="SLL">SLL (Le)</SelectItem>
-                                <SelectItem value="SOS">SOS (S)</SelectItem>
-                                <SelectItem value="ZAR">ZAR (R)</SelectItem>
-                                <SelectItem value="SSP">SSP (£)</SelectItem>
-                                <SelectItem value="SDG">SDG (£)</SelectItem>
-                                <SelectItem value="TZS">TZS (TSh)</SelectItem>
-                                <SelectItem value="TND">TND (DT)</SelectItem>
-                                <SelectItem value="UGX">UGX (USh)</SelectItem>
-                                <SelectItem value="ZMW">ZMW (ZK)</SelectItem>
-                                <SelectItem value="ZWL">ZWL ($)</SelectItem>
                                 <SelectItem value="AED">AED (د.إ)</SelectItem>
                                 <SelectItem value="AFN">AFN (؋)</SelectItem>
                                 <SelectItem value="ALL">ALL (L)</SelectItem>
                                 <SelectItem value="AMD">AMD (֏)</SelectItem>
                                 <SelectItem value="ANG">ANG (ƒ)</SelectItem>
+                                <SelectItem value="AOA">AOA (Kz)</SelectItem>
                                 <SelectItem value="ARS">ARS ($)</SelectItem>
                                 <SelectItem value="AUD">AUD (A$)</SelectItem>
                                 <SelectItem value="AWG">AWG (ƒ)</SelectItem>
@@ -420,26 +382,42 @@ function PostJobPageContent() {
                                 <SelectItem value="BDT">BDT (৳)</SelectItem>
                                 <SelectItem value="BGN">BGN (лв)</SelectItem>
                                 <SelectItem value="BHD">BHD (.د.ب)</SelectItem>
+                                <SelectItem value="BIF">BIF (FBu)</SelectItem>
                                 <SelectItem value="BMD">BMD ($)</SelectItem>
                                 <SelectItem value="BND">BND (B$)</SelectItem>
                                 <SelectItem value="BOB">BOB (Bs.)</SelectItem>
                                 <SelectItem value="BRL">BRL (R$)</SelectItem>
                                 <SelectItem value="BSD">BSD (B$)</SelectItem>
                                 <SelectItem value="BTN">BTN (Nu.)</SelectItem>
+                                <SelectItem value="BWP">BWP (P)</SelectItem>
                                 <SelectItem value="BYN">BYN (Br)</SelectItem>
                                 <SelectItem value="BZD">BZD (BZ$)</SelectItem>
+                                <SelectItem value="CAD">CAD (CA$)</SelectItem>
+                                <SelectItem value="CDF">CDF (FC)</SelectItem>
                                 <SelectItem value="CHF">CHF (CHF)</SelectItem>
                                 <SelectItem value="CLP">CLP ($)</SelectItem>
                                 <SelectItem value="CNY">CNY (¥)</SelectItem>
                                 <SelectItem value="COP">COP ($)</SelectItem>
                                 <SelectItem value="CRC">CRC (₡)</SelectItem>
                                 <SelectItem value="CUP">CUP ($MN)</SelectItem>
+                                <SelectItem value="CVE">CVE (Esc)</SelectItem>
                                 <SelectItem value="CZK">CZK (Kč)</SelectItem>
+                                <SelectItem value="DJF">DJF (Fdj)</SelectItem>
                                 <SelectItem value="DKK">DKK (kr)</SelectItem>
                                 <SelectItem value="DOP">DOP (RD$)</SelectItem>
+                                <SelectItem value="DZD">DZD (DA)</SelectItem>
+                                <SelectItem value="EGP">EGP (E£)</SelectItem>
+                                <SelectItem value="ERN">ERN (Nfk)</SelectItem>
+                                <SelectItem value="ETB">ETB (Br)</SelectItem>
+                                <SelectItem value="EUR">EUR (€)</SelectItem>
                                 <SelectItem value="FJD">FJD (FJ$)</SelectItem>
+                                <SelectItem value="GBP">GBP (£)</SelectItem>
                                 <SelectItem value="GEL">GEL (₾)</SelectItem>
+                                <SelectItem value="GHS">GHS (GH₵)</SelectItem>
                                 <SelectItem value="GIP">GIP (£)</SelectItem>
+                                <SelectItem value="GMD">GMD (D)</SelectItem>
+                                <SelectItem value="GNF">GNF (FG)</SelectItem>
+                                <SelectItem value="GQE">GQE (CFA)</SelectItem>
                                 <SelectItem value="GTQ">GTQ (Q)</SelectItem>
                                 <SelectItem value="GYD">GYD (G$)</SelectItem>
                                 <SelectItem value="HKD">HKD (HK$)</SelectItem>
@@ -455,21 +433,35 @@ function PostJobPageContent() {
                                 <SelectItem value="ISK">ISK (kr)</SelectItem>
                                 <SelectItem value="JMD">JMD (J$)</SelectItem>
                                 <SelectItem value="JOD">JOD (JD)</SelectItem>
+                                <SelectItem value="JPY">JPY (¥)</SelectItem>
+                                <SelectItem value="KES">KES (KSh)</SelectItem>
                                 <SelectItem value="KGS">KGS (сом)</SelectItem>
                                 <SelectItem value="KHR">KHR (៛)</SelectItem>
+                                <SelectItem value="KMF">KMF (CF)</SelectItem>
                                 <SelectItem value="KWD">KWD (K.D.)</SelectItem>
                                 <SelectItem value="KZT">KZT (₸)</SelectItem>
                                 <SelectItem value="LAK">LAK (₭)</SelectItem>
                                 <SelectItem value="LBP">LBP (L£)</SelectItem>
                                 <SelectItem value="LKR">LKR (Rs)</SelectItem>
+                                <SelectItem value="LRD">LRD (L$)</SelectItem>
+                                <SelectItem value="LSL">LSL (L)</SelectItem>
+                                <SelectItem value="LYD">LYD (LD)</SelectItem>
+                                <SelectItem value="MAD">MAD (DH)</SelectItem>
                                 <SelectItem value="MDL">MDL (L)</SelectItem>
+                                <SelectItem value="MGA">MGA (Ar)</SelectItem>
                                 <SelectItem value="MKD">MKD (ден)</SelectItem>
                                 <SelectItem value="MMK">MMK (K)</SelectItem>
                                 <SelectItem value="MNT">MNT (₮)</SelectItem>
                                 <SelectItem value="MOP">MOP (P)</SelectItem>
+                                <SelectItem value="MRU">MRU (UM)</SelectItem>
+                                <SelectItem value="MUR">MUR (₨)</SelectItem>
                                 <SelectItem value="MVR">MVR (Rf)</SelectItem>
+                                <SelectItem value="MWK">MWK (MK)</SelectItem>
                                 <SelectItem value="MXN">MXN (Mex$)</SelectItem>
                                 <SelectItem value="MYR">MYR (RM)</SelectItem>
+                                <SelectItem value="MZN">MZN (MT)</SelectItem>
+                                <SelectItem value="NAD">NAD (N$)</SelectItem>
+                                <SelectItem value="NGN">NGN (₦)</SelectItem>
                                 <SelectItem value="NIO">NIO (C$)</SelectItem>
                                 <SelectItem value="NOK">NOK (kr)</SelectItem>
                                 <SelectItem value="NPR">NPR (₨)</SelectItem>
@@ -486,28 +478,45 @@ function PostJobPageContent() {
                                 <SelectItem value="RON">RON (lei)</SelectItem>
                                 <SelectItem value="RSD">RSD (дин)</SelectItem>
                                 <SelectItem value="RUB">RUB (₽)</SelectItem>
+                                <SelectItem value="RWF">RWF (FRw)</SelectItem>
                                 <SelectItem value="SAR">SAR (﷼)</SelectItem>
                                 <SelectItem value="SBD">SBD (Si$)</SelectItem>
+                                <SelectItem value="SCR">SCR (₨)</SelectItem>
+                                <SelectItem value="SDG">SDG (£)</SelectItem>
                                 <SelectItem value="SEK">SEK (kr)</SelectItem>
                                 <SelectItem value="SGD">SGD (S$)</SelectItem>
                                 <SelectItem value="SHP">SHP (£)</SelectItem>
+                                <SelectItem value="SLL">SLL (Le)</SelectItem>
+                                <SelectItem value="SOS">SOS (S)</SelectItem>
                                 <SelectItem value="SRD">SRD ($)</SelectItem>
+                                <SelectItem value="SSP">SSP (£)</SelectItem>
+                                <SelectItem value="STN">STN (Db)</SelectItem>
                                 <SelectItem value="SYP">SYP (£S)</SelectItem>
+                                <SelectItem value="SZL">SZL (L)</SelectItem>
                                 <SelectItem value="THB">THB (฿)</SelectItem>
                                 <SelectItem value="TJS">TJS (SM)</SelectItem>
                                 <SelectItem value="TMT">TMT (T)</SelectItem>
+                                <SelectItem value="TND">TND (DT)</SelectItem>
                                 <SelectItem value="TOP">TOP (T$)</SelectItem>
                                 <SelectItem value="TRY">TRY (₺)</SelectItem>
                                 <SelectItem value="TTD">TTD (TT$)</SelectItem>
                                 <SelectItem value="TWD">TWD (NT$)</SelectItem>
+                                <SelectItem value="TZS">TZS (TSh)</SelectItem>
                                 <SelectItem value="UAH">UAH (₴)</SelectItem>
+                                <SelectItem value="UGX">UGX (USh)</SelectItem>
+                                <SelectItem value="USD">USD ($)</SelectItem>
                                 <SelectItem value="UYU">UYU ($U)</SelectItem>
                                 <SelectItem value="UZS">UZS (soʻm)</SelectItem>
                                 <SelectItem value="VES">VES (Bs.)</SelectItem>
                                 <SelectItem value="VND">VND (₫)</SelectItem>
                                 <SelectItem value="VUV">VUV (Vt)</SelectItem>
                                 <SelectItem value="WST">WST (T)</SelectItem>
+                                <SelectItem value="XAF">XAF (CFA)</SelectItem>
+                                <SelectItem value="XOF">XOF (CFA)</SelectItem>
                                 <SelectItem value="YER">YER (﷼)</SelectItem>
+                                <SelectItem value="ZAR">ZAR (R)</SelectItem>
+                                <SelectItem value="ZMW">ZMW (ZK)</SelectItem>
+                                <SelectItem value="ZWL">ZWL ($)</SelectItem>
                             </SelectContent>
                         </Select>
                         <FormMessage />

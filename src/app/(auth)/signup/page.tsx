@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -40,6 +41,15 @@ const formSchema = z.object({
   userType: z.enum(["seeker", "employer"], {
     required_error: "Please select a user type.",
   }),
+  companyName: z.string().optional(),
+}).refine(data => {
+    if (data.userType === 'employer') {
+        return !!data.companyName && data.companyName.length >= 2;
+    }
+    return true;
+}, {
+    message: "Company name is required for employers.",
+    path: ["companyName"],
 });
 
 export default function SignupPage() {
@@ -57,8 +67,11 @@ export default function SignupPage() {
       email: "",
       password: "",
       userType: "seeker",
+      companyName: "",
     },
   });
+
+  const userType = form.watch("userType");
 
   React.useEffect(() => {
     if (user) {
@@ -74,15 +87,21 @@ export default function SignupPage() {
       const user = userCredential.user;
       const [firstName, ...lastName] = values.fullName.split(' ');
       
-      const userDocRef = doc(firestore, "users", user.uid);
-      setDocument(userDocRef, {
+      const userData: any = {
         id: user.uid,
         userType: values.userType,
         firstName: firstName,
         lastName: lastName.join(' '),
         email: values.email,
         createdAt: new Date().toISOString(),
-      }, { merge: true });
+      };
+
+      if (values.userType === 'employer' && values.companyName) {
+        userData.companyName = values.companyName;
+      }
+
+      const userDocRef = doc(firestore, "users", user.uid);
+      await setDocument(userDocRef, userData, { merge: true });
 
       toast({
         title: "Account Created!",
@@ -119,45 +138,6 @@ export default function SignupPage() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="fullName"
-              render={({ field }) => (
-                <FormItem>
-                  <Label>Full Name</Label>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <Label>Email</Label>
-                  <FormControl>
-                    <Input placeholder="m@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <Label>Password</Label>
-                  <FormControl>
-                    <Input type="password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="userType"
@@ -198,6 +178,63 @@ export default function SignupPage() {
                 </FormItem>
               )}
             />
+
+            {userType === 'employer' && (
+                <FormField
+                control={form.control}
+                name="companyName"
+                render={({ field }) => (
+                    <FormItem>
+                    <Label>Company Name</Label>
+                    <FormControl>
+                        <Input placeholder="Acme Inc." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            )}
+
+            <FormField
+              control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <Label>Full Name</Label>
+                  <FormControl>
+                    <Input placeholder="John Doe" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <Label>Email</Label>
+                  <FormControl>
+                    <Input placeholder="m@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <Label>Password</Label>
+                  <FormControl>
+                    <Input type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
             <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Account
