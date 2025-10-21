@@ -16,10 +16,11 @@ import { Loader2 } from "lucide-react";
 
 export default function ApplyPage({ params }: { params: { id: string } }) {
     const firestore = useFirestore();
+    const id = params.id;
     const jobRef = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return doc(firestore, 'jobListings', params.id);
-    }, [firestore, params.id]);
+        if (!firestore || !id) return null;
+        return doc(firestore, 'jobListings', id);
+    }, [firestore, id]);
 
     const { data: job, isLoading } = useDoc<Job>(jobRef);
 

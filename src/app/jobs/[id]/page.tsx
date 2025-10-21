@@ -18,7 +18,7 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
   const id = params.id;
   const jobRef = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !id) return null;
     return doc(firestore, 'jobListings', id);
   }, [firestore, id]);
 
