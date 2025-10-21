@@ -1,55 +1,24 @@
-'use client';
 
+import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams, notFound } from "next/navigation";
-import { ArrowLeft, Briefcase, MapPin, Building, Share2, Heart, Loader2, Mail, MessageCircle, Globe } from "lucide-react";
-import { doc } from 'firebase/firestore';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import React from 'react';
+import { ArrowLeft, Building, Globe, MapPin, Briefcase } from "lucide-react";
 
-import { Job } from "@/lib/data";
+import { getJob, type Job } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { PlaceHolderImages }from '@/lib/placeholder-images';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import JobDetailClientContent from "./job-detail-client-content";
 
-export default function JobDetailPage() {
-  const firestore = useFirestore();
-  const params = useParams();
-  const id = params?.id as string;
-
-  const jobRef = useMemoFirebase(() => {
-    if (!firestore || !id) return null;
-    return doc(firestore, 'jobListings', id);
-  }, [firestore, id]);
-
-  const { data: job, isLoading } = useDoc<Job>(jobRef);
+export default async function JobDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params;
+  const job = await getJob(id);
   const headerImage = PlaceHolderImages.find((img) => img.id === "job-detail-header");
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   if (!job) {
-    // We show a not found page, but only if we are not loading and have an id.
-    if (!isLoading && id) {
-        notFound();
-    }
-    // if we are here, it's because we're still waiting for the id, so show a loader.
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+    notFound();
   }
-  
-  const hasDirectApply = job.applicationEmail || job.applicationWhatsApp;
 
   return (
     <div>
@@ -71,7 +40,6 @@ export default function JobDetailPage() {
             <ArrowLeft className="h-4 w-4" />
             Back to Jobs
           </Link>
-
           <Card className="overflow-hidden">
             <CardHeader className="flex flex-col items-start gap-6 p-6 sm:flex-row">
               <div className={cn("flex h-20 w-20 shrink-0 items-center justify-center rounded-lg sm:h-24 sm:w-24", job.logoBg)}>
@@ -102,36 +70,9 @@ export default function JobDetailPage() {
                 </div>
                  <p className="mt-3 text-lg font-semibold text-primary">{job.currencySymbol}{job.salary}</p>
               </div>
-              <div className="flex w-full shrink-0 flex-col items-stretch gap-2 sm:w-auto sm:items-end">
-                <div className="flex flex-col items-stretch gap-2">
-                    {hasDirectApply ? (
-                        <>
-                            {job.applicationEmail && (
-                                <Button asChild className="w-full bg-accent hover:bg-accent/90">
-                                    <a href={`mailto:${job.applicationEmail}?subject=Application for ${job.title}`}>
-                                        <Mail className="mr-2" /> Apply via Email
-                                    </a>
-                                </Button>
-                            )}
-                            {job.applicationWhatsApp && (
-                                <Button asChild variant="outline" className="w-full">
-                                    <a href={`https://wa.me/${job.applicationWhatsApp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
-                                        <MessageCircle className="mr-2" /> Apply on WhatsApp
-                                    </a>
-                                </Button>
-                            )}
-                        </>
-                    ) : (
-                        <Link href={`/jobs/apply/${job.id}`} className="w-full">
-                            <Button className="w-full bg-accent hover:bg-accent/90">Apply Now</Button>
-                        </Link>
-                    )}
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon"><Heart className="h-4 w-4" /></Button>
-                    <Button variant="outline" size="icon"><Share2 className="h-4 w-4" /></Button>
-                </div>
-              </div>
+              
+              <JobDetailClientContent job={job} />
+
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-12 p-6 pt-0 md:grid-cols-3">
               <div className="space-y-8 md:col-span-2">
@@ -175,6 +116,10 @@ export default function JobDetailPage() {
                         <div className="flex justify-between">
                             <span className="font-medium text-muted-foreground">Job Type:</span>
                             <span>{job.type}</span>
+                        </div>
+                         <div className="flex justify-between">
+                            <span className="font-medium text-muted-foreground">Closing Date:</span>
+                            <span>{job.closingDate}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="font-medium text-muted-foreground">Salary:</span>

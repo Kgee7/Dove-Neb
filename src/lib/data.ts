@@ -1,5 +1,6 @@
+
 import { PlaceHolderImages } from "./placeholder-images";
-import { collection, getDocs, getFirestore } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, getFirestore } from 'firebase/firestore';
 import { initializeFirebase, addDocumentNonBlocking } from "@/firebase";
 
 export type Job = {
@@ -21,119 +22,13 @@ export type Job = {
   applicationEmail?: string;
   applicationWhatsApp?: string;
   closingDate: string;
+  employerId: string;
 };
 
 const findImage = (id: string) => PlaceHolderImages.find(img => img.id === id)?.imageUrl || '';
 
 export let jobs: Job[] = [
-  {
-    id: '1',
-    title: 'Senior Frontend Developer',
-    company: 'Innovate Inc.',
-    logoUrl: findImage('company-logo-1'),
-    logoBg: 'bg-indigo-100',
-    location: 'San Francisco, CA',
-    type: 'Full-time',
-    workArrangement: 'Hybrid',
-    salary: '120,000 - 160,000',
-    currency: 'USD',
-    currencySymbol: '$',
-    postedDate: '2d ago',
-    category: 'Engineering',
-    description: 'We are looking for a seasoned Frontend Developer to build and maintain our web applications. You will be responsible for creating a top-tier user experience.',
-    requirements: ['5+ years of experience with React', 'Expertise in TypeScript, HTML, and CSS', 'Experience with GraphQL', 'Strong understanding of web performance'],
-    closingDate: '2025-12-31',
-  },
-  {
-    id: '2',
-    title: 'Product Designer',
-    company: 'Creative Co.',
-    logoUrl: findImage('company-logo-2'),
-    logoBg: 'bg-pink-100',
-    location: 'New York, NY',
-    type: 'Full-time',
-    workArrangement: 'On-site',
-    salary: '90,000 - 130,000',
-    currency: 'USD',
-    currencySymbol: '$',
-    postedDate: '4d ago',
-    category: 'Design',
-    description: 'Join our team to design beautiful and intuitive interfaces for our suite of creative tools. You will work closely with product managers and engineers.',
-    requirements: ['Proven experience as a Product Designer', 'Strong portfolio of design projects', 'Proficiency in Figma or Sketch', 'Excellent communication skills'],
-    closingDate: '2025-12-31',
-  },
-  {
-    id: '3',
-    title: 'Digital Marketing Manager',
-    company: 'Growth Gurus',
-    logoUrl: findImage('company-logo-3'),
-    logoBg: 'bg-green-100',
-    location: 'Remote',
-    type: 'Full-time',
-    workArrangement: 'Remote',
-    salary: '85,000 - 110,000',
-    currency: 'USD',
-    currencySymbol: '$',
-    postedDate: '1w ago',
-    category: 'Marketing',
-    description: 'We are seeking a results-driven Digital Marketing Manager to lead our online marketing efforts, including SEO/SEM, email marketing, and social media campaigns.',
-    requirements: ['5+ years in digital marketing', 'Experience with Google Analytics and AdWords', 'Strong analytical skills', 'Proven track record of successful campaigns'],
-    closingDate: '2025-12-31',
-  },
-  {
-    id: '4',
-    title: 'Backend Engineer (Node.js)',
-    company: 'Tech Solutions',
-    logoUrl: findImage('company-logo-4'),
-    logoBg: 'bg-purple-100',
-    location: 'Austin, TX',
-    type: 'Contract',
-    workArrangement: 'Hybrid',
-    salary: '70 - 90 / hour',
-    currency: 'USD',
-    currencySymbol: '$',
-    postedDate: '3d ago',
-    category: 'Engineering',
-    description: 'Seeking a Backend Engineer to develop and manage our server-side logic. You will be responsible for the core services that power our applications.',
-    requirements: ['3+ years of experience with Node.js', 'Experience with RESTful APIs and microservices', 'Knowledge of databases like PostgreSQL or MongoDB', 'Familiarity with AWS or GCP'],
-    closingDate: '2025-12-31',
-  },
-  {
-    id: '5',
-    title: 'Account Executive',
-    company: 'SalesForce',
-    logoUrl: findImage('company-logo-5'),
-    logoBg: 'bg-blue-100',
-    location: 'Chicago, IL',
-    type: 'Full-time',
-    workArrangement: 'On-site',
-    salary: '75,000 + Commission',
-    currency: 'USD',
-    currencySymbol: '$',
-    postedDate: '5d ago',
-    category: 'Sales',
-    description: 'We are looking for a motivated Account Executive to drive sales and build strong relationships with clients. You will manage the full sales cycle.',
-    requirements: ['2+ years of B2B sales experience', 'Excellent negotiation and communication skills', 'Track record of meeting or exceeding sales quotas', 'Familiarity with CRM software'],
-    closingDate: '2025-12-31',
-  },
-  {
-    id: '6',
-    title: 'UX Researcher',
-    company: 'UserFirst Labs',
-    logoUrl: findImage('company-logo-6'),
-    logoBg: 'bg-yellow-100',
-    location: 'Remote',
-    type: 'Part-time',
-    workArrangement: 'Remote',
-    salary: '40 - 60 / hour',
-    currency: 'USD',
-    currencySymbol: '$',
-    postedDate: '10d ago',
-    category: 'Design',
-    description: 'Join our research team to uncover user needs and behaviors. Your insights will directly shape product strategy and design decisions.',
-    requirements: ['Experience with qualitative and quantitative research methods', 'Ability to synthesize research findings into actionable insights', 'Strong empathy for users', 'Excellent collaboration skills'],
-    closingDate: '2025-12-31',
-  },
+  // This data is for seeding and reference. Actual data comes from Firestore.
 ];
 
 async function seedJobs() {
@@ -148,9 +43,8 @@ async function seedJobs() {
     }
 }
 
-// Check if we are in a browser environment before seeding
 if (typeof window !== 'undefined') {
-    seedJobs();
+    // seedJobs();
 }
 
 export async function getJobs(): Promise<Job[]> {
@@ -161,9 +55,14 @@ export async function getJobs(): Promise<Job[]> {
     return jobList;
 }
 
-export async function getJob(id: string): Promise<Job | undefined> {
-  const jobs = await getJobs();
-  return jobs.find(job => job.id === id);
+export async function getJob(id: string): Promise<Job | null> {
+  const { firestore } = initializeFirebase();
+  const jobDocRef = doc(firestore, 'jobListings', id);
+  const jobSnapshot = await getDoc(jobDocRef);
+  
+  if (jobSnapshot.exists()) {
+    return { id: jobSnapshot.id, ...jobSnapshot.data() } as Job;
+  }
+  
+  return null;
 }
-
-    
