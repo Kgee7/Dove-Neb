@@ -1,11 +1,11 @@
 
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useDoc, useMemoFirebase, useFirestore, useFirebaseApp, updateProfile, setDoc, getStorage, ref, uploadBytes, getDownloadURL } from '@/firebase';
+import { useUser, useDoc, useFirestore, useFirebaseApp, updateProfile, setDoc, getStorage, ref, uploadBytes, getDownloadURL } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -66,10 +66,7 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const resumeInputRef = useRef<HTMLInputElement>(null);
 
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
+  const userDocRef = useMemo(() => user ? doc(firestore, 'users', user.uid) : null, [user, firestore]);
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
@@ -416,5 +413,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
