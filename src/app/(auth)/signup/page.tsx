@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useAuth, useUser, setDocumentNonBlocking } from "@/firebase";
+import { useAuth, useUser, setDocument } from "@/firebase";
 import { initiateEmailSignUp } from "@/firebase/non-blocking-login";
 import { useToast } from "@/hooks/use-toast";
 import { doc } from 'firebase/firestore';
@@ -75,7 +75,7 @@ export default function SignupPage() {
       const [firstName, ...lastName] = values.fullName.split(' ');
       
       const userDocRef = doc(firestore, "users", user.uid);
-      setDocumentNonBlocking(userDocRef, {
+      setDocument(userDocRef, {
         id: user.uid,
         userType: values.userType,
         firstName: firstName,
