@@ -56,7 +56,7 @@ type UserProfile = {
 const formSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
   category: z.enum(['Engineering', 'Design', 'Marketing', 'Sales', 'Product']),
-  type: z.enum(['Full-time', 'Part-time', 'Contract']),
+  jobType: z.enum(['Full-time', 'Part-time', 'Contract']),
   workArrangement: z.enum(['On-site', 'Remote', 'Hybrid']),
   location: z.string().min(2, { message: 'Location is required.' }),
   salary: z.string().min(1, { message: 'Salary is required.' }),
@@ -143,7 +143,7 @@ function PostJobPageContent() {
       form.reset({
         title: jobToEdit.title,
         category: jobToEdit.category,
-        type: jobToEdit.type,
+        jobType: jobToEdit.type,
         workArrangement: jobToEdit.workArrangement || 'On-site',
         location: jobToEdit.location,
         salary: jobToEdit.salary,
@@ -173,7 +173,7 @@ function PostJobPageContent() {
 
         const jobData: any = {
             ...values,
-            id: jobId, // Ensure the ID is saved within the document
+            // id: jobId, // This is the important part
             location: values.workArrangement === 'Remote' ? 'Remote' : values.location,
             employerId: user.uid,
             postedDate: editJobId && jobToEdit ? jobToEdit.postedDate : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric'}),
@@ -191,7 +191,7 @@ function PostJobPageContent() {
             jobData.logoBg = `bg-indigo-100`;
         }
         
-        await setDocument(jobDocRef, jobData, { merge: true });
+        await setDocument(jobDocRef, { ...jobData, id: jobId }, { merge: true });
         
         toast({
             title: `Job ${editJobId ? 'Updated' : 'Posted'}!`,
@@ -272,7 +272,7 @@ function PostJobPageContent() {
 
               <FormField
                 control={form.control}
-                name="type"
+                name="jobType"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Job Type</FormLabel>
