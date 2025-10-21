@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import React from "react";
+import { firebaseConfig } from "@/firebase/config";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
@@ -112,6 +113,10 @@ export default function LoginPage() {
     if (!auth || !firestore) return;
     setGoogleLoading(true);
     const provider = new GoogleAuthProvider();
+    // Force the auth domain to ensure it matches the authorized domain in Firebase Console.
+    provider.setCustomParameters({
+      authDomain: firebaseConfig.authDomain,
+    });
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
