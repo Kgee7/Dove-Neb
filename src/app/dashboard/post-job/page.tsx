@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFirestore, useUser, setDocument, addDocument, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useUser, setDocument, useDoc, useMemoFirebase, addDocument } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import React, { useEffect } from 'react';
@@ -121,17 +121,19 @@ function PostJobPageContent() {
     };
     
     try {
-        let jobDocRef;
         if(editJobId) {
-            jobDocRef = doc(firestore, 'jobListings', editJobId);
-            await setDocument(jobDocRef, { ...jobData, id: jobDocRef.id }, { merge: true });
+            const jobDocRef = doc(firestore, 'jobListings', editJobId);
+            await setDocument(jobDocRef, jobData, { merge: true });
         } else {
-            const newDocRef = doc(collection(firestore, 'jobListings'));
+            const jobsCollection = collection(firestore, 'jobListings');
+            const newDocRef = doc(jobsCollection); // Create a new doc ref with a generated ID
+            
             const companyLogos = PlaceHolderImages.filter(img => img.id.startsWith('company-logo'));
             const randomLogo = companyLogos[Math.floor(Math.random() * companyLogos.length)];
+            
             const fullJobData = {
               ...jobData,
-              id: newDocRef.id,
+              id: newDocRef.id, // Explicitly save the generated ID in the document
               logoUrl: randomLogo.imageUrl,
               logoBg: `bg-indigo-100` // Example, could be randomized
             }
@@ -359,3 +361,5 @@ export default function PostJobPage() {
         </React.Suspense>
     )
 }
+
+    
