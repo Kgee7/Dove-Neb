@@ -3,8 +3,9 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile } from 'firebase/auth';
 import { getFirestore, setDoc, addDoc, updateDoc, deleteDoc, collection, doc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { 
   setDocumentNonBlocking,
   addDocumentNonBlocking,
@@ -68,5 +69,10 @@ export {
   doc,
   setDoc,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  updateProfile,
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL
 };

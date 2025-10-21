@@ -53,6 +53,13 @@ export function SiteHeader() {
     if (firstName) {
       return firstName.substring(0, 2);
     }
+    if(user?.displayName) {
+        const names = user.displayName.split(' ');
+        if (names.length > 1) {
+            return `${names[0][0]}${names[names.length - 1][0]}`;
+        }
+        return names[0].substring(0, 2);
+    }
     if (user?.email) {
         return user.email.substring(0, 2).toUpperCase();
     }

@@ -1,11 +1,11 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFirestore, useUser, useDoc, useMemoFirebase, setDocument } from '@/firebase';
+import { useFirestore, useUser, useDoc, useMemoFirebase, setDocument, getStorage, ref, uploadBytes, getDownloadURL, updateProfile } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,7 +26,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Edit } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type UserProfile = {
     userType: 'seeker' | 'employer';
@@ -35,6 +36,7 @@ type UserProfile = {
     email: string;
     phone?: string;
     companyName?: string;
+    photoURL?: string;
 };
 
 const profileSchema = z.object({
@@ -49,6 +51,8 @@ export default function ProfilePage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [loading, setLoading] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -77,6 +81,56 @@ export default function ProfilePage() {
       });
     }
   }, [userProfile, form]);
+
+  const getInitials = (firstName?: string, lastName?: string) => {
+    if (firstName && lastName) {
+      return `${firstName[0]}${lastName[0]}`;
+    }
+    if (firstName) {
+      return firstName.substring(0, 2);
+    }
+    if (user?.email) {
+        return user.email.substring(0, 2).toUpperCase();
+    }
+    return "U";
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user || !userDocRef) return;
+    setUploading(true);
+
+    try {
+      const storage = getStorage();
+      const storageRef = ref(storage, `profile-pictures/${user.uid}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      // Update Firebase Auth profile
+      await updateProfile(user, { photoURL: downloadURL });
+
+      // Update Firestore document
+      await setDocument(userDocRef, { photoURL: downloadURL }, { merge: true });
+
+      toast({
+        title: 'Profile Picture Updated',
+        description: 'Your new avatar has been saved.',
+      });
+    } catch (error: any) {
+      console.error('Error uploading file:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Upload Failed',
+        description: error.message || 'Could not upload your profile picture.',
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   async function onSubmit(values: z.infer<typeof profileSchema>) {
     if (!userDocRef) return;
@@ -128,6 +182,38 @@ export default function ProfilePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="flex flex-col items-center gap-4 mb-8">
+            <div className="relative group">
+                <Avatar className="h-24 w-24">
+                    <AvatarImage src={user?.photoURL || ''} alt="Profile picture" />
+                    <AvatarFallback className="text-3xl">
+                        {getInitials(userProfile?.firstName, userProfile?.lastName)}
+                    </AvatarFallback>
+                </Avatar>
+                {uploading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                        <Loader2 className="h-8 w-8 animate-spin text-white" />
+                    </div>
+                )}
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute bottom-0 right-0 rounded-full h-8 w-8 bg-muted group-hover:bg-accent group-hover:text-accent-foreground"
+                    onClick={handleAvatarClick}
+                    disabled={uploading}
+                >
+                    <Edit className="h-4 w-4" />
+                </Button>
+            </div>
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept="image/png, image/jpeg, image/gif"
+            />
+          </div>
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -196,7 +282,7 @@ export default function ProfilePage() {
                 )}
               
               <div className="flex justify-end">
-                <Button type="submit" className="bg-accent hover:bg-accent/90" disabled={loading}>
+                <Button type="submit" className="bg-accent hover:bg-accent/90" disabled={loading || uploading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {loading ? 'Saving...' : 'Save Changes'}
                 </Button>
