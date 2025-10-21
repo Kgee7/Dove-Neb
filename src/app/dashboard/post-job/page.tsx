@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -151,7 +149,7 @@ function PostJobPageContent() {
         salary: jobToEdit.salary,
         currency: jobToEdit.currency as any || 'USD',
         description: jobToEdit.description,
-        requirements: Array.isArray(jobToEdit.requirements) ? jobToEdit.requirements.join('\n') : '',
+        requirements: Array.isArray(jobToEdit.requirements) ? jobToEdit.requirements.join('\n') : jobToEdit.requirements,
         closingDate: new Date(jobToEdit.closingDate),
         applicationEmail: jobToEdit.applicationEmail || '',
         applicationWhatsApp: jobToEdit.applicationWhatsApp || '',
@@ -173,8 +171,9 @@ function PostJobPageContent() {
 
         const companyName = userProfile?.companyName || 'A Great Company';
 
-        const jobData = {
+        const jobData: any = {
             ...values,
+            id: jobId, // Ensure the ID is saved within the document
             location: values.workArrangement === 'Remote' ? 'Remote' : values.location,
             employerId: user.uid,
             postedDate: editJobId && jobToEdit ? jobToEdit.postedDate : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric'}),
@@ -182,27 +181,21 @@ function PostJobPageContent() {
             requirements: values.requirements.split('\n').filter(req => req.trim() !== ''),
             company: companyName,
             currencySymbol: getCurrencySymbol(values.currency),
-            id: jobId,
         };
-        
-        let fullJobData = { ...jobData };
-        
+                
         if(!editJobId) {
             const companyLogos = PlaceHolderImages.filter(img => img.id.startsWith('company-logo'));
             const randomLogo = companyLogos[Math.floor(Math.random() * companyLogos.length)];
             
-            fullJobData = {
-              ...jobData,
-              logoUrl: randomLogo.imageUrl,
-              logoBg: `bg-indigo-100`
-            }
+            jobData.logoUrl = randomLogo.imageUrl;
+            jobData.logoBg = `bg-indigo-100`;
         }
         
-        await setDocument(jobDocRef, fullJobData, { merge: true });
+        await setDocument(jobDocRef, jobData, { merge: true });
         
         toast({
             title: `Job ${editJobId ? 'Updated' : 'Posted'}!`,
-            description: `Your job listing for ${fullJobData.title} has been successfully ${editJobId ? 'updated' : 'created'}.`,
+            description: `Your job listing for ${jobData.title} has been successfully ${editJobId ? 'updated' : 'created'}.`,
         });
         router.push('/dashboard');
     } catch (error: any) {

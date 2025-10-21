@@ -6,7 +6,7 @@ import { useParams, notFound } from "next/navigation";
 import { ArrowLeft, Briefcase, MapPin, Building, Share2, Heart, Loader2, Mail, MessageCircle, Globe } from "lucide-react";
 import { doc } from 'firebase/firestore';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 import { Job } from "@/lib/data";
 import { cn } from "@/lib/utils";
@@ -18,14 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function JobDetailPage() {
   const firestore = useFirestore();
   const params = useParams();
-  const [id, setId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (params?.id) {
-      setId(params.id as string);
-    }
-  }, [params]);
-
+  const id = params?.id as string;
 
   const jobRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
@@ -35,7 +28,7 @@ export default function JobDetailPage() {
   const { data: job, isLoading } = useDoc<Job>(jobRef);
   const headerImage = PlaceHolderImages.find((img) => img.id === "job-detail-header");
 
-  if (isLoading || !id) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -149,7 +142,7 @@ export default function JobDetailPage() {
                 <div>
                   <h2 className="text-xl font-semibold mb-4 font-headline">Requirements</h2>
                   <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
-                    {job.requirements.map((req, index) => (
+                    {Array.isArray(job.requirements) && job.requirements.map((req, index) => (
                       <li key={index}>{req}</li>
                     ))}
                   </ul>
@@ -197,5 +190,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    
