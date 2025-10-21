@@ -1,8 +1,13 @@
+
+'use client';
+
 import Link from "next/link";
 import Image from "next/image";
-import { Briefcase, MapPin, Search, SlidersHorizontal, Heart } from "lucide-react";
+import { Briefcase, MapPin, Search, Heart, Loader2 } from "lucide-react";
+import { collection } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 
-import { jobs } from "@/lib/data";
+import { Job } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import {
   Card,
@@ -20,8 +25,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 export default function JobsPage() {
+  const firestore = useFirestore();
+
+  const jobsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'jobListings');
+  }, [firestore]);
+  
+  const { data: jobs, isLoading } = useCollection<Job>(jobsQuery);
+
   return (
     <div className="bg-secondary/50">
       <div className="container py-8">
@@ -65,7 +80,7 @@ export default function JobsPage() {
 
         {/* Job Listings */}
         <div className="mb-6 flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Showing {jobs.length} results</p>
+            <p className="text-sm text-muted-foreground">Showing {jobs?.length || 0} results</p>
             <div className="flex items-center gap-2">
                 <Label htmlFor="sort" className="text-sm">Sort by:</Label>
                 <Select defaultValue="newest">
@@ -82,55 +97,63 @@ export default function JobsPage() {
             </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {jobs.map((job) => (
-            <Card
-              key={job.id}
-              className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg"
-            >
-              <CardHeader className="flex flex-row items-start gap-4 p-4">
-                <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-lg", job.logoBg)}>
-                    <Image
-                      src={job.logoUrl}
-                      alt={`${job.company} logo`}
-                      width={40}
-                      height={40}
-                      className="rounded-md object-contain"
-                    />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-muted-foreground">{job.company}</p>
-                  <CardTitle className="text-lg">
-                    <Link
-                      href={`/jobs/${job.id}`}
-                      className="hover:underline"
-                    >
-                      {job.title}
-                    </Link>
-                  </CardTitle>
-                </div>
-                 <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                    <Heart className="h-4 w-4" />
-                  </Button>
-              </CardHeader>
-              <CardContent className="flex-grow p-4 pt-0">
-                <div className="flex flex-wrap gap-2 text-sm">
-                  <Badge variant="outline">{job.type}</Badge>
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3" /> {job.location}
-                  </Badge>
-                   <Badge variant="secondary">{job.category}</Badge>
-                </div>
-                <p className="mt-4 text-sm font-semibold text-foreground">
-                  {job.salary}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                    Posted {job.postedDate}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {isLoading && (
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
+
+        {!isLoading && jobs && (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {jobs.map((job) => (
+              <Card
+                key={job.id}
+                className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg"
+              >
+                <CardHeader className="flex flex-row items-start gap-4 p-4">
+                  <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-lg", job.logoBg)}>
+                      <Image
+                        src={job.logoUrl}
+                        alt={`${job.company} logo`}
+                        width={40}
+                        height={40}
+                        className="rounded-md object-contain"
+                      />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">{job.company}</p>
+                    <CardTitle className="text-lg">
+                      <Link
+                        href={`/jobs/${job.id}`}
+                        className="hover:underline"
+                      >
+                        {job.title}
+                      </Link>
+                    </CardTitle>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                      <Heart className="h-4 w-4" />
+                    </Button>
+                </CardHeader>
+                <CardContent className="flex-grow p-4 pt-0">
+                  <div className="flex flex-wrap gap-2 text-sm">
+                    <Badge variant="outline">{job.type}</Badge>
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <MapPin className="h-3 w-3" /> {job.location}
+                    </Badge>
+                    <Badge variant="secondary">{job.category}</Badge>
+                  </div>
+                  <p className="mt-4 text-sm font-semibold text-foreground">
+                    {job.salary}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                      Posted {job.postedDate}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

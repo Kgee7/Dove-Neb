@@ -1,3 +1,6 @@
+
+'use client';
+
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -8,7 +11,10 @@ import {
   MapPin,
   Heart,
   Sparkles,
+  Loader2,
 } from "lucide-react";
+import { collection } from "firebase/firestore";
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +26,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { jobs } from "@/lib/data";
+import { Job } from "@/lib/data";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +35,15 @@ export default function Home() {
     (img) => img.id === "hero-background"
   );
   const aiImage = PlaceHolderImages.find((img) => img.id === "ai-matching-bg");
+
+  const firestore = useFirestore();
+
+  const jobsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'jobListings');
+  }, [firestore]);
+  
+  const { data: jobs, isLoading } = useCollection<Job>(jobsQuery);
 
   return (
     <div className="flex-1">
@@ -130,48 +145,54 @@ export default function Home() {
               Explore opportunities from leading companies.
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {jobs.slice(0, 6).map((job) => (
-              <Card
-                key={job.id}
-                className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-2xl"
-              >
-                <CardHeader className="flex flex-row items-start gap-4 p-4">
-                  <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-lg", job.logoBg)}>
-                    <Image
-                      src={job.logoUrl}
-                      alt={`${job.company} logo`}
-                      width={40}
-                      height={40}
-                      className="rounded-md object-contain"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">{job.company}</p>
-                    <CardTitle className="text-lg">
-                      <Link href={`/jobs/${job.id}`} className="hover:underline">
-                        {job.title}
-                      </Link>
-                    </CardTitle>
-                  </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                    <Heart className="h-4 w-4" />
-                  </Button>
-                </CardHeader>
-                <CardContent className="flex-1 p-4 pt-0">
-                  <div className="flex flex-wrap gap-2 text-sm">
-                    <Badge variant="outline">{job.type}</Badge>
-                    <Badge variant="outline" className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" /> {job.location}
-                    </Badge>
-                  </div>
-                  <p className="mt-4 text-sm text-muted-foreground">
-                    {job.salary}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {isLoading ? (
+             <div className="flex justify-center items-center h-40">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+             </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {jobs?.slice(0, 6).map((job) => (
+                <Card
+                  key={job.id}
+                  className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-2xl"
+                >
+                  <CardHeader className="flex flex-row items-start gap-4 p-4">
+                    <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-lg", job.logoBg)}>
+                      <Image
+                        src={job.logoUrl}
+                        alt={`${job.company} logo`}
+                        width={40}
+                        height={40}
+                        className="rounded-md object-contain"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground">{job.company}</p>
+                      <CardTitle className="text-lg">
+                        <Link href={`/jobs/${job.id}`} className="hover:underline">
+                          {job.title}
+                        </Link>
+                      </CardTitle>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                      <Heart className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="flex-1 p-4 pt-0">
+                    <div className="flex flex-wrap gap-2 text-sm">
+                      <Badge variant="outline">{job.type}</Badge>
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" /> {job.location}
+                      </Badge>
+                    </div>
+                    <p className="mt-4 text-sm text-muted-foreground">
+                      {job.salary}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
           <div className="mt-12 text-center">
             <Link
               href="/jobs"

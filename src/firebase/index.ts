@@ -2,8 +2,8 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore'
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { getFirestore, setDoc, addDoc, updateDoc, deleteDoc, collection, doc } from 'firebase/firestore'
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
@@ -48,3 +48,16 @@ export * from './non-blocking-updates';
 export * from './non-blocking-login';
 export * from './errors';
 export * from './error-emitter';
+
+// Re-exporting non-blocking functions with user-friendly names
+export const setDocument = setDocumentNonBlocking;
+export const addDocument = addDocumentNonBlocking;
+export const updateDocument = updateDocumentNonBlocking;
+export const deleteDocument = deleteDocumentNonBlocking;
+export {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  collection,
+  doc,
+  setDoc,
+};

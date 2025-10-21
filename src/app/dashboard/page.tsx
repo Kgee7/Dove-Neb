@@ -1,3 +1,8 @@
+
+'use client';
+import { useRouter } from 'next/navigation';
+import React from 'react';
+import { useUser } from '@/firebase';
 import {
   Card,
   CardContent,
@@ -6,9 +11,27 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Loader2, Briefcase } from "lucide-react";
 
 export default function DashboardPage() {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+
   return (
     <div className="container py-10">
       <div className="flex items-center justify-between mb-8">

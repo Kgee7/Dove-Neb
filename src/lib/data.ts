@@ -1,4 +1,6 @@
 import { PlaceHolderImages } from "./placeholder-images";
+import { collection, getDocs, getFirestore } from 'firebase/firestore';
+import { initializeFirebase } from "@/firebase";
 
 export type Job = {
   id: string;
@@ -17,7 +19,7 @@ export type Job = {
 
 const findImage = (id: string) => PlaceHolderImages.find(img => img.id === id)?.imageUrl || '';
 
-export const jobs: Job[] = [
+export let jobs: Job[] = [
   {
     id: '1',
     title: 'Senior Frontend Developer',
@@ -103,3 +105,33 @@ export const jobs: Job[] = [
     requirements: ['Experience with qualitative and quantitative research methods', 'Ability to synthesize research findings into actionable insights', 'Strong empathy for users', 'Excellent collaboration skills'],
   },
 ];
+
+async function seedJobs() {
+    const { firestore } = initializeFirebase();
+    const jobCollection = collection(firestore, 'jobListings');
+    const jobSnapshot = await getDocs(jobCollection);
+    if (jobSnapshot.empty) {
+        console.log("Seeding jobs...");
+        for (const job of jobs) {
+            await addDoc(jobCollection, job);
+        }
+    }
+}
+
+// Check if we are in a browser environment before seeding
+if (typeof window !== 'undefined') {
+    seedJobs();
+}
+
+export async function getJobs(): Promise<Job[]> {
+    const { firestore } = initializeFirebase();
+    const jobCollection = collection(firestore, 'jobListings');
+    const jobSnapshot = await getDocs(jobCollection);
+    const jobList = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+    return jobList;
+}
+
+export async function getJob(id: string): Promise<Job | undefined> {
+  const jobs = await getJobs();
+  return jobs.find(job => job.id === id);
+}

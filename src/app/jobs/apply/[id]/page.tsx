@@ -1,16 +1,35 @@
+'use client';
+
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import { doc } from "firebase/firestore";
+import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 
-import { jobs } from "@/lib/data";
+import { Job } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 export default function ApplyPage({ params }: { params: { id: string } }) {
-    const job = jobs.find((j) => j.id === params.id);
+    const firestore = useFirestore();
+    const jobRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return doc(firestore, 'jobListings', params.id);
+    }, [firestore, params.id]);
+
+    const { data: job, isLoading } = useDoc<Job>(jobRef);
+
+    if (isLoading) {
+        return (
+          <div className="flex justify-center items-center h-screen">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          </div>
+        );
+    }
 
     if (!job) {
         notFound();

@@ -1,9 +1,13 @@
+'use client';
+
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Briefcase, MapPin, Building, Share2, Heart } from "lucide-react";
+import { ArrowLeft, Briefcase, MapPin, Building, Share2, Heart, Loader2 } from "lucide-react";
+import { doc } from 'firebase/firestore';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 
-import { jobs } from "@/lib/data";
+import { Job } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +15,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function JobDetailPage({ params }: { params: { id: string } }) {
-  const job = jobs.find((j) => j.id === params.id);
+  const firestore = useFirestore();
+  const jobRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'jobListings', params.id);
+  }, [firestore, params.id]);
+
+  const { data: job, isLoading } = useDoc<Job>(jobRef);
   const headerImage = PlaceHolderImages.find((img) => img.id === "job-detail-header");
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!job) {
     notFound();
