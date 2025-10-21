@@ -14,7 +14,7 @@ import {FirestorePermissionError} from '@/firebase/errors';
 
 /**
  * Initiates a setDoc operation for a document reference.
- * Does NOT await the write operation internally.
+ * Handles errors and emits a permission-error event if one occurs.
  */
 export async function setDocumentNonBlocking(docRef: DocumentReference, data: any, options?: SetOptions) {
   try {
@@ -38,8 +38,7 @@ export async function setDocumentNonBlocking(docRef: DocumentReference, data: an
 
 /**
  * Initiates an addDoc operation for a collection reference.
- * Does NOT await the write operation internally.
- * Returns the Promise for the new doc ref, but typically not awaited by caller.
+ * Handles errors and emits a permission-error event if one occurs.
  */
 export async function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
   try {
