@@ -1,8 +1,9 @@
+
 'use client';
 
-import { FirebaseApp } from 'firebase/app';
-import { Auth } from 'firebase/auth';
-import { Firestore } from 'firebase/firestore';
+import { getApp, getApps, initializeApp, FirebaseApp } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
 import React, { createContext, useContext } from 'react';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 

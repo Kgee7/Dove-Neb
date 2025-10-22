@@ -3,7 +3,8 @@
 import { notFound, useParams } from "next/navigation";
 import Image from "next/image";
 import { doc } from "firebase/firestore";
-import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
+import { useDoc, useFirestore } from "@/firebase";
+import { useMemo } from "react";
 
 import { Job } from "@/lib/data";
 import { cn } from "@/lib/utils";
@@ -19,7 +20,7 @@ export default function ApplyPage() {
     const params = useParams();
     const id = params.id as string;
     
-    const jobRef = useMemoFirebase(() => {
+    const jobRef = useMemo(() => {
         if (!firestore || !id) return null;
         return doc(firestore, 'jobListings', id);
     }, [firestore, id]);

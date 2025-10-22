@@ -6,8 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { suggestJobs, type SuggestJobsOutput } from "@/ai/flows/ai-suggested-jobs";
-import { useUser, useFirestore, useDoc } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, doc } from '@/firebase';
+
 
 import {
   Card,

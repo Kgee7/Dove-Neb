@@ -14,8 +14,7 @@ import {
   Loader2,
   Globe,
 } from "lucide-react";
-import { collection } from "firebase/firestore";
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, collection } from '@/firebase';
 import { useMemo } from 'react';
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -23,7 +22,6 @@ import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -235,5 +233,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

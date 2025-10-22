@@ -1,15 +1,28 @@
-
 'use client';
 
+// Core Provider and Initialization
 export * from './provider';
+export * from './init';
 export * from './config';
-export * from './errors';
-export * from 'firebase/auth';
+export * from './client-provider';
+
+// Custom Hooks
 export * from './firestore/use-doc';
 export * from './firestore/use-collection';
-export * from 'firebase/storage';
+
+// Error Handling
+export * from './errors';
+export * from './error-emitter';
+
+// Non-blocking operations
 export * from './non-blocking-login';
 export * from './non-blocking-updates';
+
+// Firebase SDK re-exports for convenience
+// AUTH
+export * from 'firebase/auth';
+
+// FIRESTORE
 export {
   doc,
   collection,
@@ -22,8 +35,11 @@ export {
   setDoc,
   addDoc,
   updateDoc,
+  serverTimestamp,
+  type DocumentReference,
+  type CollectionReference,
+  type Query as FirestoreQuery,
 } from 'firebase/firestore';
-export { useMemo } from 'react';
 
-// A hook to memoize Firebase queries and references.
-export const useMemoFirebase = useMemo;
+// STORAGE
+export * from 'firebase/storage';

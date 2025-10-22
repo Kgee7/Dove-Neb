@@ -3,13 +3,12 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { collection } from 'firebase/firestore';
-import { useCollection, useFirestore } from '@/firebase';
-import { useMemo } from 'react';
+import { useCollection, useFirestore, collection } from '@/firebase';
 import { Job } from '@/lib/data';
 import { cn } from '@/lib/utils';
+import { useMemo } from 'react';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
 import { Globe, MapPin, Loader2, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';

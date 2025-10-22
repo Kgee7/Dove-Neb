@@ -5,10 +5,10 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, doc, setDoc } from 'firebase/firestore';
+import { useFirestore, useUser, useDoc, setDoc, collection, doc } from '@/firebase';
+
 import { useToast } from '@/hooks/use-toast';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Job } from '@/lib/data';
 
@@ -109,14 +109,14 @@ function PostJobPageContent() {
   
   const editJobId = searchParams.get('edit');
   
-  const jobRef = useMemoFirebase(() => {
+  const jobRef = useMemo(() => {
     if (!firestore || !editJobId) return null;
     return doc(firestore, 'jobListings', editJobId);
   }, [firestore, editJobId]);
 
   const { data: jobToEdit, isLoading: isJobLoading } = useDoc<Job>(jobRef);
 
-  const userProfileRef = useMemoFirebase(() => {
+  const userProfileRef = useMemo(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
@@ -502,7 +502,7 @@ function PostJobPageContent() {
                                 <SelectItem value="TWD">TWD (NT$)</SelectItem>
                                 <SelectItem value="TZS">TZS (TSh)</SelectItem>
                                 <SelectItem value="UAH">UAH (₴)</SelectItem>
-                                <SelectItem value="UGX">UGX (USh)</SelectItem>
+                                <SelectItem value="UGX">USh</SelectItem>
                                 <SelectItem value="USD">USD ($)</SelectItem>
                                 <SelectItem value="UYU">UYU ($U)</SelectItem>
                                 <SelectItem value="UZS">UZS (soʻm)</SelectItem>

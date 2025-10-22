@@ -3,8 +3,7 @@
 
 import Link from 'next/link';
 import { useMemo } from 'react';
-import { useCollection, useFirestore, useUser } from '@/firebase';
-import { collection, query, where, doc, deleteDoc } from 'firebase/firestore';
+import { useCollection, useFirestore, useUser, deleteDoc, doc, query, collection, where } from '@/firebase';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Briefcase, Loader2, Edit, Trash2 } from "lucide-react";
 import {

@@ -6,10 +6,10 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useAuth, useUser, setDocument } from "@/firebase";
+import { useAuth, useUser } from "@/firebase";
 import { initiateEmailSignUp } from "@/firebase/non-blocking-login";
 import { useToast } from "@/hooks/use-toast";
-import { doc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { useFirestore } from "@/firebase";
 
 
@@ -101,7 +101,7 @@ export default function SignupPage() {
       }
 
       const userDocRef = doc(firestore, "users", user.uid);
-      await setDocument(userDocRef, userData, { merge: true });
+      await setDoc(userDocRef, userData, { merge: true });
 
       toast({
         title: "Account Created!",

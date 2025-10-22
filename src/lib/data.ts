@@ -1,7 +1,7 @@
 
 import { PlaceHolderImages } from "./placeholder-images";
-import { collection, getDocs, getDoc, doc, getFirestore } from 'firebase/firestore';
-import { initializeFirebase, addDocumentNonBlocking } from "@/firebase";
+import { collection, getDocs, getDoc, doc, getFirestore, setDoc } from 'firebase/firestore';
+import { initializeFirebase } from "@/firebase/init";
 
 export type Job = {
   id: string;
@@ -25,8 +25,6 @@ export type Job = {
   employerId: string;
 };
 
-const findImage = (id: string) => PlaceHolderImages.find(img => img.id === id)?.imageUrl || '';
-
 export let jobs: Job[] = [
   // This data is for seeding and reference. Actual data comes from Firestore.
 ];
@@ -38,7 +36,8 @@ async function seedJobs() {
     if (jobSnapshot.empty) {
         console.log("Seeding jobs...");
         for (const job of jobs) {
-            addDocumentNonBlocking(jobCollection, job);
+            const jobDocRef = doc(jobCollection, job.id);
+            await setDoc(jobDocRef, job);
         }
     }
 }
