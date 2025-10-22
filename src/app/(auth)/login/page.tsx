@@ -6,12 +6,12 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useAuth, useUser, setDocument, GoogleAuthProvider, signInWithPopup } from "@/firebase";
+import { useAuth, useUser, GoogleAuthProvider, signInWithPopup } from "@/firebase";
 import { initiateEmailSignIn } from "@/firebase/non-blocking-login";
 import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
 import { useFirestore } from "@/firebase";
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 
 import { Button } from "@/components/ui/button";
@@ -130,11 +130,12 @@ export default function LoginPage() {
           id: user.uid,
           userType: "seeker",
           firstName: firstName || "",
+
           lastName: lastName.join(" "),
           email: user.email,
           createdAt: new Date().toISOString(),
         };
-        await setDocument(userDocRef, userData);
+        await setDoc(userDocRef, userData);
       }
       
       toast({

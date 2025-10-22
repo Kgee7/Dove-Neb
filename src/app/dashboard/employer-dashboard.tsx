@@ -1,9 +1,10 @@
+
 'use client';
 
 import Link from 'next/link';
 import { useMemo } from 'react';
-import { useCollection, useFirestore, useUser, deleteDocument } from '@/firebase';
-import { collection, query, where, doc } from 'firebase/firestore';
+import { useCollection, useFirestore, useUser } from '@/firebase';
+import { collection, query, where, doc, deleteDoc } from 'firebase/firestore';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Briefcase, Loader2, Edit, Trash2 } from "lucide-react";
 import {
@@ -42,7 +43,7 @@ export default function EmployerDashboard() {
   const handleDelete = (jobId: string) => {
     if (!firestore) return;
     const jobDocRef = doc(firestore, 'jobListings', jobId);
-    deleteDocument(jobDocRef);
+    deleteDoc(jobDocRef);
     toast({
         title: "Job Deleted",
         description: "The job posting has been removed.",
@@ -105,7 +106,7 @@ export default function EmployerDashboard() {
                             <div className="flex items-center justify-between p-4">
                                 <div>
                                     <h3 className="text-lg font-semibold">{job.title}</h3>
-                                    <p className="text-sm text-muted-foreground">{job.location} &middot; {job.type}</p>
+                                    <p className="text-sm text-muted-foreground">{job.location} &middot; {job.jobType}</p>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Link href={`/jobs/${job.id}`}>

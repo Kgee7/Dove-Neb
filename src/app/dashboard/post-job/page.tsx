@@ -5,8 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFirestore, useUser, useDoc, useMemoFirebase, setDocument } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, doc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import React, { useEffect } from 'react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -196,7 +196,7 @@ function PostJobPageContent() {
             jobData.logoBg = `bg-indigo-100`;
         }
         
-        await setDocument(jobDocRef, jobData, { merge: true });
+        await setDoc(jobDocRef, jobData, { merge: true });
         
         toast({
             title: `Job ${editJobId ? 'Updated' : 'Posted'}!`,
