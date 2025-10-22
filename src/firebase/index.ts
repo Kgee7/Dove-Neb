@@ -1,78 +1,30 @@
+import { FirebaseError } from 'firebase/app';
+import { doc, setDoc, onSnapshot, DocumentData, FirestoreError, collection, getDocs, getDoc, query, where, deleteDoc } from 'firebase/firestore';
+import { useMemo } from 'react';
 
-'use client';
+export const setDocument = async (ref: any, data: any, options: any) => {
+    await setDoc(ref, data, options);
+};
 
-import { firebaseConfig } from '@/firebase/config';
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile } from 'firebase/auth';
-import { getFirestore, setDoc, addDoc, updateDoc, deleteDoc, collection, doc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { 
-  setDocumentNonBlocking,
-  addDocumentNonBlocking,
-  updateDocumentNonBlocking,
-  deleteDocumentNonBlocking
-} from './non-blocking-updates';
-
-// IMPORTANT: DO NOT MODIFY THIS FUNCTION
-export function initializeFirebase() {
-  if (!getApps().length) {
-    // Important! initializeApp() is called without any arguments because Firebase App Hosting
-    // integrates with the initializeApp() function to provide the environment variables needed to
-    // populate the FirebaseOptions in production. It is critical that we attempt to call initializeApp()
-    // without arguments.
-    let firebaseApp;
-    try {
-      // Attempt to initialize via Firebase App Hosting environment variables
-      firebaseApp = initializeApp();
-    } catch (e) {
-      // Only warn in production because it's normal to use the firebaseConfig to initialize
-      // during development
-      if (process.env.NODE_ENV === "production") {
-        console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
-      }
-      firebaseApp = initializeApp(firebaseConfig);
+export const getDocument = async (ref: any) => {
+    const docSnap = await getDoc(ref);
+    if (docSnap.exists()) {
+        const docData = docSnap.data();
+        return Object.assign({ id: docSnap.id }, docData);
     }
+    return null;
+};
 
-    return getSdks(firebaseApp);
-  }
-
-  // If already initialized, return the SDKs with the already initialized App
-  return getSdks(getApp());
-}
-
-export function getSdks(firebaseApp: FirebaseApp) {
-  return {
-    firebaseApp,
-    auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp)
-  };
-}
+export const deleteDocument = async (ref: any) => {
+    await deleteDoc(ref);
+};
 
 export * from './provider';
-export * from './client-provider';
-export * from './firestore/use-collection';
-export * from './firestore/use-doc';
-export * from './non-blocking-updates';
-export * from './non-blocking-login';
+export * from './config';
 export * from './errors';
-export * from './error-emitter';
-
-// Re-exporting non-blocking functions with user-friendly names
-export const setDocument = setDocumentNonBlocking;
-export const addDocument = addDocumentNonBlocking;
-export const updateDocument = updateDocumentNonBlocking;
-export const deleteDocument = deleteDocumentNonBlocking;
-export {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  collection,
-  doc,
-  setDoc,
-  GoogleAuthProvider,
-  signInWithPopup,
-  updateProfile,
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL
-};
+export * from 'firebase/auth';
+export * from './firestore/use-doc';
+export * from './firestore/use-collection';
+export * from 'firebase/storage';
+export * from './non-blocking-login';
+export { useMemo };

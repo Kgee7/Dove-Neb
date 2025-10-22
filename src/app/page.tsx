@@ -15,7 +15,8 @@ import {
   Globe,
 } from "lucide-react";
 import { collection } from "firebase/firestore";
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
+import { useMemo } from 'react';
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +40,7 @@ export default function Home() {
 
   const firestore = useFirestore();
 
-  const jobsQuery = useMemoFirebase(() => {
+  const jobsQuery = useMemo(() => {
     if (!firestore) return null;
     return collection(firestore, 'jobListings');
   }, [firestore]);

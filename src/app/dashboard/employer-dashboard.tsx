@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemoFirebase, useCollection, useFirestore, useUser, deleteDocument } from '@/firebase';
+import { useMemo } from 'react';
+import { useCollection, useFirestore, useUser, deleteDocument } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Briefcase, Loader2, Edit, Trash2 } from "lucide-react";
@@ -31,7 +32,7 @@ export default function EmployerDashboard() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const employerJobsQuery = useMemoFirebase(() => {
+  const employerJobsQuery = useMemo(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'jobListings'), where("employerId", "==", user.uid));
   }, [firestore, user]);

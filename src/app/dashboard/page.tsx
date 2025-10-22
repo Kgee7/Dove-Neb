@@ -1,7 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import React from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import React, { useMemo } from 'react';
+import { useUser, useFirestore, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Loader2 } from "lucide-react";
 import EmployerDashboard from './employer-dashboard';
@@ -18,7 +18,7 @@ export default function DashboardPage() {
   const firestore = useFirestore();
   const router = useRouter();
 
-  const userDocRef = useMemoFirebase(() => {
+  const userDocRef = useMemo(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);

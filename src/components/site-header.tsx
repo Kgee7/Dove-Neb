@@ -3,11 +3,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useMemo } from 'react';
 
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Icons } from "@/components/icons";
-import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
+import { useUser, useAuth, useDoc, useFirestore } from "@/firebase";
 import { doc } from "firebase/firestore";
 import {
   DropdownMenu,
@@ -32,7 +33,7 @@ export function SiteHeader() {
   const firestore = useFirestore();
   const router = useRouter();
 
-  const userDocRef = useMemoFirebase(() => {
+  const userDocRef = useMemo(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);

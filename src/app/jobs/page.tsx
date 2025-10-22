@@ -4,7 +4,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { collection } from 'firebase/firestore';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
+import { useMemo } from 'react';
 import { Job } from '@/lib/data';
 import { cn } from '@/lib/utils';
 
@@ -16,7 +17,7 @@ import { Button } from '@/components/ui/button';
 export default function JobsListingPage() {
   const firestore = useFirestore();
 
-  const jobsQuery = useMemoFirebase(() => {
+  const jobsQuery = useMemo(() => {
     if (!firestore) return null;
     return collection(firestore, 'jobListings');
   }, [firestore]);

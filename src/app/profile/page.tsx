@@ -56,7 +56,7 @@ const profileSchema = z.object({
 });
 
 export default function ProfilePage() {
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
   const firebaseApp = useFirebaseApp();
   const { toast } = useToast();
