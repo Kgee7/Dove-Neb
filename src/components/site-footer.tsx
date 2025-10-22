@@ -1,3 +1,4 @@
+
 import { Icons } from "./icons";
 
 export function SiteFooter() {
@@ -11,9 +12,14 @@ export function SiteFooter() {
                     Dove Jobs
                 </p>
             </div>
-          <p className="text-center text-sm text-muted-foreground md:text-left">
-            Built to connect dreams with direction.
-          </p>
+          <div className="flex flex-col items-center gap-2 text-center md:flex-row md:gap-4">
+             <p className="text-sm text-muted-foreground">
+                Built to connect dreams with direction.
+             </p>
+            <a href="/logo.svg" download="logo.svg" className="text-sm text-muted-foreground hover:text-primary underline">
+                Download Logo
+            </a>
+          </div>
           <p className="text-center text-sm text-muted-foreground md:text-left">
             &copy; {new Date().getFullYear()} Dove Jobs, Inc. All rights reserved.
           </p>
