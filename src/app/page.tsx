@@ -3,6 +3,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, useMemo } from "react";
 import {
   ArrowRight,
   Briefcase,
@@ -14,17 +16,18 @@ import {
   Loader2,
   Globe,
 } from "lucide-react";
-import { useCollection, useFirestore, collection } from '@/firebase';
-import { useMemo } from 'react';
+import { useCollection, useFirestore, useUser, collection, doc, setDoc, deleteDoc, updateDoc, useDoc } from '@/firebase';
+import { arrayUnion, arrayRemove } from 'firebase/firestore';
+
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Job } from "@/lib/data";
@@ -38,6 +41,11 @@ export default function Home() {
   const aiImage = PlaceHolderImages.find((img) => img.id === "ai-matching-bg");
 
   const firestore = useFirestore();
+  const { user } = useUser();
+  const router = useRouter();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [locationQuery, setLocationQuery] = useState('');
 
   const jobsQuery = useMemo(() => {
     if (!firestore) return null;
@@ -45,6 +53,36 @@ export default function Home() {
   }, [firestore]);
   
   const { data: jobs, isLoading } = useCollection<Job>(jobsQuery);
+    const { data: userProfile } = useDoc(firestore && user ? doc(firestore, 'users', user.uid) : null);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('q', searchQuery);
+    if (locationQuery) params.set('loc', locationQuery);
+    router.push(`/jobs?${params.toString()}`);
+  };
+
+  const toggleFavorite = async (jobId: string, isFavorited: boolean) => {
+    if (!user || !firestore) {
+      router.push('/login');
+      return;
+    }
+    const userFavoritesRef = doc(firestore, `users/${user.uid}/favoriteJobs`, jobId);
+    const userDocRef = doc(firestore, 'users', user.uid);
+    
+    if (isFavorited) {
+      await deleteDoc(userFavoritesRef);
+      await updateDoc(userDocRef, { favoriteJobs: arrayRemove(jobId) });
+    } else {
+        const jobDoc = jobs?.find(j => j.id === jobId);
+        if (jobDoc) {
+             await setDoc(userFavoritesRef, jobDoc);
+             await updateDoc(userDocRef, { favoriteJobs: arrayUnion(jobId) });
+        }
+    }
+  };
+
 
   return (
     <div className="flex-1">
@@ -71,17 +109,24 @@ export default function Home() {
             </p>
             <Card className="mx-auto mt-8 max-w-2xl shadow-lg">
               <CardContent className="p-4">
-                <form className="flex flex-col gap-4 sm:flex-row">
+                <form className="flex flex-col gap-4 sm:flex-row" onSubmit={handleSearch}>
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       placeholder="Job title, keywords, or company"
                       className="pl-10"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
                   <div className="relative flex-1">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <Input placeholder="City, state, or zip code" className="pl-10" />
+                    <Input 
+                      placeholder="City, state, or zip code" 
+                      className="pl-10"
+                      value={locationQuery}
+                      onChange={(e) => setLocationQuery(e.target.value)}
+                    />
                   </div>
                   <Button type="submit" className="bg-accent hover:bg-accent/90">
                     Find Jobs
@@ -152,7 +197,9 @@ export default function Home() {
              </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {jobs?.slice(0, 6).map((job) => (
+              {jobs?.slice(0, 6).map((job) => {
+                const isFavorited = userProfile?.favoriteJobs?.includes(job.id);
+                return (
                 <Card
                   key={job.id}
                   className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-2xl"
@@ -175,8 +222,8 @@ export default function Home() {
                         </Link>
                       </CardTitle>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                      <Heart className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => toggleFavorite(job.id, isFavorited)}>
+                       <Heart className={cn("h-4 w-4", isFavorited && "fill-red-500 text-red-500")} />
                     </Button>
                   </CardHeader>
                   <CardContent className="flex-1 p-4 pt-0">
@@ -187,12 +234,12 @@ export default function Home() {
                         {job.location}
                       </Badge>
                     </div>
-                    <p className="mt-4 text-sm text-muted-foreground">
+                    <p className="mt-4 text-base font-semibold">
                       {job.currencySymbol}{job.salary}
                     </p>
                   </CardContent>
                 </Card>
-              ))}
+              )})}
             </div>
           )}
           <div className="mt-12 text-center">

@@ -1,3 +1,4 @@
+
 'use client';
 
 // Core Provider and Initialization
@@ -36,6 +37,8 @@ export {
   addDoc,
   updateDoc,
   serverTimestamp,
+  arrayUnion,
+  arrayRemove,
   type DocumentReference,
   type CollectionReference,
   type Query as FirestoreQuery,
@@ -43,3 +46,4 @@ export {
 
 // STORAGE
 export * from 'firebase/storage';
+
