@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useAuth, useUser, GoogleAuthProvider, signInWithPopup } from "@/firebase";
+import { useAuth, useUser, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from "@/firebase";
 import { initiateEmailSignIn } from "@/firebase/non-blocking-login";
 import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
@@ -113,10 +113,10 @@ export default function LoginPage() {
     if (!auth || !firestore) return;
     setGoogleLoading(true);
     const provider = new GoogleAuthProvider();
-    // Force the auth domain to ensure it matches the authorized domain in Firebase Console.
     provider.setCustomParameters({
-      authDomain: firebaseConfig.authDomain,
+      prompt: 'select_account'
     });
+
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
@@ -130,9 +130,9 @@ export default function LoginPage() {
           id: user.uid,
           userType: "seeker",
           firstName: firstName || "",
-
-          lastName: lastName.join(" "),
+          lastName: lastName.join(" ") || "",
           email: user.email,
+          photoURL: user.photoURL,
           createdAt: new Date().toISOString(),
         };
         await setDoc(userDocRef, userData);
@@ -142,6 +142,7 @@ export default function LoginPage() {
         title: "Signed in with Google!",
         description: "You will be redirected shortly.",
       });
+      // Redirection is handled by the useEffect
 
     } catch (error: any) {
       console.error(error);
@@ -196,7 +197,7 @@ export default function LoginPage() {
                   <div className="flex items-center">
                     <Label>Password</Label>
                     <Link
-                      href="#"
+                      href="/forgot-password"
                       className="ml-auto inline-block text-sm underline"
                     >
                       Forgot your password?
@@ -213,7 +214,7 @@ export default function LoginPage() {
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
-            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={loading || googleLoading}>
+            <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={loading || googleLoading}>
               {googleLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign in with Google
             </Button>

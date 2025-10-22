@@ -100,11 +100,11 @@ export default function Home() {
         <div className="absolute inset-0 bg-background/30" />
         <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
           <div className="container max-w-4xl">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl font-headline">
-              Dove Jobs: Where Opportunities Take Flight.
+            <h1 className="text-1.5xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl font-headline">
+              Dove Jobs 
             </h1>
-            <p className="mt-4 text-lg text-foreground/80 md:text-xl">
-              Find your next opportunity from our curated list of roles.
+            <p className="mt-3.5 text-lg text-foreground/80 md:text-xl">
+            Where Opportunities Take Flight
             </p>
             <Card className="mx-auto mt-8 max-w-2xl shadow-lg">
               <CardContent className="p-4">
