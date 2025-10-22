@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { useParams } from 'next/navigation';
 import { doc } from 'firebase/firestore';
 import { useDoc, useFirestore } from '@/firebase';
 import { Job } from '@/lib/data';
@@ -15,13 +16,15 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-export default function JobDetailsPage({ params }: { params: { jobId: string } }) {
+export default function JobDetailsPage() {
   const firestore = useFirestore();
+  const params = useParams();
+  const jobId = params.jobId as string;
 
   const jobDocRef = useMemo(() => {
-    if (!firestore) return null;
-    return doc(firestore, 'jobListings', params.jobId);
-  }, [firestore, params.jobId]);
+    if (!firestore || !jobId) return null;
+    return doc(firestore, 'jobListings', jobId);
+  }, [firestore, jobId]);
 
   const { data: job, isLoading } = useDoc<Job>(jobDocRef);
 
