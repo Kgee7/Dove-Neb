@@ -30,7 +30,8 @@ export default function JobsListingPage() {
   }, [firestore]);
   
   const { data: jobs, isLoading } = useCollection<Job>(jobsQuery);
-  const { data: userProfile } = useDoc(firestore && user ? doc(firestore, 'users', user.uid) : null);
+  const userDocRef = useMemo(() => firestore && user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: userProfile } = useDoc(userDocRef);
 
   const filteredJobs = useMemo(() => {
     if (!jobs) return [];
@@ -59,22 +60,15 @@ export default function JobsListingPage() {
   };
 
   const toggleFavorite = async (jobId: string, isFavorited: boolean) => {
-    if (!user || !firestore) {
+    if (!user || !firestore || !userDocRef) {
       router.push('/login');
       return;
     }
-    const userFavoritesRef = doc(firestore, `users/${user.uid}/favoriteJobs`, jobId);
-    const userDocRef = doc(firestore, 'users', user.uid);
     
     if (isFavorited) {
-      await deleteDoc(userFavoritesRef);
       await updateDoc(userDocRef, { favoriteJobs: arrayRemove(jobId) });
     } else {
-        const jobDoc = jobs?.find(j => j.id === jobId);
-        if (jobDoc) {
-             await setDoc(userFavoritesRef, jobDoc);
-             await updateDoc(userDocRef, { favoriteJobs: arrayUnion(jobId) });
-        }
+      await updateDoc(userDocRef, { favoriteJobs: arrayUnion(jobId) });
     }
   };
 
@@ -177,4 +171,3 @@ export default function JobsListingPage() {
     </div>
   );
 }
-

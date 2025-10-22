@@ -16,8 +16,7 @@ import {
   Loader2,
   Globe,
 } from "lucide-react";
-import { useCollection, useFirestore, useUser, collection, doc, setDoc, deleteDoc, updateDoc, useDoc } from '@/firebase';
-import { arrayUnion, arrayRemove } from 'firebase/firestore';
+import { useCollection, useFirestore, useUser, useDoc, collection, doc, updateDoc, arrayUnion, arrayRemove } from '@/firebase';
 
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -53,7 +52,8 @@ export default function Home() {
   }, [firestore]);
   
   const { data: jobs, isLoading } = useCollection<Job>(jobsQuery);
-    const { data: userProfile } = useDoc(firestore && user ? doc(firestore, 'users', user.uid) : null);
+  const userDocRef = useMemo(() => firestore && user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: userProfile } = useDoc(userDocRef);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,22 +64,15 @@ export default function Home() {
   };
 
   const toggleFavorite = async (jobId: string, isFavorited: boolean) => {
-    if (!user || !firestore) {
+    if (!user || !firestore || !userDocRef) {
       router.push('/login');
       return;
     }
-    const userFavoritesRef = doc(firestore, `users/${user.uid}/favoriteJobs`, jobId);
-    const userDocRef = doc(firestore, 'users', user.uid);
     
     if (isFavorited) {
-      await deleteDoc(userFavoritesRef);
       await updateDoc(userDocRef, { favoriteJobs: arrayRemove(jobId) });
     } else {
-        const jobDoc = jobs?.find(j => j.id === jobId);
-        if (jobDoc) {
-             await setDoc(userFavoritesRef, jobDoc);
-             await updateDoc(userDocRef, { favoriteJobs: arrayUnion(jobId) });
-        }
+      await updateDoc(userDocRef, { favoriteJobs: arrayUnion(jobId) });
     }
   };
 
@@ -98,14 +91,14 @@ export default function Home() {
             priority
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
+        <div className="absolute inset-0 bg-background/30" />
         <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
           <div className="container max-w-4xl">
             <h1 className="text-4xl font-bold tracking-tight text-foreground md:text-6xl lg:text-7xl font-headline">
-              Dove Jobs
+              Dove Jobs: Where Opportunities Take Flight.
             </h1>
             <p className="mt-4 text-lg text-foreground/80 md:text-xl">
-              Where Opportunities Take Flight.
+              Find your next opportunity from our curated list of roles.
             </p>
             <Card className="mx-auto mt-8 max-w-2xl shadow-lg">
               <CardContent className="p-4">

@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -12,8 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Wand2, Search, Heart, Loader2 } from "lucide-react";
-import { useCollection, useFirestore, useUser } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useCollection, useFirestore, useUser, useDoc, collection, doc, query, where, getDocs } from '@/firebase';
 import { Job } from '@/lib/data';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -24,19 +23,51 @@ type SeekerDashboardProps = {
     userProfile: {
         firstName: string;
         lastName: string;
+        favoriteJobs?: string[];
     } | null;
+}
+
+type UserProfile = {
+    favoriteJobs?: string[];
 }
 
 function FavoriteJobsList() {
     const { user } = useUser();
     const firestore = useFirestore();
+    const [favoriteJobs, setFavoriteJobs] = useState<Job[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const favoriteJobsQuery = useMemo(() => {
+    const userDocRef = useMemo(() => {
         if (!firestore || !user) return null;
-        return collection(firestore, 'users', user.uid, 'favoriteJobs');
+        return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
 
-    const { data: favoriteJobs, isLoading } = useCollection<Job>(favoriteJobsQuery);
+    const { data: userProfile } = useDoc<UserProfile>(userDocRef);
+
+    useEffect(() => {
+        const fetchFavoriteJobs = async () => {
+            if (!userProfile || !userProfile.favoriteJobs || userProfile.favoriteJobs.length === 0 || !firestore) {
+                setFavoriteJobs([]);
+                setIsLoading(false);
+                return;
+            }
+
+            try {
+                const jobsRef = collection(firestore, 'jobListings');
+                const q = query(jobsRef, where('id', 'in', userProfile.favoriteJobs));
+                const querySnapshot = await getDocs(q);
+                const jobs = querySnapshot.docs.map(doc => doc.data() as Job);
+                setFavoriteJobs(jobs);
+            } catch (error) {
+                console.error("Error fetching favorite jobs:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchFavoriteJobs();
+    }, [userProfile, firestore]);
+
 
     if (isLoading) {
         return (
@@ -166,5 +197,3 @@ export default function SeekerDashboard({ userProfile }: SeekerDashboardProps) {
     </div>
   );
 }
-
-    

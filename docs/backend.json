@@ -63,11 +63,11 @@
           "description": "A summary of the user's work experience."
         },
         "favoriteJobs": {
-            "type": "array",
-            "description": "A list of job IDs that the user has favorited.",
-            "items": {
-                "type": "string"
-            }
+          "type": "array",
+          "description": "A list of job IDs that the user has favorited.",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
