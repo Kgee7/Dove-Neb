@@ -5,8 +5,9 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useDoc, useFirestore, useFirebaseApp, updateProfile, setDocument, getStorage, ref, uploadBytes, getDownloadURL } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useDoc, useFirestore, useFirebaseApp, updateProfile } from '@/firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 
 import { Button } from '@/components/ui/button';
@@ -31,7 +32,6 @@ import { Loader2, Edit, FileText, Upload } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
-import { FirebaseApp } from 'firebase/app';
 
 type UserProfile = {
     userType: 'seeker' | 'employer';
@@ -67,7 +67,7 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const resumeInputRef = useRef<HTMLInputElement>(null);
 
-  const userDocRef = useMemo(() => user ? doc(firestore, 'users', user.uid) : null, [user, firestore]);
+  const userDocRef = useMemo(() => user && firestore ? doc(firestore, 'users', user.uid) : null, [user, firestore]);
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
@@ -127,7 +127,7 @@ export default function ProfilePage() {
 
           await updateProfile(user, { photoURL: downloadURL });
           await user.reload(); 
-          await setDocument(userDocRef, { photoURL: downloadURL }, { merge: true });
+          await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
 
           toast({
             title: 'Profile Picture Updated',
@@ -188,7 +188,7 @@ export default function ProfilePage() {
           const snapshot = await uploadBytes(storageRef, file);
           const downloadURL = await getDownloadURL(snapshot.ref);
 
-          await setDocument(userDocRef, { resumeURL: downloadURL }, { merge: true });
+          await setDoc(userDocRef, { resumeURL: downloadURL }, { merge: true });
 
           toast({
             title: 'Resume Uploaded',
@@ -238,7 +238,7 @@ export default function ProfilePage() {
 
 
     try {
-      await setDocument(userDocRef, dataToUpdate, { merge: true });
+      await setDoc(userDocRef, dataToUpdate, { merge: true });
       toast({
         title: 'Profile Updated',
         description: 'Your profile information has been saved successfully.',

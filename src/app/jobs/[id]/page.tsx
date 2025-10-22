@@ -1,23 +1,59 @@
-import { notFound } from 'next/navigation';
+
+'use client';
+
+import React, { useMemo } from 'react';
+import { doc } from 'firebase/firestore';
+import { useDoc, useFirestore } from '@/firebase';
+import { Job } from '@/lib/data';
 import Image from 'next/image';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Badge } from '@/components/ui/badge';
-import { Button } from "@/components/ui/button";
-import { Globe, MapPin, Mail, MessageCircle } from 'lucide-react';
-import { getJob } from '@/lib/jobs';
-import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
-export default async function JobDetailsPage({ params }: { params: { id: string } }) {
-  const job = await getJob(params.id);
+import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
+import { Badge } from '@/components/ui/badge';
+import { Globe, MapPin, Briefcase, Building, Mail, Phone, Calendar, ArrowLeft, Loader2, MessageCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+
+export default function JobDetailsPage({ params }: { params: { id: string } }) {
+  const firestore = useFirestore();
+
+  const jobDocRef = useMemo(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'jobListings', params.id);
+  }, [firestore, params.id]);
+
+  const { data: job, isLoading } = useDoc<Job>(jobDocRef);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!job) {
-    notFound();
+    return (
+      <div className="container py-12 text-center">
+        <h1 className="text-3xl font-bold">Job not found</h1>
+        <p className="text-muted-foreground">This job listing may have been removed or the link is incorrect.</p>
+        <Link href="/jobs">
+          <Button variant="link" className="mt-4">Back to all jobs</Button>
+        </Link>
+      </div>
+    );
   }
 
   return (
     <div className="bg-muted/40">
         <div className="container max-w-4xl py-12">
+            <div className="mb-4">
+                <Link href="/jobs" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to all jobs
+                </Link>
+            </div>
             <Card className="overflow-hidden">
                 <CardHeader className="p-0">
                     <div className={cn("flex items-center gap-6 p-6", job.logoBg || 'bg-secondary')}>

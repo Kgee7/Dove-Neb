@@ -1,23 +1,5 @@
-import { FirebaseError } from 'firebase/app';
-import { doc, setDoc, onSnapshot, DocumentData, FirestoreError, collection, getDocs, getDoc, query, where, deleteDoc } from 'firebase/firestore';
-import { useMemo } from 'react';
 
-export const setDocument = async (ref: any, data: any, options: any) => {
-    await setDoc(ref, data, options);
-};
-
-export const getDocument = async (ref: any) => {
-    const docSnap = await getDoc(ref);
-    if (docSnap.exists()) {
-        const docData = docSnap.data();
-        return Object.assign({ id: docSnap.id }, docData);
-    }
-    return null;
-};
-
-export const deleteDocument = async (ref: any) => {
-    await deleteDoc(ref);
-};
+'use client';
 
 export * from './provider';
 export * from './config';
@@ -27,4 +9,21 @@ export * from './firestore/use-doc';
 export * from './firestore/use-collection';
 export * from 'firebase/storage';
 export * from './non-blocking-login';
-export { useMemo };
+export * from './non-blocking-updates';
+export {
+  doc,
+  collection,
+  query,
+  where,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  deleteDoc,
+  setDoc,
+  addDoc,
+  updateDoc,
+} from 'firebase/firestore';
+export { useMemo } from 'react';
+
+// A hook to memoize Firebase queries and references.
+export const useMemoFirebase = useMemo;
