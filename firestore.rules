@@ -125,7 +125,7 @@ service cloud.firestore {
       allow get: if true;
       allow list: if true;
       allow create: if isSignedIn() && request.resource.data.employerId == request.auth.uid;
-      allow update: if isSignedIn() && request.resource.data.employerId == resource.data.employerId && request.auth.uid == resource.data.employerId;
+      allow update: if isSignedIn() && request.auth.uid == resource.data.employerId;
       allow delete: if isSignedIn() && resource.data.employerId == request.auth.uid;
     }
 
