@@ -360,7 +360,7 @@
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier for the user (sender or receiver)."
+              "description": "The unique identifier for a user (sender or receiver)."
             },
             {
               "name": "messageId",
