@@ -16,7 +16,8 @@ import {
   Loader2,
   Globe,
 } from "lucide-react";
-import { useCollection, useFirestore, useUser, useDoc, collection, doc, updateDoc, arrayUnion, arrayRemove } from '@/firebase';
+import { useCollection, useFirestore, useUser, useDoc, collection, doc, updateDoc } from '@/firebase';
+import { arrayUnion, arrayRemove } from 'firebase/firestore';
 
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -52,7 +53,12 @@ export default function Home() {
   }, [firestore]);
   
   const { data: jobs, isLoading } = useCollection<Job>(jobsQuery);
-  const userDocRef = useMemo(() => firestore && user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  
+  const userDocRef = useMemo(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+
   const { data: userProfile } = useDoc(userDocRef);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -94,7 +100,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-background/30" />
         <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
           <div className="container max-w-4xl">
-            <h1 className="text-4xl font-bold tracking-tight text-foreground md:text-6xl lg:text-7xl font-headline">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl font-headline">
               Dove Jobs: Where Opportunities Take Flight.
             </h1>
             <p className="mt-4 text-lg text-foreground/80 md:text-xl">
