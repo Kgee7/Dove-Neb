@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -54,6 +55,12 @@ export default function PostJobPage() {
     },
   });
 
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [isUserLoading, user, router]);
+
   const onSubmit = async (data: PostJobFormValues) => {
     if (!user) {
       toast({
@@ -89,17 +96,12 @@ export default function PostJobPage() {
     }
   };
   
-  if (isUserLoading) {
+  if (isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
-  }
-
-  if (!user) {
-    router.push('/login');
-    return null;
   }
 
   return (

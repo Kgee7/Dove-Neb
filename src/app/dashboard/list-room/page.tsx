@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -66,6 +66,12 @@ export default function ListRoomPage() {
     name: "images",
   });
 
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [isUserLoading, user, router]);
+
   const onSubmit = async (data: ListRoomFormValues) => {
     if (!user) {
       toast({
@@ -120,7 +126,7 @@ export default function ListRoomPage() {
     }
   };
 
-  if (isUserLoading) {
+  if (isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -128,11 +134,6 @@ export default function ListRoomPage() {
     );
   }
   
-  if (!user) {
-      router.push('/login');
-      return null;
-  }
-
   return (
     <div className="container max-w-3xl py-12">
       <Card>
