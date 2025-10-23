@@ -16,6 +16,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { Job } from '@/lib/job-data';
+import { Badge } from '@/components/ui/badge';
 
 type UserProfile = {
   userType: 'seeker' | 'employer' | 'renter' | 'owner';
@@ -64,26 +65,26 @@ export default function DashboardPage() {
 
   // Queries for Room related data
   const bookingsQuery = useMemo(() => {
-      if (!firestore || !user) return null;
+      if (!firestore || !user?.uid) return null;
       return query(collection(firestore, 'users', user.uid, 'bookings'), orderBy('checkInDate', 'desc'));
   }, [firestore, user]);
   const { data: bookings, isLoading: bookingsLoading } = useCollection<Booking>(bookingsQuery);
 
   const roomListingsQuery = useMemo(() => {
-    if (!firestore || !user ) return null;
+    if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'rooms'), where('ownerId', '==', user.uid));
   }, [firestore, user]);
   const { data: roomListings, isLoading: roomListingsLoading } = useCollection<Room>(roomListingsQuery);
 
   // Queries for Job related data
   const jobApplicationsQuery = useMemo(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'users', user.uid, 'applications'), orderBy('appliedAt', 'desc'));
   }, [firestore, user]);
   const { data: jobApplications, isLoading: applicationsLoading } = useCollection<JobApplication>(jobApplicationsQuery);
 
   const jobListingsQuery = useMemo(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'jobs'), where('employerId', '==', user.uid));
   }, [firestore, user]);
   const { data: jobListings, isLoading: jobListingsLoading } = useCollection<Job>(jobListingsQuery);
