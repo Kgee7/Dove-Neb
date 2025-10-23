@@ -1,0 +1,354 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Dove Jobs platform, either a job seeker or an employer.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "userType": {
+          "type": "string",
+          "description": "The type of user (e.g., job seeker, employer)."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the user."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user.",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "The phone number of the user."
+        },
+        "companyName": {
+          "type": "string",
+          "description": "The name of the company the employer represents (if applicable)."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user account was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user account was last updated.",
+          "format": "date-time"
+        },
+        "resumeURL": {
+          "type": "string",
+          "description": "URL to the user's uploaded resume.",
+          "format": "uri"
+        },
+        "skills": {
+          "type": "array",
+          "description": "A list of the user's skills.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "experience": {
+          "type": "string",
+          "description": "A summary of the user's work experience."
+        },
+        "favoriteJobs": {
+          "type": "array",
+          "description": "A list of job IDs that the user has favorited.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "userType",
+        "firstName",
+        "lastName",
+        "email"
+      ]
+    },
+    "JobListing": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "JobListing",
+      "type": "object",
+      "description": "Represents a job posting on the Dove Jobs platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Job Listing entity."
+        },
+        "employerId": {
+          "type": "string",
+          "description": "Reference to the User (Employer) who posted the job. (Relationship: User 1:N JobListing)"
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the job listing."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the job responsibilities and requirements."
+        },
+        "location": {
+          "type": "string",
+          "description": "The location where the job is based. Can be 'Remote' if workArrangement is 'Remote'."
+        },
+        "workArrangement": {
+          "type": "string",
+          "description": "The work arrangement for the job.",
+          "enum": ["On-site", "Remote", "Hybrid"]
+        },
+        "salary": {
+          "type": "string",
+          "description": "The salary offered for the job."
+        },
+        "currency": {
+          "type": "string",
+          "description": "The currency of the salary (e.g., USD, EUR, GBP).",
+          "enum": ["USD", "EUR", "GBP", "JPY", "CAD", "DZD", "AOA", "XOF", "BWP", "BIF", "CVE", "XAF", "KMF", "CDF", "DJF", "EGP", "GQE", "ERN", "SZL", "ETB", "GMD", "GHS", "GNF", "GWP", "KES", "LSL", "LRD", "LYD", "MGA", "MWK", "MRU", "MUR", "MAD", "MZN", "NAD", "NGN", "RWF", "STN", "SCR", "SLL", "SOS", "ZAR", "SSP", "SDG", "TZS", "TND", "UGX", "ZMW", "ZWL", "AED", "AFN", "ALL", "AMD", "ANG", "ARS", "AUD", "AWG", "AZN", "BAM", "BBD", "BDT", "BGN", "BHD", "BMD", "BND", "BOB", "BRL", "BSD", "BTN", "BYN", "BZD", "CHF", "CLP", "CNY", "COP", "CRC", "CUP", "CZK", "DKK", "DOP", "FJD", "GEL", "GIP", "GTQ", "GYD", "HKD", "HNL", "HRK", "HTG", "HUF", "IDR", "ILS", "INR", "IQD", "IRR", "ISK", "JMD", "JOD", "KGS", "KHR", "KWD", "KZT", "LAK", "LBP", "LKR", "MDL", "MKD", "MMK", "MNT", "MOP", "MVR", "MXN", "MYR", "NIO", "NOK", "NPR", "NZD", "OMR", "PAB", "PEN", "PGK", "PHP", "PKR", "PLN", "PYG", "QAR", "RON", "RSD", "RUB", "SAR", "SBD", "SEK", "SGD", "SHP", "SRD", "SYP", "THB", "TJS", "TMT", "TOP", "TRY", "TTD", "TWD", "UAH", "UYU", "UZS", "VES", "VND", "VUV", "WST", "YER"]
+        },
+        "currencySymbol": {
+            "type": "string",
+            "description": "The symbol for the currency (e.g., $, €, £)."
+        },
+        "category": {
+          "type": "string",
+          "description": "The job category (e.g., Engineering, Marketing)."
+        },
+        "jobType": {
+          "type": "string",
+          "description": "The type of job (e.g., Full-time, Part-time, Contract)."
+        },
+        "postedDate": {
+          "type": "string",
+          "description": "The date when the job was posted.",
+          "format": "date-time"
+        },
+        "closingDate": {
+          "type": "string",
+          "description": "The date when the job application closes.",
+          "format": "date-time"
+        },
+        "applicationEmail": {
+          "type": "string",
+          "description": "Email address for job applications.",
+          "format": "email"
+        },
+        "applicationWhatsApp": {
+          "type": "string",
+          "description": "WhatsApp number for job applications."
+        }
+      },
+      "required": [
+        "id",
+        "employerId",
+        "title",
+        "description",
+        "location",
+        "workArrangement",
+        "salary",
+        "currency",
+        "currencySymbol",
+        "category",
+        "jobType",
+        "postedDate",
+        "closingDate"
+      ]
+    },
+    "JobApplication": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "JobApplication",
+      "type": "object",
+      "description": "Represents a job application submitted by a job seeker.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Job Application entity."
+        },
+        "jobListingId": {
+          "type": "string",
+          "description": "Reference to the Job Listing being applied for. (Relationship: JobListing 1:N JobApplication)"
+        },
+        "jobSeekerId": {
+          "type": "string",
+          "description": "Reference to the User (Job Seeker) who submitted the application. (Relationship: User 1:N JobApplication)"
+        },
+        "applicationDate": {
+          "type": "string",
+          "description": "The date when the application was submitted.",
+          "format": "date-time"
+        },
+        "resumeURL": {
+          "type": "string",
+          "description": "URL to the resume submitted with the application.",
+          "format": "uri"
+        },
+        "coverLetter": {
+          "type": "string",
+          "description": "The cover letter submitted with the application."
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the application (e.g., Applied, Reviewed, Interviewing, Offered, Rejected)."
+        }
+      },
+      "required": [
+        "id",
+        "jobListingId",
+        "jobSeekerId",
+        "applicationDate",
+        "resumeURL"
+      ]
+    },
+    "Message": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Message",
+      "type": "object",
+      "description": "Represents a message exchanged between users (job seekers and employers).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Message entity."
+        },
+        "senderId": {
+          "type": "string",
+          "description": "Reference to the User who sent the message. (Relationship: User 1:N Message)"
+        },
+        "receiverId": {
+          "type": "string",
+          "description": "Reference to the User who received the message. (Relationship: User 1:N Message)"
+        },
+        "sentDate": {
+          "type": "string",
+          "description": "The date and time when the message was sent.",
+          "format": "date-time"
+        },
+        "messageText": {
+          "type": "string",
+          "description": "The content of the message."
+        }
+      },
+      "required": [
+        "id",
+        "senderId",
+        "receiverId",
+        "sentDate",
+        "messageText"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous",
+      "google.com"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Accessible only by the user themselves (for update/delete) or by admins.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/jobListings/{jobListingId}",
+        "definition": {
+          "entityName": "JobListing",
+          "schema": {
+            "$ref": "#/backend/entities/JobListing"
+          },
+          "description": "Stores job listings created by employers. `employerId` is denormalized to allow independent authorization.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user (employer)."
+            },
+            {
+              "name": "jobListingId",
+              "description": "The unique identifier for the job listing."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/jobListings/{jobListingId}",
+        "definition": {
+          "entityName": "JobListing",
+          "schema": {
+            "$ref": "#/backend/entities/JobListing"
+          },
+          "description": "Top level Jobs collection for searching and listing all jobs across platform",
+          "params": [
+            {
+              "name": "jobListingId",
+              "description": "The unique identifier for the job listing."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/jobApplications/{jobApplicationId}",
+        "definition": {
+          "entityName": "JobApplication",
+          "schema": {
+            "$ref": "#/backend/entities/JobApplication"
+          },
+          "description": "Stores job applications submitted by job seekers. `jobSeekerId` is denormalized for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user (job seeker)."
+            },
+            {
+              "name": "jobApplicationId",
+              "description": "The unique identifier for the job application."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/messages/{messageId}",
+        "definition": {
+          "entityName": "Message",
+          "schema": {
+            "$ref": "#/backend/entities/Message"
+          },
+          "description": "Stores messages between users. Ensures that only the sender and receiver can access the message.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for a user (sender or receiver)."
+            },
+            {
+              "name": "messageId",
+              "description": "The unique identifier for the message."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure for Dove Jobs is designed for secure and scalable management of users, job listings, applications, and messages, adhering to the principles of Authorization Independence, Structural Segregation, Access Modeling, and Data Clarity. Path-based ownership is favored for private user data, while membership maps are used for collaborative access.  \n\n*   **Authorization Independence**:  Achieved by denormalizing authorization data (e.g., `employerId` on job listings) to avoid `get()` calls in security rules.\n*   **Structural Segregation**:  Different data types (users, jobs, applications) are stored in separate collections, each with clearly defined security requirements. User-owned data (job listings, applications, messages, favorites) is stored in subcollections under the user's document.\n*   **Access Modeling**: Path-based ownership is used to define clear ownership and roles.\n*   **QAPs (Rules are not Filters)**: The segregation of data into different collections based on access needs ensures secure list operations. Only the data that the user has access to will be present in the collection that the user queries.\n*   **Data Clarity**: Explicit state modeling using a status field in the `JobApplication` ensures that the state of application is predictable and easy to manage.\n\nThis structure facilitates simple, robust, and easily debuggable security rules, ensuring that data access is controlled and secure."
+  }
+}
