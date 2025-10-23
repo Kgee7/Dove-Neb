@@ -1,3 +1,4 @@
+
 'use client';
 import { useRouter } from 'next/navigation';
 import React, { useMemo } from 'react';
@@ -57,9 +58,9 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const userDocRef = useMemo(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user?.uid) return null;
     return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
@@ -67,26 +68,26 @@ export default function DashboardPage() {
   const bookingsQuery = useMemo(() => {
       if (!firestore || !user?.uid) return null;
       return query(collection(firestore, 'users', user.uid, 'bookings'), orderBy('checkInDate', 'desc'));
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
   const { data: bookings, isLoading: bookingsLoading } = useCollection<Booking>(bookingsQuery);
 
   const roomListingsQuery = useMemo(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'rooms'), where('ownerId', '==', user.uid));
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
   const { data: roomListings, isLoading: roomListingsLoading } = useCollection<Room>(roomListingsQuery);
 
   // Queries for Job related data
   const jobApplicationsQuery = useMemo(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'users', user.uid, 'applications'), orderBy('appliedAt', 'desc'));
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
   const { data: jobApplications, isLoading: applicationsLoading } = useCollection<JobApplication>(jobApplicationsQuery);
 
   const jobListingsQuery = useMemo(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'jobs'), where('employerId', '==', user.uid));
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
   const { data: jobListings, isLoading: jobListingsLoading } = useCollection<Job>(jobListingsQuery);
 
   React.useEffect(() => {
@@ -292,3 +293,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
