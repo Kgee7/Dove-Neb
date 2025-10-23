@@ -28,7 +28,7 @@ export interface UseCollectionResult<T> {
  * React hook to subscribe to a Firestore collection in real-time.
  *
  * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedQuery or BAD THINGS WILL HAPPEN.
- * Use useMemoFirebase to memoize it per React guidance. Also, ensure that its dependencies are stable.
+ * Use useMemo to memoize it per React guidance. Also, ensure that its dependencies are stable.
  *
  * @template T Optional type for document data. Defaults to any.
  * @param {Query<DocumentData> | null | undefined} memoizedQuery -
@@ -45,11 +45,12 @@ export function useCollection<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
+    // This is the key change: a robust guard clause at the top.
     if (!memoizedQuery) {
       setData(null);
-      setIsLoading(false);
+      setIsLoading(false); // Not loading because there's nothing to fetch
       setError(null);
-      return;
+      return; // Stop execution if the query is not ready
     }
 
     setIsLoading(true);
@@ -67,6 +68,15 @@ export function useCollection<T = any>(
         setError(null); // Clear previous errors on new data
       },
       (error: FirestoreError) => {
+        // This check prevents an error when the path is undefined
+        if (!memoizedQuery.path) {
+          console.error("useCollection error: Query path is undefined.", error);
+          setError(new Error("Firestore query path is undefined."));
+          setData(null);
+          setIsLoading(false);
+          return;
+        }
+
         const contextualError = new FirestorePermissionError({
           operation: 'list',
           path: memoizedQuery.path,
