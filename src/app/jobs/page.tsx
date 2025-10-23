@@ -3,15 +3,22 @@
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useCollection, useFirestore, useUser } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, limit } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Job, jobs as allJobs, jobTypes, locations } from '@/lib/job-data';
+import { Job } from '@/lib/job-data';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Briefcase, MapPin, Search } from 'lucide-react';
+import { Briefcase, Loader2, MapPin, Search } from 'lucide-react';
+import { suggestJobs, type SuggestJobsInput } from '@/ai/flows/ai-suggested-jobs';
+
+
+// Mock data - replace with Firestore data
+const allJobs: Job[] = [];
+const locations: string[] = [];
+const jobTypes: string[] = [];
 
 export default function JobsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,26 +28,46 @@ export default function JobsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
+  const jobsQuery = useMemo(() => {
+    if (!firestore) return null;
+    let q = query(collection(firestore, 'jobs'));
+
+    // This is a placeholder for more complex filtering logic
+    // For now, we just limit the results for performance
+    return query(q, limit(20));
+
+  }, [firestore]);
+
+  const { data: jobs, isLoading: jobsLoading } = useCollection<Job>(jobsQuery);
+  
+  const allJobs = jobs || [];
+  const locations = useMemo(() => [...new Set(allJobs.map(j => j.location))], [allJobs]);
+  const jobTypes = useMemo(() => [...new Set(allJobs.map(j => j.type))], [allJobs]);
+
+
   const suggestedJobsQuery = useMemo(() => {
     if (!firestore || !user?.uid) return null;
-    return query(collection(firestore, `users/${user.uid}/suggested-jobs`));
+    // This query is intentionally left simple. 
+    // A real implementation might involve a more complex query or a separate collection for recommendations.
+    return query(collection(firestore, `jobs`), where("type", "==", "Full-time"), limit(3));
   }, [firestore, user?.uid]);
 
-  const { data: suggestedJobs } = useCollection<Job>(suggestedJobsQuery);
+  const { data: suggestedJobs, isLoading: suggestedJobsLoading } = useCollection<Job>(suggestedJobsQuery);
 
 
   const filteredJobs = useMemo(() => {
+    if (!jobs) return [];
     return allJobs.filter(job => {
       const term = searchTerm.toLowerCase();
       const titleMatch = job.title.toLowerCase().includes(term);
-      const companyMatch = job.company.toLowerCase().includes(term);
+      const companyMatch = job.companyName.toLowerCase().includes(term);
       const locationMatch = locationFilter === 'all' || job.location === locationFilter;
       const typeMatch = typeFilter === 'all' || job.type === typeFilter;
       return (titleMatch || companyMatch) && locationMatch && typeMatch;
     });
-  }, [searchTerm, locationFilter, typeFilter]);
+  }, [allJobs, searchTerm, locationFilter, typeFilter]);
 
-  const displayedJobs = searchTerm || locationFilter !== 'all' || typeFilter !== 'all' ? filteredJobs : allJobs.slice(0, 8);
+  const displayedJobs = searchTerm || locationFilter !== 'all' || typeFilter !== 'all' ? filteredJobs : allJobs;
 
   return (
     <div className="container mx-auto py-12 px-4 md:px-6">
@@ -90,17 +117,23 @@ export default function JobsPage() {
       {user && suggestedJobs && suggestedJobs.length > 0 && (
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-6">Suggested for You</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {suggestedJobs.map(job => (
-              <JobCard key={`suggested-${job.id}`} job={job} />
-            ))}
-          </div>
+           {suggestedJobsLoading ? (
+            <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin" /></div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {suggestedJobs.map(job => (
+                  <JobCard key={`suggested-${job.id}`} job={job} />
+                ))}
+            </div>
+          )}
         </section>
       )}
 
       <section>
         <h2 className="text-2xl font-bold mb-6">All Jobs</h2>
-        {displayedJobs.length > 0 ? (
+        {jobsLoading ? (
+           <div className="flex justify-center items-center h-64"><Loader2 className="h-12 w-12 animate-spin" /></div>
+        ) : displayedJobs.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {displayedJobs.map(job => (
               <JobCard key={job.id} job={job} />
@@ -129,9 +162,11 @@ function JobCard({ job }: { job: Job }) {
         <div className="flex items-start justify-between">
             <div>
                 <CardTitle className="text-lg font-bold leading-tight">{job.title}</CardTitle>
-                <CardDescription className="mt-1">{job.company}</CardDescription>
+                <CardDescription className="mt-1">{job.companyName}</CardDescription>
             </div>
-            <img src={job.logo} alt={`${job.company} logo`} className="w-12 h-12 rounded-full" />
+             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center font-bold text-lg">
+                {job.companyName?.charAt(0) || '?'}
+            </div>
         </div>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col">
@@ -148,8 +183,11 @@ function JobCard({ job }: { job: Job }) {
         <Separator className="my-4" />
         <div className="flex items-center justify-between">
             <div>
-                <p className="font-semibold text-lg">{job.salary}</p>
-                <Badge variant='secondary' className='mt-1'>{job.posted}</Badge>
+                {job.salaryMin && job.salaryMax ? (
+                    <p className="font-semibold text-base">${job.salaryMin/1000}k - ${job.salaryMax/1000}k</p>
+                ) : (
+                     <p className="font-semibold text-base">Competitive</p>
+                )}
             </div>
             <Link href={`/jobs/${job.id}`} passHref>
                  <Button size='sm'>View Job</Button>
