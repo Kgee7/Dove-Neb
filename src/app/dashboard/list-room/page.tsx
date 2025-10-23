@@ -59,7 +59,7 @@ export default function ListRoomPage() {
       description: '',
       location: '',
       price: 0,
-      currencyInfo: 'USD,$',
+      currencyInfo: 'US', // Default to US
       images: [],
       amenities: [],
     },
@@ -98,7 +98,10 @@ export default function ListRoomPage() {
       );
       
       const ownerName = user.displayName || `${user.firstName} ${user.lastName}`.trim() || 'Anonymous';
-      const [currency, currencySymbol] = data.currencyInfo.split(',');
+      const selectedCountry = countries.find(c => c.code === data.currencyInfo);
+      const currency = selectedCountry?.currency || 'USD';
+      const currencySymbol = selectedCountry?.currencySymbol || '$';
+
 
       await addDoc(collection(firestore, 'rooms'), {
         ownerId: user.uid,
@@ -207,7 +210,7 @@ export default function ListRoomPage() {
                           </FormControl>
                           <SelectContent>
                             {countries.map(country => (
-                              <SelectItem key={country.code} value={`${country.currency},${country.currencySymbol}`}>
+                              <SelectItem key={country.code} value={country.code}>
                                 {country.name} ({country.currency})
                               </SelectItem>
                             ))}
