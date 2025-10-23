@@ -45,6 +45,7 @@ export function useCollection<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
+    // Guard clause: If there's no query, set a clean state and do nothing.
     if (!memoizedQuery) {
       setData(null);
       setIsLoading(false);
@@ -67,7 +68,7 @@ export function useCollection<T = any>(
         setError(null); 
       },
       async (error: FirestoreError) => {
-        // Add a guard to ensure memoizedQuery is still valid inside the error callback
+        // Guard clause inside error handler to prevent crash on contextual error creation
         if (!memoizedQuery) {
             setError(error);
             setData(null);
