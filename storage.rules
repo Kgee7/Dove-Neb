@@ -1,0 +1,28 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper function to check ownership
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Rules for profile pictures
+    match /profilePictures/{userId}/{fileName} {
+      allow read: if true; // Allow anyone to read profile pictures
+      allow write: if isOwner(userId); // Only allow the owner to upload/update their picture
+    }
+
+    // Rules for resumes
+    match /resumes/{userId}/{fileName} {
+      allow read: if isOwner(userId); // Only the owner can read their own resume
+      allow write: if isOwner(userId); // Only the owner can upload/update their resume
+    }
+    
+    // Rules for room images
+    match /rooms/{userId}/{fileName} {
+      allow read: if true; // Allow anyone to read room images
+      allow write: if isOwner(userId); // Only allow room owner to upload/update images
+    }
+  }
+}
