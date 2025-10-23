@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { useUser, useDoc, useFirestore, useFirebaseApp } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { updateProfile } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, Edit, Upload } from 'lucide-react';
+import { Loader2, Edit, Upload, ArrowLeft } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type UserProfile = {
@@ -52,6 +52,7 @@ export default function ProfilePage() {
   const firestore = useFirestore();
   const firebaseApp = useFirebaseApp();
   const { toast } = useToast();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingResume, setUploadingResume] = useState(false);
@@ -127,9 +128,9 @@ export default function ProfilePage() {
           if (error.code) { // Check for Firebase Storage specific error codes
             errorMessage = `Upload Failed: ${error.code}. ${error.message}`;
             if (error.code === 'storage/unauthorized') {
-              errorMessage = 'Permission denied. Check Firebase Storage Security Rules.'; // Specific message for permissions [9, 11, 32]
+              errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
             } else if (error.code === 'storage/quota-exceeded') {
-              errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.'; // For quota issues [9, 34]
+              errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.';
             }
           } else if (error.message) {
             errorMessage = error.message;
@@ -189,9 +190,9 @@ export default function ProfilePage() {
           if (error.code) { // Check for Firebase Storage specific error codes
             errorMessage = `Upload Failed: ${error.code}. ${error.message}`;
              if (error.code === 'storage/unauthorized') {
-              errorMessage = 'Permission denied. Check Firebase Storage Security Rules.'; // Specific message for permissions [9, 11, 32]
+              errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
             } else if (error.code === 'storage/quota-exceeded') {
-              errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.'; // For quota issues [9, 34]
+              errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.';
             }
           } else if (error.message) {
             errorMessage = error.message;
@@ -249,10 +250,17 @@ export default function ProfilePage() {
     <div className="container max-w-2xl py-12">
       <Card>
         <CardHeader>
-          <CardTitle>My Profile</CardTitle>
-          <CardDescription>
-            Manage your personal information and settings.
-          </CardDescription>
+          <div className="flex items-center gap-4 mb-4">
+            <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <CardTitle>My Profile</CardTitle>
+              <CardDescription>
+                Manage your personal information and settings.
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center gap-4 mb-8">
