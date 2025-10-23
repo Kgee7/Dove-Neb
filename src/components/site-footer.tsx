@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import { Icons } from "./icons";
 
@@ -16,7 +17,6 @@ export function SiteFooter() {
             <p className="text-sm text-muted-foreground">
               Connecting dreams with direction.
             </p>
-            <Link href="/logo.svg" download="logo.svg" className="text-sm text-muted-foreground underline hover:text-foreground">Download Logo</Link>
           </div>
           <p className="text-center text-sm text-muted-foreground md:text-left">
             &copy; {new Date().getFullYear()} Dove Jobs, Inc. All rights reserved.
