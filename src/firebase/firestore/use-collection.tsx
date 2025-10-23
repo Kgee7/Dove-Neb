@@ -67,16 +67,7 @@ export function useCollection<T = any>(
         setIsLoading(false);
         setError(null); // Clear previous errors on new data
       },
-      (error: FirestoreError) => {
-        // This check prevents an error when the path is undefined
-        if (!memoizedQuery.path) {
-          console.error("useCollection error: Query path is undefined.", error);
-          setError(new Error("Firestore query path is undefined."));
-          setData(null);
-          setIsLoading(false);
-          return;
-        }
-
+      async (error: FirestoreError) => {
         const contextualError = new FirestorePermissionError({
           operation: 'list',
           path: memoizedQuery.path,
