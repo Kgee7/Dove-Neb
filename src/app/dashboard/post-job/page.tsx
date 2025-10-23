@@ -52,6 +52,8 @@ export default function PostJobPage() {
       companyName: '',
       location: '',
       description: '',
+      salaryMin: undefined,
+      salaryMax: undefined,
     },
   });
 
@@ -186,7 +188,7 @@ export default function PostJobPage() {
                     <FormItem>
                       <FormLabel>Minimum Salary ($)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="70000" {...field} />
+                        <Input type="number" placeholder="70000" {...field} value={field.value ?? ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -199,7 +201,7 @@ export default function PostJobPage() {
                     <FormItem>
                       <FormLabel>Maximum Salary ($)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="120000" {...field} />
+                        <Input type="number" placeholder="120000" {...field} value={field.value ?? ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
