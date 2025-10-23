@@ -188,8 +188,7 @@
           "schema": {
             "$ref": "#/backend/entities/Room"
           },
-          "description": "Top level Rooms collection for searching and listing all rooms.",
-          "publicRead": true
+          "description": "Top level Rooms collection for searching and listing all rooms."
         }
       },
        {

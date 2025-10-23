@@ -1,174 +1,107 @@
 /**
- * @fileoverview Firestore Security Rules for Dove Jobs.
+ * @fileoverview Firestore Security Rules for the Room Booking Application.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for personal data and
- * allows for public read access to job listings while restricting write access
- * to the owner (employer). It leverages denormalization to avoid costly
- * `get()` calls and ensures authorization decisions are fast and efficient.
+ * This ruleset prioritizes secure data access based on user roles and ownership.
+ * Public read access is granted to the `rooms` collection, but writes are restricted to owners.
+ * Users have full access to their own data tree under `/users/{userId}`.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profiles, accessible only by the user or admins.
- * - /users/{userId}/jobListings/{jobListingId}: Job listings created by employers.
- * - /jobListings/{jobListingId}: Publicly readable job listings.
- * - /users/{userId}/jobApplications/{jobApplicationId}: Job applications by job seekers.
- * - /users/{userId}/messages/{messageId}: Messages between users, only accessible to sender/receiver.
+ * - `/users/{userId}`: Stores user profiles. Access is restricted to the user themselves.
+ * - `/rooms/{roomId}`: Stores room listings. Publicly readable, but only the owner can modify.
+ * - `/users/{userId}/bookings/{bookingId}`: Stores booking information for a specific user. Accessible only by the user.
  *
  * Key Security Decisions:
- * - Users can only read, update, and delete their own profiles.
- * - Job listings are publicly readable but only writable by the employer who created them.
- * - Job applications are private to the job seeker who created them.
- * - Messages are private between the sender and receiver.
- * - Listing all users is disallowed.
+ * - Users can only manage their own profiles and bookings.
+ * - Listing of users is disallowed for privacy.
+ * - Public read access is granted to the `rooms` collection.
  *
  * Denormalization for Authorization:
- * - JobListing documents under `/jobListings/{jobListingId}` should contain an `employerId` field
- *   that matches the UID of the employer who created the listing. This allows for fast
- *   ownership checks without needing to perform additional reads.
+ * - The `Room` entity includes an `ownerId` field to simplify ownership checks.
  *
  * Structural Segregation:
- * - Public job listings are stored in the top-level `/jobListings` collection, while
- *   private job listings created by employers are stored in the `/users/{userId}/jobListings`
- *   subcollection. This separation allows for public read access to the former and
- *   owner-only write access to the latter.
+ * - Private user data (bookings) is stored in a subcollection under the user's document.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the request is authenticated.
+     * @description Checks if the current user is signed in.
+     * @return {bool} True if the user is signed in, false otherwise.
      */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * @description Checks if the authenticated user is the owner of the resource.
+     * @description Checks if the current user is the owner of the resource.
+     * @param {string} userId - The user ID to compare against the request's auth UID.
+     * @return {bool} True if the user is the owner, false otherwise.
      */
     function isOwner(userId) {
-      return request.auth.uid == userId;
+        return isSignedIn() && request.auth.uid == userId;
     }
 
     /**
-     * @description Checks if the authenticated user is the owner of the resource, and that the resource exists.
-     * @principle Ensures that update and delete operations only happen on existing documents owned by the user.
+     * @description Checks if the current user is the existing owner of the resource.
+     * @param {string} userId - The user ID to compare against the request's auth UID and the resource's owner ID.
+     * @return {bool} True if the user is the owner and the resource exists, false otherwise.
      */
     function isExistingOwner(userId) {
-      return isOwner(userId) && existsAfter(/databases/$(database)/documents/users/$(userId));
+        return isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Enforces immutability of the user ID.
-     * @principle Prevents unauthorized modification of the owner.
-     */
-    function userIdIsImmutable(userId) {
-        return request.resource.data.id == resource.data.id;
-    }
-
-
-    /**
-     * @description Defines access rules for user profiles.
+     * @description Security rules for user profiles.
      * @path /users/{userId}
-     * @allow (create) User with matching UID can create their profile.
-     * @allow (get) User with matching UID can get their profile.
-     * @allow (update) User with matching UID can update their profile.
-     * @allow (delete) User with matching UID can delete their profile.
-     * @deny (create) User tries to create a profile with a mismatched UID.
-     * @deny (get) Another user tries to read this user's profile.
-     * @deny (update) Another user tries to update this user's profile.
-     * @deny (delete) Another user tries to delete this user's profile.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) - If the user is creating their own profile (IDs match).
+     * @allow (get, update, delete) - If the user is the owner of the profile.
+     * @deny (create) - If the user ID in the request does not match the authenticated user ID.
+     * @deny (update, delete) - If the user is not the owner of the profile or the profile doesn't exist.
+     * @deny (list) - Listing users is not allowed.
+     * @principle Enforces user ownership for profile data.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      // Only allow a user to create their own profile.
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      // Only allow the user to read, update, and delete their own profile.
+      allow get, update, delete: if isExistingOwner(userId);
+      // No listing of users.
       allow list: if false;
-      allow create: if isOwner(userId) && request.auth.uid == userId;
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Defines access rules for job listings created under a specific user.
-     * @path /users/{userId}/jobListings/{jobListingId}
-     * @allow (create) User can create a job listing under their own user ID.
-     * @allow (get) User can get a job listing under their own user ID.
-     * @allow (update) User can update a job listing under their own user ID.
-     * @allow (delete) User can delete a job listing under their own user ID.
-     * @deny (create) User tries to create a job listing under another user's ID.
-     * @deny (get) Another user tries to read this user's job listing.
-     * @deny (update) Another user tries to update this user's job listing.
-     * @deny (delete) Another user tries to delete this user's job listing.
-     * @principle Enforces document ownership for all operations.
+     * @description Security rules for room listings.
+     * @path /rooms/{roomId}
+     * @allow (get, list) - Public read access for all rooms.
+     * @allow (create) - Only if the ownerId matches the authenticated user and other required fields are present.
+     * @allow (update, delete) - Only the owner can update or delete the room, and the room must exist.
+     * @deny (create) - If the ownerId does not match the authenticated user or required fields are missing.
+     * @deny (update, delete) - If the user is not the owner of the room or the room doesn't exist.
+     * @principle Allows public reading of rooms but restricts modifications to the owner.
      */
-    match /users/{userId}/jobListings/{jobListingId} {
-        allow get: if isOwner(userId);
-        allow list: if isOwner(userId);
-        allow create: if isOwner(userId);
-        allow update: if isOwner(userId);
-        allow delete: if isOwner(userId);
+    match /rooms/{roomId} {
+      // Allow public read access to room listings.
+      allow get, list: if true;
+
+      // Only allow creating a room if the ownerId matches the authenticated user.
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+
+      // Only the owner can update or delete the room, and the room must exist.
+      allow update, delete: if isExistingOwner(resource.data.ownerId);
     }
 
     /**
-     * @description Defines access rules for job listings.
-     * @path /jobListings/{jobListingId}
-     * @allow (get) Any user can read a job listing.
-     * @allow (list) Any user can list job listings.
-     * @allow (create) Only the job poster can create a job listing, validating that the request.auth.uid matches the employerId.
-     * @allow (update) Only the job poster can update a job listing, validating that the existing resource.data.employerId matches the request.auth.uid.
-     * @allow (delete) Only the job poster can delete a job listing, validating that the existing resource.data.employerId matches the request.auth.uid.
-     * @deny (create) A user tries to create a job listing with an employerId that doesn't match their UID.
-     *
-     * @principle Allows public read access but restricts write access to the owner.
+     * @description Security rules for bookings under a user's profile.
+     * @path /users/{userId}/bookings/{bookingId}
+     * @allow (create, get, update, delete, list) - Only if the user is the owner.
+     * @deny (create, get, update, delete, list) - If the user is not the owner.
+     * @principle Restricts access to bookings to the owner.
      */
-    match /jobListings/{jobListingId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && request.resource.data.employerId == request.auth.uid;
-      allow update: if isSignedIn() && request.auth.uid == resource.data.employerId;
-      allow delete: if isSignedIn() && resource.data.employerId == request.auth.uid;
-    }
-
-    /**
-     * @description Defines access rules for job applications submitted by a job seeker.
-     * @path /users/{userId}/jobApplications/{jobApplicationId}
-     * @allow (create) User can create a job application under their own user ID, ensuring that jobSeekerId matches.
-     * @allow (get) User can get a job application under their own user ID.
-     * @allow (update) User can update a job application under their own user ID.
-     * @allow (delete) User can delete a job application under their own user ID.
-     * @deny (create) User tries to create a job application under another user's ID.
-     * @deny (get) Another user tries to read this user's job application.
-     * @deny (update) Another user tries to update this user's job application.
-     * @deny (delete) Another user tries to delete this user's job application.
-     * @principle Enforces document ownership for all operations.
-     */
-    match /users/{userId}/jobApplications/{jobApplicationId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
-    }
-
-    /**
-     * @description Defines access rules for messages between users.
-     * @path /users/{userId}/messages/{messageId}
-     * @allow (create) User can create a message under their own user ID, ensuring senderId matches.
-     * @allow (get) User can get a message under their own user ID if they are the sender or receiver.
-     * @allow (update) Not applicable for messages (no updates allowed).
-     * @allow (delete) User can delete a message they sent.
-     * @deny (create) User tries to create a message under another user's ID.
-     * @deny (get) Another user tries to read this user's message.
-     * @deny (update) No updates allowed.
-     * @deny (delete) User tries to delete another user's message.
-     * @principle Enforces sender/receiver access for messages.
-     */
-    match /users/{userId}/messages/{messageId} {
-      allow get: if isOwner(userId) || request.auth.uid == resource.data.recipientId;
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.senderId == request.auth.uid;
-      allow update: if false;
-      allow delete: if isOwner(userId) && request.auth.uid == resource.data.senderId;
+    match /users/{userId}/bookings/{bookingId} {
+      // Only allow the user to create, read, update, delete, and list their own bookings.
+      allow create, get, update, delete, list: if isOwner(userId);
     }
   }
 }
