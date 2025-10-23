@@ -45,7 +45,7 @@ export function useCollection<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
-    // This is the key change: a robust guard clause at the top.
+    // This guard clause prevents the hook from running if the query is not ready.
     if (!memoizedQuery) {
       setData(null);
       setIsLoading(false); // Not loading because there's nothing to fetch
