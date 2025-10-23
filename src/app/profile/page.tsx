@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useDoc, useFirestore, useFirebaseApp, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useDoc, useFirestore, useFirebaseApp } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateProfile } from 'firebase/auth';
@@ -258,7 +258,7 @@ export default function ProfilePage() {
           <div className="flex flex-col items-center gap-4 mb-8">
             <div className="relative group">
                 <Avatar className="h-24 w-24">
-                    <AvatarImage src={photoURL || ''} alt="Profile picture" />
+                    {photoURL && <AvatarImage src={photoURL} alt="Profile picture" />}
                     <AvatarFallback className="text-3xl">
                         {getInitials(userProfile?.firstName, userProfile?.lastName)}
                     </AvatarFallback>

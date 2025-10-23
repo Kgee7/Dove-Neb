@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -115,10 +116,10 @@ export function SiteHeader() {
                   className="relative h-8 w-8 rounded-full"
                 >
                   <Avatar className="h-8 w-8">
-                    <AvatarImage
-                      src={photoURL || ""}
+                    {photoURL && <AvatarImage
+                      src={photoURL}
                       alt={fullName}
-                    />
+                    />}
                     <AvatarFallback>
                       {getInitials(userProfile?.firstName, userProfile?.lastName)}
                     </AvatarFallback>
