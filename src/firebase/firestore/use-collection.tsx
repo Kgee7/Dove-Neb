@@ -68,7 +68,7 @@ export function useCollection<T = any>(
         setError(null); 
       },
       async (error: FirestoreError) => {
-        // Guard clause inside error handler to prevent crash on contextual error creation.
+        // Guard clause inside error handler to prevent a crash when creating a contextual error.
         // This ensures that if the query is invalid when the error is caught, we don't crash.
         if (!memoizedQuery) {
             setError(error);
