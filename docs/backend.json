@@ -1,205 +1,113 @@
-
 {
   "entities": {
     "User": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user of the platform, either a renter or an owner.",
+      "description": "Represents a user of the platform.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the User entity."
-        },
-        "userType": {
-          "type": "string",
-          "description": "The type of user (e.g., renter, owner)."
-        },
-        "firstName": {
-          "type": "string",
-          "description": "The first name of the user."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "The last name of the user."
-        },
-        "email": {
-          "type": "string",
-          "description": "The email address of the user.",
-          "format": "email"
-        },
-        "photoURL": {
-          "type": "string",
-          "description": "URL of the user's profile picture."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the user account was created.",
-          "format": "date-time"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the User." },
+        "userType": { "type": "string", "description": "Type of user (e.g., seeker, employer)." },
+        "firstName": { "type": "string", "description": "The first name of the user." },
+        "lastName": { "type": "string", "description": "The last name of the user." },
+        "email": { "type": "string", "format": "email", "description": "The email address of the user." },
+        "photoURL": { "type": "string", "description": "URL of the user's profile picture." },
+        "resumeURL": { "type": "string", "description": "URL of the user's resume." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of account creation." }
       },
-      "required": [
-        "id",
-        "userType",
-        "firstName",
-        "lastName",
-        "email"
-      ]
+      "required": ["id", "userType", "firstName", "lastName", "email"]
+    },
+    "Job": {
+      "title": "Job",
+      "type": "object",
+      "description": "Represents a job listing on the platform.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the Job." },
+        "employerId": { "type": "string", "description": "Reference to the User (Employer) who posted the job." },
+        "companyName": { "type": "string", "description": "Name of the company hiring." },
+        "title": { "type": "string", "description": "The title of the job." },
+        "description": { "type": "string", "description": "A detailed description of the job." },
+        "location": { "type": "string", "description": "Location of the job." },
+        "type": { "type": "string", "enum": ["Full-time", "Part-time", "Contract", "Internship"], "description": "Type of employment." },
+        "salaryMin": { "type": "number", "description": "Minimum salary for the position." },
+        "salaryMax": { "type": "number", "description": "Maximum salary for the position." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "employerId", "companyName", "title", "description", "location", "type"]
+    },
+    "JobApplication": {
+        "title": "Job Application",
+        "type": "object",
+        "description": "Represents an application submitted by a user for a job.",
+        "properties": {
+            "id": { "type": "string" },
+            "jobId": { "type": "string" },
+            "jobTitle": { "type": "string" },
+            "companyName": { "type": "string" },
+            "seekerId": { "type": "string" },
+            "status": { "type": "string", "enum": ["pending", "reviewed", "rejected", "hired"] },
+            "appliedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "jobId", "jobTitle", "companyName", "seekerId", "status", "appliedAt"]
     },
     "Room": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Room",
       "type": "object",
       "description": "Represents a room listing on the platform.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Room entity."
-        },
-        "ownerId": {
-          "type": "string",
-          "description": "Reference to the User (Owner) who listed the room."
-        },
-        "ownerName": {
-          "type": "string",
-          "description": "The name of the owner who listed the room."
-        },
-        "title": {
-          "type": "string",
-          "description": "The title of the room listing."
-        },
-        "description": {
-          "type": "string",
-          "description": "A detailed description of the room."
-        },
-        "location": {
-          "type": "string",
-          "description": "The city and country where the room is located."
-        },
-        "price": {
-          "type": "number",
-          "description": "The price per night for the room."
-        },
-        "currency": {
-          "type": "string",
-          "description": "The currency of the price (e.g., USD, EUR)."
-        },
-        "currencySymbol": {
-            "type": "string",
-            "description": "The symbol for the currency (e.g., $, €, £)."
-        },
-        "images": {
-            "type": "array",
-            "description": "A list of URLs for the room images.",
-            "items": {
-                "type": "string",
-                "format": "uri"
-            }
-        },
-         "amenities": {
-          "type": "array",
-          "description": "A list of amenities offered with the room.",
-          "items": {
-            "type": "string"
-          }
-        }
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "ownerName": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "location": { "type": "string" },
+        "price": { "type": "number" },
+        "currency": { "type": "string" },
+        "currencySymbol": { "type": "string" },
+        "images": { "type": "array", "items": { "type": "string", "format": "uri" } },
+        "amenities": { "type": "array", "items": { "type": "string" } }
       },
-      "required": [
-        "id",
-        "ownerId",
-        "ownerName",
-        "title",
-        "description",
-        "location",
-        "price",
-        "currency",
-        "currencySymbol",
-        "images"
-      ]
+      "required": ["id", "ownerId", "ownerName", "title", "description", "location", "price", "images"]
     },
-     "Booking": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
+    "Booking": {
       "title": "Booking",
       "type": "object",
       "description": "Represents a booking made by a user for a room.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Booking entity."
-        },
-        "roomId": {
-          "type": "string",
-          "description": "Reference to the Room being booked."
-        },
-        "renterId": {
-          "type": "string",
-          "description": "Reference to the User (Renter) who made the booking."
-        },
-        "checkInDate": {
-          "type": "string",
-          "format": "date"
-        },
-        "checkOutDate": {
-          "type": "string",
-          "format": "date"
-        },
-        "totalPrice": {
-          "type": "number"
-        },
-        "status": {
-            "type": "string",
-            "enum": ["pending", "confirmed", "cancelled"]
-        }
+        "id": { "type": "string" },
+        "roomId": { "type": "string" },
+        "renterId": { "type": "string" },
+        "checkInDate": { "type": "string", "format": "date" },
+        "checkOutDate": { "type": "string", "format": "date" },
+        "totalPrice": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"] }
       },
-      "required": [
-        "id",
-        "roomId",
-        "renterId",
-        "checkInDate",
-        "checkOutDate",
-        "totalPrice",
-        "status"
-      ]
+      "required": ["id", "roomId", "renterId", "checkInDate", "checkOutDate", "totalPrice", "status"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous",
-      "google.com"
-    ]
+    "providers": ["password", "anonymous", "google.com"]
   },
   "firestore": {
     "structure": [
       {
         "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user profiles."
-        }
+        "definition": { "schema": { "$ref": "#/entities/User" }, "description": "Stores user profiles." }
+      },
+      {
+        "path": "/jobs/{jobId}",
+        "definition": { "schema": { "$ref": "#/entities/Job" }, "description": "Top-level collection for all job listings.", "publicRead": true }
+      },
+      {
+        "path": "/users/{userId}/applications/{applicationId}",
+        "definition": { "schema": { "$ref": "#/entities/JobApplication" }, "description": "Subcollection for a user's job applications." }
       },
       {
         "path": "/rooms/{roomId}",
-        "definition": {
-          "entityName": "Room",
-          "schema": {
-            "$ref": "#/backend/entities/Room"
-          },
-          "description": "Top level Rooms collection for searching and listing all rooms."
-        }
+        "definition": { "schema": { "$ref": "#/entities/Room" }, "description": "Top-level collection for all room listings.", "publicRead": true }
       },
-       {
+      {
         "path": "/users/{userId}/bookings/{bookingId}",
-        "definition": {
-          "entityName": "Booking",
-          "schema": {
-            "$ref": "#/backend/entities/Booking"
-          },
-          "description": "Stores bookings made by users."
-        }
+        "definition": { "schema": { "$ref": "#/entities/Booking" }, "description": "Subcollection for a user's room bookings." }
       }
     ]
   }

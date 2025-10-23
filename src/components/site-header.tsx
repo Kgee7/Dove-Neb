@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -24,6 +23,7 @@ import { LogOut, User as UserIcon, Loader2 } from "lucide-react";
 type UserProfile = {
   firstName: string;
   lastName: string;
+  photoURL?: string;
 };
 
 export function SiteHeader() {
@@ -68,18 +68,21 @@ export function SiteHeader() {
   };
 
   const navLinks = [
+    { href: "/jobs", label: "Jobs" },
     { href: "/rooms", label: "Rooms" },
     { href: "/dashboard", label: "Dashboard", protected: true },
   ];
 
   const fullName = userProfile ? `${userProfile.firstName} ${userProfile.lastName}`.trim() : user?.displayName || "My Account";
+  const photoURL = user?.photoURL || userProfile?.photoURL;
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 max-w-screen-2xl items-center">
         <Link href="/" className="mr-6 flex items-center space-x-2">
           <Icons.logo className="h-6 w-6 text-primary" />
-          <span className="font-bold sm:inline-block">Dove Rooms</span>
+          <span className="font-bold sm:inline-block">Dove Jobs</span>
         </Link>
         <nav className="hidden flex-1 items-center gap-4 text-sm lg:flex">
           {navLinks.map((link) => {
@@ -90,7 +93,7 @@ export function SiteHeader() {
                 href={link.href}
                 className={cn(
                   "transition-colors hover:text-foreground/80",
-                  pathname === link.href
+                  pathname?.startsWith(link.href)
                     ? "text-foreground"
                     : "text-foreground/60"
                 )}
@@ -112,7 +115,7 @@ export function SiteHeader() {
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage
-                      src={user.photoURL || ""}
+                      src={photoURL || ""}
                       alt={fullName}
                     />
                     <AvatarFallback>
@@ -133,6 +136,10 @@ export function SiteHeader() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                 <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+                  <UserIcon className="mr-2 h-4 w-4" />
+                  <span>Dashboard</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push("/profile")}>
                   <UserIcon className="mr-2 h-4 w-4" />
                   <span>Profile</span>
@@ -146,9 +153,14 @@ export function SiteHeader() {
             </DropdownMenu>
           ) : (
             <>
-               <Link href="/signup">
+               <Link href="/dashboard/list-room">
                 <Button className="hidden sm:inline-flex" variant="outline">
                     List your space
+                </Button>
+               </Link>
+                 <Link href="/dashboard/post-job">
+                <Button className="hidden sm:inline-flex" variant="outline">
+                    Post a Job
                 </Button>
                </Link>
               <Link

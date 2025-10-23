@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,15 +26,16 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, Edit } from 'lucide-react';
+import { Loader2, Edit, Upload } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type UserProfile = {
-    userType: 'renter' | 'owner';
+    userType: 'seeker' | 'employer' | 'renter' | 'owner';
     firstName: string;
-    lastName: string;
+    lastName:string;
     email: string;
     photoURL?: string;
+    resumeURL?: string;
 };
 
 const profileSchema = z.object({
@@ -44,14 +44,16 @@ const profileSchema = z.object({
 });
 
 export default function ProfilePage() {
-  const { user, isLoading: isUserLoading } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const firebaseApp = useFirebaseApp();
   const { toast } = useToast();
-  const [loading, setLoading] = React.useState(false);
-  const [uploading, setUploading] = React.useState(false);
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadingResume, setUploadingResume] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
 
   const userDocRef = useMemo(() => user && firestore ? doc(firestore, 'users', user.uid) : null, [user, firestore]);
 
@@ -136,6 +138,66 @@ export default function ProfilePage() {
       setUploading(false);
     }
   };
+  
+  const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user || !userDocRef || !firebaseApp) return;
+
+    const allowedResumeTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedResumeTypes.includes(file.type)) {
+        toast({
+            variant: 'destructive',
+            title: 'Invalid File Type',
+            description: 'Resume must be a PDF or Word document (DOC, DOCX).',
+        });
+        return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+            variant: 'destructive',
+            title: 'File Too Large',
+            description: 'Resume file must be less than 5MB.',
+        });
+        return;
+    }
+
+    setUploadingResume(true);
+
+    try {
+      const storage = getStorage(firebaseApp);
+      const storageRef = ref(storage, `resumes/${user.uid}/${file.name}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      await setDoc(userDocRef, { resumeURL: downloadURL }, { merge: true });
+
+      toast({
+        title: 'Resume Uploaded',
+        description: 'Your resume has been saved successfully.',
+      });
+    } catch (error: any) {
+      console.error('Error uploading resume:', error);
+      let errorMessage = 'Could not upload your resume.';
+      if (error.code) {
+        errorMessage = `Upload Failed: ${error.code}. ${error.message}`;
+         if (error.code === 'storage/unauthorized') {
+          errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
+        } else if (error.code === 'storage/quota-exceeded') {
+          errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.';
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      toast({
+        variant: 'destructive',
+        title: 'Upload Failed',
+        description: errorMessage,
+      });
+    } finally {
+      setUploadingResume(false);
+    }
+  };
 
 
   async function onSubmit(values: z.infer<typeof profileSchema>) {
@@ -173,20 +235,22 @@ export default function ProfilePage() {
     );
   }
 
+  const photoURL = user?.photoURL || userProfile?.photoURL;
+
   return (
     <div className="container max-w-2xl py-12">
       <Card>
         <CardHeader>
           <CardTitle>My Profile</CardTitle>
           <CardDescription>
-            Manage your personal information.
+            Manage your personal information and settings.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center gap-4 mb-8">
             <div className="relative group">
                 <Avatar className="h-24 w-24">
-                    <AvatarImage src={user?.photoURL || userProfile?.photoURL || ''} alt="Profile picture" />
+                    <AvatarImage src={photoURL || ''} alt="Profile picture" />
                     <AvatarFallback className="text-3xl">
                         {getInitials(userProfile?.firstName, userProfile?.lastName)}
                     </AvatarFallback>
@@ -250,8 +314,38 @@ export default function ProfilePage() {
                     <FormControl>
                         <Input value={userProfile?.email || ''} disabled />
                     </FormControl>
-                    <FormMessage />
                 </FormItem>
+                
+                {userProfile?.userType === 'seeker' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className='text-lg'>Resume</CardTitle>
+                            <CardDescription>Your resume is used for job applications.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center gap-4">
+                                {userProfile.resumeURL ? (
+                                    <a href={userProfile.resumeURL} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                                        View Current Resume
+                                    </a>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">No resume uploaded.</p>
+                                )}
+                                <Button onClick={() => resumeInputRef.current?.click()} disabled={uploadingResume}>
+                                    {uploadingResume ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                                    {userProfile.resumeURL ? 'Replace Resume' : 'Upload Resume'}
+                                </Button>
+                            </div>
+                             <input
+                                type="file"
+                                ref={resumeInputRef}
+                                onChange={handleResumeFileChange}
+                                className="hidden"
+                                accept=".pdf,.doc,.docx"
+                            />
+                        </CardContent>
+                    </Card>
+                )}
               
               <div className="flex justify-end">
                 <Button type="submit" className="bg-accent hover:bg-accent/90" disabled={loading || uploading}>

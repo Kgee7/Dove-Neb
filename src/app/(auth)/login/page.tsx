@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -6,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useAuth, useUser, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from "@/firebase";
+import { useAuth, useUser, GoogleAuthProvider, signInWithPopup } from "@/firebase";
 import { initiateEmailSignIn } from "@/firebase/non-blocking-login";
 import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
@@ -32,7 +31,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import React from "react";
-import { firebaseConfig } from "@/firebase/config";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
@@ -126,7 +124,7 @@ export default function LoginPage() {
         const [firstName, ...lastName] = (user.displayName || "").split(" ");
         const userData = {
           id: user.uid,
-          userType: "renter",
+          userType: "seeker", // Default to seeker for google sign in
           firstName: firstName || "",
           lastName: lastName.join(" ") || "",
           email: user.email,
@@ -167,7 +165,7 @@ export default function LoginPage() {
       <CardHeader className="p-0 mb-8 text-center">
         <CardTitle className="text-2xl">Welcome Back</CardTitle>
         <CardDescription>
-          Sign in to access your dashboard and bookings.
+          Sign in to access your dashboard.
         </CardDescription>
       </CardHeader>
       <Form {...form}>

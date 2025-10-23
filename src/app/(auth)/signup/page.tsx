@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -28,7 +27,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2 } from "lucide-react";
 import React from "react";
@@ -37,7 +35,7 @@ const formSchema = z.object({
   fullName: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
-  userType: z.enum(["renter", "owner"], {
+  userType: z.enum(["seeker", "employer"], {
     required_error: "Please select an account type.",
   }),
 });
@@ -56,7 +54,7 @@ export default function SignupPage() {
       fullName: "",
       email: "",
       password: "",
-      userType: "renter",
+      userType: "seeker",
     },
   });
 
@@ -68,6 +66,11 @@ export default function SignupPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
+    if (!firestore) {
+        console.error("Firestore not available");
+        setLoading(false);
+        return;
+    }
     try {
       const userCredential = await initiateEmailSignUp(auth, values.email, values.password);
       
@@ -114,7 +117,7 @@ export default function SignupPage() {
       <CardHeader className="p-0 mb-8 text-center">
         <CardTitle className="text-2xl">Create an Account</CardTitle>
         <CardDescription>
-          Join to find or list your perfect space.
+          Join to find jobs or list your space.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -125,7 +128,7 @@ export default function SignupPage() {
               name="userType"
               render={({ field }) => (
                 <FormItem className="space-y-2">
-                  <Label>I want to...</Label>
+                  <FormLabel>I am a...</FormLabel>
                    <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
@@ -134,24 +137,24 @@ export default function SignupPage() {
                     >
                       <FormItem>
                         <FormControl>
-                           <RadioGroupItem value="renter" id="renter" className="peer sr-only" />
+                           <RadioGroupItem value="seeker" id="seeker" className="peer sr-only" />
                         </FormControl>
                         <Label
-                          htmlFor="renter"
+                          htmlFor="seeker"
                           className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
                         >
-                          Rent a Room
+                          Job Seeker
                         </Label>
                       </FormItem>
                       <FormItem>
                          <FormControl>
-                           <RadioGroupItem value="owner" id="owner" className="peer sr-only" />
+                           <RadioGroupItem value="employer" id="employer" className="peer sr-only" />
                          </FormControl>
                          <Label
-                          htmlFor="owner"
+                          htmlFor="employer"
                           className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
                         >
-                          List my Room
+                          Employer
                         </Label>
                       </FormItem>
                     </RadioGroup>
@@ -166,7 +169,7 @@ export default function SignupPage() {
               name="fullName"
               render={({ field }) => (
                 <FormItem>
-                  <Label>Full Name</Label>
+                  <FormLabel>Full Name</FormLabel>
                   <FormControl>
                     <Input placeholder="John Doe" {...field} />
                   </FormControl>
@@ -179,7 +182,7 @@ export default function SignupPage() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <Label>Email</Label>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input placeholder="m@example.com" {...field} />
                   </FormControl>
@@ -192,7 +195,7 @@ export default function SignupPage() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <Label>Password</Label>
+                  <FormLabel>Password</FormLabel>
                   <FormControl>
                     <Input type="password" {...field} />
                   </FormControl>

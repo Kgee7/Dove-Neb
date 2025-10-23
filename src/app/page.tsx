@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from "next/image";
@@ -7,16 +6,15 @@ import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
 import {
   ArrowRight,
-  BedDouble,
+  Briefcase,
+  Building2,
   Home,
   Search,
-  Users,
   MapPin,
-  Sparkles,
-  Loader2,
+  BedDouble,
 } from "lucide-react";
 import { useCollection, useFirestore } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, limit } from 'firebase/firestore';
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,8 +27,11 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Room } from "@/lib/data";
+import { Job } from "@/lib/job-data";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { cn } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 export default function HomePage() {
   const heroImage = PlaceHolderImages.find(
@@ -40,28 +41,45 @@ export default function HomePage() {
   const firestore = useFirestore();
   const router = useRouter();
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [locationQuery, setLocationQuery] = useState('');
+  const [jobSearchQuery, setJobSearchQuery] = useState('');
+  const [jobLocationQuery, setJobLocationQuery] = useState('');
+  const [roomSearchQuery, setRoomSearchQuery] = useState('');
+  const [roomLocationQuery, setRoomLocationQuery] = useState('');
 
   const roomsQuery = useMemo(() => {
     if (!firestore) return null;
-    return collection(firestore, 'rooms');
+    return query(collection(firestore, 'rooms'), limit(6));
   }, [firestore]);
   
-  const { data: rooms, isLoading } = useCollection<Room>(roomsQuery);
+  const { data: rooms, isLoading: roomsLoading } = useCollection<Room>(roomsQuery);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const jobsQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'jobs'), limit(6));
+  }, [firestore]);
+
+  const { data: jobs, isLoading: jobsLoading } = useCollection<Job>(jobsQuery);
+
+  const handleJobSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (searchQuery) params.set('q', searchQuery);
-    if (locationQuery) params.set('loc', locationQuery);
+    if (jobSearchQuery) params.set('q', jobSearchQuery);
+    if (jobLocationQuery) params.set('loc', jobLocationQuery);
+    router.push(`/jobs?${params.toString()}`);
+  };
+
+  const handleRoomSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (roomSearchQuery) params.set('q', roomSearchQuery);
+    if (roomLocationQuery) params.set('loc', roomLocationQuery);
     router.push(`/rooms?${params.toString()}`);
   };
 
   return (
     <div className="flex-1">
       {/* Hero Section */}
-      <section className="relative h-[60vh] min-h-[500px] w-full">
+      <section className="relative h-[70vh] min-h-[550px] w-full">
         {heroImage && (
           <Image
             src={heroImage.imageUrl}
@@ -76,82 +94,139 @@ export default function HomePage() {
         <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
           <div className="container max-w-4xl">
             <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl font-headline">
-              Find Your Next Perfect Stay
+              Where Opportunities Take Flight
             </h1>
             <p className="mt-4 text-lg text-foreground/90 md:text-xl">
-              Discover unique rooms and experiences, curated for you.
+              Find your dream job and the perfect place to stay.
             </p>
             <Card className="mx-auto mt-8 max-w-2xl shadow-lg">
-              <CardContent className="p-4">
-                <form className="flex flex-col gap-4 sm:flex-row" onSubmit={handleSearch}>
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      placeholder="Search destinations"
-                      className="pl-10"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                  <div className="relative flex-1">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <Input 
-                      placeholder="Location" 
-                      className="pl-10"
-                      value={locationQuery}
-                      onChange={(e) => setLocationQuery(e.target.value)}
-                    />
-                  </div>
-                  <Button type="submit" className="bg-accent hover:bg-accent/90">
-                    Search
-                  </Button>
-                </form>
-              </CardContent>
+               <Tabs defaultValue="jobs" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="jobs">Find a Job</TabsTrigger>
+                  <TabsTrigger value="rooms">Find a Room</TabsTrigger>
+                </TabsList>
+                <TabsContent value="jobs">
+                  <CardContent className="p-4">
+                    <form className="flex flex-col gap-4 sm:flex-row" onSubmit={handleJobSearch}>
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Job title, keywords, or company"
+                          className="pl-10"
+                          value={jobSearchQuery}
+                          onChange={(e) => setJobSearchQuery(e.target.value)}
+                        />
+                      </div>
+                      <div className="relative flex-1">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          placeholder="Location" 
+                          className="pl-10"
+                          value={jobLocationQuery}
+                          onChange={(e) => setJobLocationQuery(e.target.value)}
+                        />
+                      </div>
+                      <Button type="submit" className="bg-accent hover:bg-accent/90">
+                        Search Jobs
+                      </Button>
+                    </form>
+                  </CardContent>
+                </TabsContent>
+                <TabsContent value="rooms">
+                   <CardContent className="p-4">
+                    <form className="flex flex-col gap-4 sm:flex-row" onSubmit={handleRoomSearch}>
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Destination, e.g., 'downtown'"
+                          className="pl-10"
+                          value={roomSearchQuery}
+                          onChange={(e) => setRoomSearchQuery(e.target.value)}
+                        />
+                      </div>
+                      <div className="relative flex-1">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          placeholder="Location" 
+                          className="pl-10"
+                          value={roomLocationQuery}
+                          onChange={(e) => setRoomLocationQuery(e.target.value)}
+                        />
+                      </div>
+                      <Button type="submit" className="bg-accent hover:bg-accent/90">
+                        Search Rooms
+                      </Button>
+                    </form>
+                  </CardContent>
+                </TabsContent>
+              </Tabs>
             </Card>
           </div>
         </div>
       </section>
-
-      {/* How It Works Section */}
-      <section className="container py-16 sm:py-24">
-        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2">
-          <Card className="transform transition-transform duration-300 hover:scale-105 hover:shadow-xl">
-            <CardHeader className="flex flex-row items-center gap-4">
-              <div className="rounded-full bg-primary/10 p-3">
-                <Users className="h-8 w-8 text-primary" />
-              </div>
-              <div>
-                <CardTitle>For Renters</CardTitle>
-                <CardDescription>Find your home away from home.</CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Browse through thousands of unique listings to find the perfect space for your next trip. Securely book and communicate with hosts.
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="transform transition-transform duration-300 hover:scale-105 hover:shadow-xl">
-            <CardHeader className="flex flex-row items-center gap-4">
-              <div className="rounded-full bg-accent/10 p-3">
-                <Home className="h-8 w-8 text-accent" />
-              </div>
-              <div>
-                <CardTitle>For Owners</CardTitle>
-                <CardDescription>Share your space, earn income.</CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                List your room, manage bookings, and connect with travelers from around the world. Our platform makes hosting simple and rewarding.
-              </p>
-            </CardContent>
-          </Card>
+      
+       {/* Featured Jobs Section */}
+      <section className="bg-secondary/50 py-16 sm:py-24">
+        <div className="container">
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-bold tracking-tight md:text-4xl font-headline">
+              Featured Jobs
+            </h2>
+            <p className="mt-2 text-lg text-muted-foreground">
+              Explore some of our most popular and recently added jobs.
+            </p>
+          </div>
+          {jobsLoading ? (
+             <div className="flex justify-center items-center h-40">...loading</div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {jobs?.map((job) => (
+                <Card
+                  key={job.id}
+                  className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-2xl"
+                >
+                  <CardHeader>
+                     <CardTitle className="text-lg">
+                        <Link href={`/jobs/${job.id}`} className="hover:underline">
+                          {job.title}
+                        </Link>
+                    </CardTitle>
+                     <p className="text-sm text-muted-foreground flex items-center">
+                        <Building2 className="h-4 w-4 mr-2" />
+                        {job.companyName}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="flex flex-1 flex-col">
+                    <p className="text-sm text-muted-foreground mt-1 flex items-center">
+                        <MapPin className="h-4 w-4 mr-2" />
+                        {job.location}
+                    </p>
+                    <div className="mt-4 flex-grow" />
+                     <div className="flex justify-between items-center mt-2">
+                        <Badge variant="outline">{job.type}</Badge>
+                        <p className="text-lg font-semibold">
+                            ${job.salaryMin/1000}k - ${job.salaryMax/1000}k
+                        </p>
+                     </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+          <div className="mt-12 text-center">
+            <Link
+              href="/jobs"
+              className={cn(buttonVariants({ size: "lg" }))}
+            >
+              Explore All Jobs
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* Featured Rooms Section */}
-      <section className="bg-secondary/50 py-16 sm:py-24">
+      <section className="py-16 sm:py-24">
         <div className="container">
           <div className="mb-12 text-center">
             <h2 className="text-3xl font-bold tracking-tight md:text-4xl font-headline">
@@ -161,13 +236,11 @@ export default function HomePage() {
               Explore some of our most popular and highly-rated rooms.
             </p>
           </div>
-          {isLoading ? (
-             <div className="flex justify-center items-center h-40">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-             </div>
+          {roomsLoading ? (
+             <div className="flex justify-center items-center h-40">...loading</div>
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {rooms?.slice(0, 6).map((room) => (
+              {rooms?.map((room) => (
                 <Card
                   key={room.id}
                   className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-2xl"

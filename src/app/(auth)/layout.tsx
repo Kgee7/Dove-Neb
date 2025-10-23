@@ -1,4 +1,3 @@
-
 import Image from "next/image";
 import Link from "next/link";
 import { Icons } from "@/components/icons";
@@ -21,7 +20,7 @@ export default function AuthLayout({
             className="mb-8 flex items-center justify-center gap-2 text-2xl font-bold text-foreground"
           >
             <Icons.logo className="h-7 w-7 text-primary" />
-            <span>Dove Rooms</span>
+            <span>Dove Jobs</span>
           </Link>
           {children}
         </div>
@@ -41,10 +40,10 @@ export default function AuthLayout({
         <div className="relative z-10 flex h-full flex-col justify-end p-10 text-white">
           <div className="max-w-md rounded-lg bg-black/40 p-6 backdrop-blur-sm">
             <h2 className="text-3xl font-bold">
-              Find your next perfect stay.
+              Find your next opportunity.
             </h2>
             <p className="mt-4 text-lg text-zinc-200">
-              Join thousands of users finding unique rooms and experiences.
+              Join thousands of users finding jobs, rooms, and new connections.
             </p>
           </div>
         </div>
