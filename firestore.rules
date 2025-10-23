@@ -2,133 +2,175 @@
  * @fileoverview Firestore Security Rules for Prototyping.
  *
  * Core Philosophy:
- * This ruleset prioritizes secure authorization while relaxing data validation to accelerate prototyping.
- * It focuses on who can access what, not necessarily the precise shape of the data.
+ * This ruleset prioritizes strict user-ownership and public-read access where appropriate,
+ * while maintaining flexibility for rapid data model iteration.
+ * All write operations are guarded by authorization checks.
  *
  * Data Structure:
- * - Users: /users/{userId} - Stores individual user profiles.
- * - Jobs: /jobs/{jobId} - Stores job listings. Publicly readable, but owner-only writes.
- * - Job Applications: /users/{userId}/applications/{applicationId} - Stores job applications submitted by a user.
- * - Rooms: /rooms/{roomId} - Stores room listings. Publicly readable, but owner-only writes.
- * - Bookings: /users/{userId}/bookings/{bookingId} - Stores bookings made by a user.
+ * - /users/{userId}: Stores user profiles, accessible only by the owning user.
+ * - /jobs/{jobId}: Publicly readable job listings, writable only by the job poster.
+ * - /users/{userId}/applications/{applicationId}: Job applications submitted by a user, accessible only by the user.
+ * - /rooms/{roomId}: Publicly readable room listings, writable only by the room owner.
+ * - /users/{userId}/bookings/{bookingId}: Room bookings made by a user, accessible only by the user.
  *
  * Key Security Decisions:
- * - Users can only read/write their own data under /users/{userId}.
- * - Job listings and rooms are publicly readable but writable only by the owner.
- * - Listing of users is disallowed.
+ * - User listing is disallowed.
+ * - Public read access is granted to the `jobs` and `rooms` collections.
+ * - Write operations require authentication.
  *
  * Denormalization for Authorization:
- * - Jobs and Rooms will rely on an `employerId` and `ownerId` field, respectively, to enforce owner-only writes.
- *   These fields must match `request.auth.uid` on creation and remain immutable on updates.
- *
- * Structural Segregation:
- * - Draft vs. published content is not explicitly handled, but the public read with owner-only write pattern on
- *   top-level collections supports this implicitly (e.g., a user can create a job listing and publish it when ready).
+ * - The rules assume that documents in the `jobs` and `rooms` collections contain fields like `employerId` and `ownerId` respectively,
+ *   which are used to enforce ownership during write operations.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the user is signed in.
-     * @principle Verified Identity: All authorization decisions must rely on request.auth.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Checks if the authenticated user is the owner of the resource.
-     * @param {string} userId The user ID to compare against the request's auth UID.
-     * @principle Ownership: Restricts access to resources based on user ownership.
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /**
-     * @description Checks if the authenticated user is the existing owner of the resource.
-     *              Combines the ownership check with the existence check.
-     * @param {string} userId The user ID to compare against the request's auth UID.
-     * @principle Ownership: Restricts access to resources based on user ownership.
-     * @principle Robustness: Verifies the document exists before allowing updates or deletes.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    /**
-     * @description Rule for the /users/{userId} collection.
+     * @description Controls access to user profiles.
      * @path /users/{userId}
-     * @allow (create) - Authenticated user with matching UID can create their own user document.
-     * @allow (get, update, delete) - Authenticated user with matching UID can read/write their own user document.
-     * @deny (create) - Unauthenticated user cannot create user documents.
-     * @deny (get, update, delete) - Another authenticated user cannot read/write a different user's document.
-     * @principle Ownership: Enforces strict user-ownership for all operations.
-     * @principle Self-Creation: Allows a user to create their own document with matching UID.
+     * @allow (get) Authenticated user can read their own profile.
+     * @allow (create) Authenticated user can create their own profile.
+     * @allow (update) Authenticated user can update their own profile.
+     * @allow (delete) Authenticated user can delete their own profile.
+     * @deny (get) Authenticated user cannot read other user profiles.
+     * @deny (create) Authenticated user cannot create profiles for other users.
+     * @deny (update) Authenticated user cannot update other user profiles.
+     * @deny (delete) Authenticated user cannot delete other user profiles.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
-      allow get, update, delete: if isExistingOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
       allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rule for the /jobs/{jobId} collection.
+     * @description Controls access to job listings.
      * @path /jobs/{jobId}
-     * @allow (get, list) - Any user (signed in or not) can read job listings.
-     * @allow (create) - Authenticated user can create a job listing if they are the employer.
-     * @allow (update, delete) - Only the employer who created the job can modify or delete it.
-     * @deny (create) - Unauthenticated users cannot create job listings.
-     * @deny (update, delete) - Other authenticated users cannot modify or delete job listings.
-     * @principle Public Read with Owner-Only Writes: Allows public access for reading, but restricts writes to the owner.
+     * @allow (get, list) Anyone can read job listings.
+     * @allow (create) Authenticated user can create a job listing with their ID as the employerId.
+     * @allow (update) Authenticated user can update their job listing.
+     * @allow (delete) Authenticated user can delete their job listing.
+     * @deny (create) Unauthenticated user cannot create a job listing.
+     * @deny (update) Authenticated user cannot update other users' job listings.
+     * @deny (delete) Authenticated user cannot delete other users' job listings.
+     * @principle Allows public reads and restricts writes to the job poster.
      */
     match /jobs/{jobId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(employerId) {
+        return isSignedIn() && request.auth.uid == employerId;
+      }
+
+      function isExistingOwner(employerId) {
+        return isOwner(employerId) && resource != null;
+      }
+
       allow get, list: if true;
       allow create: if isSignedIn() && request.resource.data.employerId == request.auth.uid;
-      allow update, delete: if isExistingOwner(resource.data.employerId);
+      allow update: if isExistingOwner(resource.data.employerId);
+      allow delete: if isExistingOwner(resource.data.employerId);
     }
 
     /**
-     * @description Rule for the /users/{userId}/applications/{applicationId} collection.
+     * @description Controls access to job applications.
      * @path /users/{userId}/applications/{applicationId}
-     * @allow (get, list, create, update, delete) - Authenticated user with matching UID can manage their own job applications.
-     * @deny (create) - Unauthenticated user cannot create job application documents.
-     * @deny (get, update, delete) - Another authenticated user cannot manage a different user's job application documents.
-     * @principle Ownership: Enforces strict user-ownership for all operations.
+     * @allow (get) Authenticated user can read their own job applications.
+     * @allow (create) Authenticated user can create a job application.
+     * @allow (update) Authenticated user can update their job application.
+     * @allow (delete) Authenticated user can delete their job application.
+     * @deny (get) Authenticated user cannot read other users' job applications.
+     * @deny (create) Authenticated user cannot create job applications for other users.
+     * @deny (update) Authenticated user cannot update other users' job applications.
+     * @deny (delete) Authenticated user cannot delete other users' job applications.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/applications/{applicationId} {
-      allow get, list, update, delete: if isExistingOwner(userId);
-      allow create: if isOwner(userId);
-    }
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
 
-     /**
-      * @description Rule for the /rooms/{roomId} collection.
-      * @path /rooms/{roomId}
-      * @allow (get, list) - Any user can read room listings.
-      * @allow (create) - Authenticated user can create a room listing if they are the owner.
-      * @allow (update, delete) - Only the owner who created the room can modify or delete it.
-      * @deny (create) - Unauthenticated users cannot create room listings.
-      * @deny (update, delete) - Other authenticated users cannot modify or delete room listings.
-      * @principle Public Read with Owner-Only Writes: Allows public access for reading, but restricts writes to the owner.
-      */
-    match /rooms/{roomId} {
-      allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if isExistingOwner(resource.data.ownerId);
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.seekerId == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.seekerId == resource.data.seekerId;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rule for the /users/{userId}/bookings/{bookingId} collection.
+     * @description Controls access to room listings.
+     * @path /rooms/{roomId}
+     * @allow (get, list) Anyone can read room listings.
+     * @allow (create) Authenticated user can create a room listing with their ID as the ownerId.
+     * @allow (update) Authenticated user can update their room listing.
+     * @allow (delete) Authenticated user can delete their room listing.
+     * @deny (create) Unauthenticated user cannot create a room listing.
+     * @deny (update) Authenticated user cannot update other users' room listings.
+     * @deny (delete) Authenticated user cannot delete other users' room listings.
+     */
+    match /rooms/{roomId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(ownerId) {
+        return isSignedIn() && request.auth.uid == ownerId;
+      }
+
+      function isExistingOwner(ownerId) {
+        return isOwner(ownerId) && resource != null;
+      }
+
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isExistingOwner(resource.data.ownerId);
+      allow delete: if isExistingOwner(resource.data.ownerId);
+    }
+
+    /**
+     * @description Controls access to room bookings.
      * @path /users/{userId}/bookings/{bookingId}
-     * @allow (get, list, create, update, delete) - Authenticated user with matching UID can manage their own bookings.
-     * @deny (create) - Unauthenticated user cannot create booking documents.
-     * @deny (get, update, delete) - Another authenticated user cannot manage a different user's booking documents.
-     * @principle Ownership: Enforces strict user-ownership for all operations.
+     * @allow (get) Authenticated user can read their own room bookings.
+     * @allow (create) Authenticated user can create a room booking.
+     * @allow (update) Authenticated user can update their room booking.
+     * @allow (delete) Authenticated user can delete their room booking.
+     * @deny (get) Authenticated user cannot read other users' room bookings.
+     * @deny (create) Authenticated user cannot create room bookings for other users.
+     * @deny (update) Authenticated user cannot update other users' room bookings.
+     * @deny (delete) Authenticated user cannot delete other users' room bookings.
      */
     match /users/{userId}/bookings/{bookingId} {
-      allow get, list, update, delete: if isExistingOwner(userId);
-      allow create: if isOwner(userId);
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.renterId == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.renterId == resource.data.renterId;
+      allow delete: if isExistingOwner(userId);
     }
   }
 }
