@@ -26,7 +26,9 @@ export default function JobsListingPage() {
     return query(collection(firestore, 'jobs'));
   }, [firestore]);
   
-  const { data: jobs, isLoading } = useCollection<Job>(jobsQuery);
+  const { data: jobs, isLoading } = useCollection<Job>(
+    jobsQuery
+  );
 
   const filteredJobs = useMemo(() => {
     if (!jobs) return [];
@@ -103,7 +105,7 @@ export default function JobsListingPage() {
             filteredJobs.map((job) => (
               <Card
                 key={job.id}
-                className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg"
+                className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-2xl"
               >
                 <CardHeader>
                     <CardTitle className="text-xl">

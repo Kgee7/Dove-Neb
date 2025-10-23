@@ -51,14 +51,18 @@ export default function HomePage() {
     return query(collection(firestore, 'rooms'), limit(6));
   }, [firestore]);
   
-  const { data: rooms, isLoading: roomsLoading } = useCollection<Room>(roomsQuery);
+  const { data: rooms, isLoading: roomsLoading } = useCollection<Room>(
+    roomsQuery
+  );
 
   const jobsQuery = useMemo(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'jobs'), limit(6));
   }, [firestore]);
 
-  const { data: jobs, isLoading: jobsLoading } = useCollection<Job>(jobsQuery);
+  const { data: jobs, isLoading: jobsLoading } = useCollection<Job>(
+    jobsQuery
+  );
 
   const handleJobSearch = (e: React.FormEvent) => {
     e.preventDefault();

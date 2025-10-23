@@ -45,12 +45,11 @@ export function useCollection<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
-    // This guard clause prevents the hook from running if the query is not ready.
     if (!memoizedQuery) {
       setData(null);
-      setIsLoading(false); // Not loading because there's nothing to fetch
+      setIsLoading(false);
       setError(null);
-      return; // Stop execution if the query is not ready
+      return;
     }
 
     setIsLoading(true);
@@ -65,9 +64,16 @@ export function useCollection<T = any>(
         }));
         setData(docs);
         setIsLoading(false);
-        setError(null); // Clear previous errors on new data
+        setError(null); 
       },
       async (error: FirestoreError) => {
+        // Add a guard to ensure memoizedQuery is still valid inside the error callback
+        if (!memoizedQuery) {
+            setError(error);
+            setData(null);
+            setIsLoading(false);
+            return;
+        }
         const contextualError = new FirestorePermissionError({
           operation: 'list',
           path: memoizedQuery.path,
@@ -77,13 +83,12 @@ export function useCollection<T = any>(
         setData(null);
         setIsLoading(false);
 
-        // trigger global error propagation
         errorEmitter.emit('permission-error', contextualError);
       }
     );
 
     return () => unsubscribe();
-  }, [memoizedQuery]); // Re-run if the memoizedQuery changes
+  }, [memoizedQuery]);
 
   return { data, isLoading, error };
 }

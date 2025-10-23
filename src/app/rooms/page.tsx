@@ -28,7 +28,9 @@ export default function RoomsListingPage() {
     return collection(firestore, 'rooms');
   }, [firestore]);
   
-  const { data: rooms, isLoading } = useCollection<Room>(roomsQuery);
+  const { data: rooms, isLoading } = useCollection<Room>(
+    roomsQuery
+  );
 
   const filteredRooms = useMemo(() => {
     if (!rooms) return [];
