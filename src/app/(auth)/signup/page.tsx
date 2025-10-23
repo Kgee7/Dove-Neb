@@ -12,7 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 import { doc, setDoc } from 'firebase/firestore';
 import { useFirestore } from "@/firebase";
 
-
 import { Button } from "@/components/ui/button";
 import {
   CardContent,
@@ -38,18 +37,9 @@ const formSchema = z.object({
   fullName: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
-  userType: z.enum(["seeker", "employer"], {
-    required_error: "Please select a user type.",
+  userType: z.enum(["renter", "owner"], {
+    required_error: "Please select an account type.",
   }),
-  companyName: z.string().optional(),
-}).refine(data => {
-    if (data.userType === 'employer') {
-        return !!data.companyName && data.companyName.length >= 2;
-    }
-    return true;
-}, {
-    message: "Company name is required for employers.",
-    path: ["companyName"],
 });
 
 export default function SignupPage() {
@@ -66,12 +56,9 @@ export default function SignupPage() {
       fullName: "",
       email: "",
       password: "",
-      userType: "seeker",
-      companyName: "",
+      userType: "renter",
     },
   });
-
-  const userType = form.watch("userType");
 
   React.useEffect(() => {
     if (user) {
@@ -96,10 +83,6 @@ export default function SignupPage() {
         createdAt: new Date().toISOString(),
       };
 
-      if (values.userType === 'employer' && values.companyName) {
-        userData.companyName = values.companyName;
-      }
-
       const userDocRef = doc(firestore, "users", user.uid);
       await setDoc(userDocRef, userData, { merge: true });
 
@@ -107,7 +90,6 @@ export default function SignupPage() {
         title: "Account Created!",
         description: "You will be redirected to your dashboard.",
       });
-      // Non-blocking, will redirect via useEffect
     } catch (error: any) {
       console.error(error);
       toast({
@@ -132,7 +114,7 @@ export default function SignupPage() {
       <CardHeader className="p-0 mb-8 text-center">
         <CardTitle className="text-2xl">Create an Account</CardTitle>
         <CardDescription>
-          Join Dove Jobs to start your journey.
+          Join to find or list your perfect space.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -143,7 +125,7 @@ export default function SignupPage() {
               name="userType"
               render={({ field }) => (
                 <FormItem className="space-y-2">
-                  <Label>You are a...</Label>
+                  <Label>I want to...</Label>
                    <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
@@ -152,24 +134,24 @@ export default function SignupPage() {
                     >
                       <FormItem>
                         <FormControl>
-                           <RadioGroupItem value="seeker" id="seeker" className="peer sr-only" />
+                           <RadioGroupItem value="renter" id="renter" className="peer sr-only" />
                         </FormControl>
                         <Label
-                          htmlFor="seeker"
+                          htmlFor="renter"
                           className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
                         >
-                          Job Seeker
+                          Rent a Room
                         </Label>
                       </FormItem>
                       <FormItem>
                          <FormControl>
-                           <RadioGroupItem value="employer" id="employer" className="peer sr-only" />
+                           <RadioGroupItem value="owner" id="owner" className="peer sr-only" />
                          </FormControl>
                          <Label
-                          htmlFor="employer"
+                          htmlFor="owner"
                           className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
                         >
-                          Employer
+                          List my Room
                         </Label>
                       </FormItem>
                     </RadioGroup>
@@ -178,22 +160,6 @@ export default function SignupPage() {
                 </FormItem>
               )}
             />
-
-            {userType === 'employer' && (
-                <FormField
-                control={form.control}
-                name="companyName"
-                render={({ field }) => (
-                    <FormItem>
-                    <Label>Company Name</Label>
-                    <FormControl>
-                        <Input placeholder="Acme Inc." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-            )}
 
             <FormField
               control={form.control}

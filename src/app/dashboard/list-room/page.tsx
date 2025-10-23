@@ -1,0 +1,316 @@
+
+'use client';
+
+import React, { useState, useMemo } from 'react';
+import { useForm, useFieldArray } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useFirebaseApp, useFirestore, useUser } from '@/firebase';
+import { addDoc, collection } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
+import { v4 as uuidv4 } from 'uuid';
+
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Loader2, PlusCircle, Trash2, Upload } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+
+const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
+
+const formSchema = z.object({
+  title: z.string().min(5, 'Title must be at least 5 characters long.'),
+  description: z.string().min(20, 'Description must be at least 20 characters long.'),
+  location: z.string().min(2, 'Location is required.'),
+  price: z.coerce.number().min(1, 'Price must be greater than 0.'),
+  images: z.array(z.instanceof(File)).min(1, 'At least one image is required.'),
+  amenities: z.array(z.string()).min(1, 'Select at least one amenity.'),
+});
+
+type ListRoomFormValues = z.infer<typeof formSchema>;
+
+export default function ListRoomPage() {
+  const firestore = useFirestore();
+  const firebaseApp = useFirebaseApp();
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const form = useForm<ListRoomFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      location: '',
+      price: 0,
+      images: [],
+      amenities: [],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "images",
+  });
+
+  const onSubmit = async (data: ListRoomFormValues) => {
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: 'You must be logged in to list a room.',
+      });
+      return;
+    }
+    setIsLoading(true);
+
+    try {
+      const imageUrls = await Promise.all(
+        data.images.map(async (image) => {
+          const storage = getStorage(firebaseApp);
+          const storageRef = ref(storage, `rooms/${user.uid}/${uuidv4()}`);
+          const snapshot = await uploadBytes(storageRef, image);
+          return getDownloadURL(snapshot.ref);
+        })
+      );
+      
+      const ownerName = user.displayName || `${user.firstName} ${user.lastName}`.trim() || 'Anonymous';
+
+      await addDoc(collection(firestore, 'rooms'), {
+        ownerId: user.uid,
+        ownerName: ownerName,
+        title: data.title,
+        description: data.description,
+        location: data.location,
+        price: data.price,
+        currency: 'USD',
+        currencySymbol: '$',
+        images: imageUrls,
+        amenities: data.amenities,
+        createdAt: new Date(),
+      });
+
+      toast({
+        title: 'Room Listed!',
+        description: 'Your room is now available for booking.',
+      });
+      router.push('/dashboard');
+    } catch (error: any) {
+      console.error('Error listing room:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Listing Failed',
+        description: error.message || 'Could not list your room.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isUserLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  if (!user) {
+      router.push('/login');
+      return null;
+  }
+
+  return (
+    <div className="container max-w-3xl py-12">
+      <Card>
+        <CardHeader>
+          <CardTitle>List a New Room</CardTitle>
+          <CardDescription>Fill out the details below to put your space on the market.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Room Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Cozy Downtown Apartment" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Tell guests about your space..."
+                        className="min-h-[120px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Location</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Paris, France" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Price per night ($)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="100" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+               <FormField
+                control={form.control}
+                name="images"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Room Images</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                           form.setValue('images', [...form.getValues('images'), ...files]);
+                        }}
+                        className="hidden"
+                        id="image-upload"
+                      />
+                    </FormControl>
+                    <label htmlFor="image-upload" className="flex items-center justify-center w-full p-6 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted">
+                        <div className="text-center">
+                            <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
+                            <p className="mt-2 text-sm text-muted-foreground">Click or drag to upload images</p>
+                        </div>
+                    </label>
+                    <FormMessage />
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                        {form.watch('images').map((file, index) => (
+                           <div key={index} className="relative group">
+                                <img src={URL.createObjectURL(file)} alt={`preview ${index}`} className="w-full h-24 object-cover rounded-md" />
+                                <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => {
+                                    const currentImages = form.getValues('images');
+                                    currentImages.splice(index, 1);
+                                    form.setValue('images', currentImages);
+                                }}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                           </div>
+                        ))}
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+                <FormField
+                control={form.control}
+                name="amenities"
+                render={() => (
+                    <FormItem>
+                    <div className="mb-4">
+                        <FormLabel className="text-base">Amenities</FormLabel>
+                        <FormDescription>
+                        Select the amenities available in your room.
+                        </FormDescription>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {amenitiesList.map((amenity) => (
+                        <FormField
+                        key={amenity}
+                        control={form.control}
+                        name="amenities"
+                        render={({ field }) => {
+                            return (
+                            <FormItem
+                                key={amenity}
+                                className="flex flex-row items-start space-x-3 space-y-0"
+                            >
+                                <FormControl>
+                                <Checkbox
+                                    checked={field.value?.includes(amenity)}
+                                    onCheckedChange={(checked) => {
+                                    return checked
+                                        ? field.onChange([...field.value, amenity])
+                                        : field.onChange(
+                                            field.value?.filter(
+                                            (value) => value !== amenity
+                                            )
+                                        )
+                                    }}
+                                />
+                                </FormControl>
+                                <FormLabel className="font-normal">
+                                {amenity}
+                                </FormLabel>
+                            </FormItem>
+                            )
+                        }}
+                        />
+                    ))}
+                    </div>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+
+              <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'List My Room'}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Simple UUID generator for unique file names
+const generateUUID = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+});

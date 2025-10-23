@@ -2,57 +2,45 @@
   "placeholderImages": [
     {
       "id": "hero-background",
-      "description": "A beautiful, bright sky with fluffy clouds, representing opportunity and flight.",
-      "imageUrl": "https://images.unsplash.com/photo-1671723368561-101ab8f901b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxza3klMjBjbG91ZHN8ZW58MHx8fHwxNzYxMDAzMTY0fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "sky clouds"
+      "description": "A stylish and modern living room with large windows and a city view.",
+      "imageUrl": "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxsaXZpbmclMjByb29tfGVufDB8fHx8MTc2MTExNzQ3Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "living room"
     },
     {
-      "id": "company-logo-1",
-      "description": "Generic company logo 1",
-      "imageUrl": "https://images.unsplash.com/photo-1754837369018-ff35655d126f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGxvZ298ZW58MHx8fHwxNzYwOTI2Mjc1fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "abstract logo"
+      "id": "room-1",
+      "description": "A cozy bedroom with a large bed and soft lighting.",
+      "imageUrl": "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxyb29tfGVufDB8fHx8MTc2MTEyODEwMXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cozy bedroom"
     },
     {
-      "id": "company-logo-2",
-      "description": "Generic company logo 2",
-      "imageUrl": "https://images.unsplash.com/photo-1661347998423-b15d37d6f61e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx0ZWNoJTIwbG9nb3xlbnwwfHx8fDE3NjA5MzQ2NTN8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "tech logo"
+      "id": "room-2",
+      "description": "A modern apartment with a view of the city skyline.",
+      "imageUrl": "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxhcGFydG1lbnR8ZW58MHx8fHwxNzYxMTI4MTE3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "modern apartment"
     },
     {
-      "id": "company-logo-3",
-      "description": "Generic company logo 3",
-      "imageUrl": "https://images.unsplash.com/photo-1623738244303-a645cef7aafa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxtaW5pbWFsaXN0JTIwbG9nb3xlbnwwfHx8fDE3NjA5MzQ2NTN8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "minimalist logo"
+      "id": "room-3",
+      "description": "A rustic cabin bedroom with wooden walls.",
+      "imageUrl": "https://images.unsplash.com/photo-1616594039944-762dabc13f38?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxydXN0aWMlMjByb29tfGVufDB8fHx8MTc2MTEyODExN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "rustic cabin"
     },
     {
-      "id": "company-logo-4",
-      "description": "Generic company logo 4",
-      "imageUrl": "https://images.unsplash.com/photo-1739470677724-e0f323eab139?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxnZW9tZXRyaWMlMjBsb2dvfGVufDB8fHx8MTc2MTAxMDQ3OXww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "geometric logo"
+      "id": "room-4",
+      "description": "A minimalist living room with clean lines.",
+      "imageUrl": "https://images.unsplash.com/photo-1588854337236-6889d631f379?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxtaW5pbWFsaXN0JTIwcm9vbXxlbnwwfHx8fDE3NjExMjgxMTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "minimalist room"
     },
     {
-      "id": "company-logo-5",
-      "description": "Generic company logo 5",
-      "imageUrl": "https://images.unsplash.com/photo-1662027044921-6febc57a0c53?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxuYXR1cmUlMjBsb2dvfGVufDB8fHx8MTc2MTAwMDMzN3ww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "nature logo"
+      "id": "room-5",
+      "description": "A luxurious hotel room with a king-size bed.",
+      "imageUrl": "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxob3RlbCUyMHJvb218ZW58MHx8fHwxNzYxMTI4MTE3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "luxury hotel"
     },
     {
-      "id": "company-logo-6",
-      "description": "Generic company logo 6",
-      "imageUrl": "https://images.unsplash.com/photo-1631054399813-0092e2adde4a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxtb2Rlcm4lMjBsb2dvfGVufDB8fHx8MTc2MDk5MDgxNnww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "modern logo"
-    },
-    {
-      "id": "ai-matching-bg",
-      "description": "Abstract futuristic background for AI section",
-      "imageUrl": "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMHRlY2h8ZW58MHx8fHwxNzYwOTQ2NDY4fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "abstract tech"
-    },
-    {
-      "id": "job-detail-header",
-      "description": "Abstract background for job detail header",
-      "imageUrl": "https://images.unsplash.com/photo-1574958269340-fa927503f3dd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxvZmZpY2UlMjBidWlsZGluZ3xlbnwwfHx8fDE3NjA5Mjg4Nzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "office building"
+      "id": "room-6",
+      "description": "A bright and airy sunroom with lots of plants.",
+      "imageUrl": "https://images.unsplash.com/photo-1567684015413-5853f04a796b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzdW5yb29tfGVufDB8fHx8MTc2MTEyODExN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "bright sunroom"
     }
   ]
 }

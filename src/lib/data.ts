@@ -3,45 +3,38 @@ import { PlaceHolderImages } from "./placeholder-images";
 import { collection, getDocs, getDoc, doc, getFirestore, setDoc } from 'firebase/firestore';
 import { initializeFirebase } from "@/firebase/init";
 
-export type Job = {
+export type Room = {
   id: string;
   title: string;
-  company: string;
-  logoUrl: string;
-  logoBg: string;
+  ownerName: string;
   location: string;
-  type: 'Full-time' | 'Part-time' | 'Contract';
-  workArrangement: 'On-site' | 'Remote' | 'Hybrid';
-  salary: string;
+  price: number;
   currency: string;
   currencySymbol: string;
-  postedDate: string;
-  category: 'Engineering' | 'Design' | 'Marketing' | 'Sales' | 'Product';
+  images: string[];
+  amenities: string[];
   description: string;
-  requirements: string[];
-  applicationEmail?: string;
-  applicationWhatsApp?: string;
-  closingDate: string;
-  employerId: string;
+  ownerId: string;
 };
 
-export let jobs: Job[] = [
+// This is mock data for seeding purposes
+export const rooms: Room[] = [
   // This data is for seeding and reference. Actual data comes from Firestore.
 ];
 
-async function seedJobs() {
+async function seedRooms() {
     const { firestore } = initializeFirebase();
-    const jobCollection = collection(firestore, 'jobListings');
-    const jobSnapshot = await getDocs(jobCollection);
-    if (jobSnapshot.empty) {
-        console.log("Seeding jobs...");
-        for (const job of jobs) {
-            const jobDocRef = doc(jobCollection, job.id);
-            await setDoc(jobDocRef, job);
+    const roomCollection = collection(firestore, 'rooms');
+    const roomSnapshot = await getDocs(roomCollection);
+    if (roomSnapshot.empty) {
+        console.log("Seeding rooms...");
+        for (const room of rooms) {
+            const roomDocRef = doc(roomCollection, room.id);
+            await setDoc(roomDocRef, room);
         }
     }
 }
 
 if (typeof window !== 'undefined') {
-    // seedJobs();
+    // seedRooms();
 }

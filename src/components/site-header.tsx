@@ -68,8 +68,7 @@ export function SiteHeader() {
   };
 
   const navLinks = [
-    { href: "/jobs", label: "Jobs" },
-    { href: "/ai-matching", label: "AI Matching" },
+    { href: "/rooms", label: "Rooms" },
     { href: "/dashboard", label: "Dashboard", protected: true },
   ];
 
@@ -80,7 +79,7 @@ export function SiteHeader() {
       <div className="container flex h-14 max-w-screen-2xl items-center">
         <Link href="/" className="mr-6 flex items-center space-x-2">
           <Icons.logo className="h-6 w-6 text-primary" />
-          <span className="font-bold sm:inline-block">Dove Jobs</span>
+          <span className="font-bold sm:inline-block">Dove Rooms</span>
         </Link>
         <nav className="hidden flex-1 items-center gap-4 text-sm lg:flex">
           {navLinks.map((link) => {
@@ -149,7 +148,7 @@ export function SiteHeader() {
             <>
                <Link href="/signup">
                 <Button className="hidden sm:inline-flex" variant="outline">
-                    Post a Job
+                    List your space
                 </Button>
                </Link>
               <Link

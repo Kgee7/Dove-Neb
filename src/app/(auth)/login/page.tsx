@@ -13,7 +13,6 @@ import { FirebaseError } from "firebase/app";
 import { useFirestore } from "@/firebase";
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-
 import { Button } from "@/components/ui/button";
 import {
   CardContent,
@@ -71,7 +70,6 @@ export default function LoginPage() {
           title: "Signing In...",
           description: "You will be redirected shortly.",
         });
-        // Let the onAuthStateChanged listener handle redirection
       })
       .catch((error: any) => {
         let title = "Sign-in Failed";
@@ -128,7 +126,7 @@ export default function LoginPage() {
         const [firstName, ...lastName] = (user.displayName || "").split(" ");
         const userData = {
           id: user.uid,
-          userType: "seeker",
+          userType: "renter",
           firstName: firstName || "",
           lastName: lastName.join(" ") || "",
           email: user.email,
@@ -142,7 +140,6 @@ export default function LoginPage() {
         title: "Signed in with Google!",
         description: "You will be redirected shortly.",
       });
-      // Redirection is handled by the useEffect
 
     } catch (error: any) {
       console.error(error);
@@ -170,7 +167,7 @@ export default function LoginPage() {
       <CardHeader className="p-0 mb-8 text-center">
         <CardTitle className="text-2xl">Welcome Back</CardTitle>
         <CardDescription>
-          Sign in to access your dashboard and applications.
+          Sign in to access your dashboard and bookings.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
