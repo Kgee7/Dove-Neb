@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -18,8 +18,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, User as UserIcon, Loader2 } from "lucide-react";
+import { LogOut, User as UserIcon, Loader2, Menu, X } from "lucide-react";
 
 type UserProfile = {
   firstName: string;
@@ -34,6 +35,7 @@ export function SiteHeader() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const userDocRef = useMemo(() => {
     if (!firestore || !user) return null;
@@ -155,34 +157,77 @@ export function SiteHeader() {
             </DropdownMenu>
           ) : (
             <>
-               <Link href="/dashboard/list-room">
-                <Button className="hidden sm:inline-flex" variant="outline">
-                    List your space
-                </Button>
-               </Link>
-                 <Link href="/dashboard/post-job">
-                <Button className="hidden sm:inline-flex" variant="outline">
-                    Post a Job
-                </Button>
-               </Link>
-              <Link
-                href="/login"
-                className={cn(
-                  buttonVariants({ variant: "ghost" }),
-                  "hidden sm:inline-flex"
-                )}
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/signup"
-                className={cn(
-                  buttonVariants({ variant: "default" }),
-                  "bg-accent hover:bg-accent/90"
-                )}
-              >
-                Sign Up
-              </Link>
+               <div className="hidden sm:flex items-center space-x-2">
+                <Link href="/dashboard/list-room">
+                    <Button variant="outline">
+                        List your space
+                    </Button>
+                </Link>
+                <Link href="/dashboard/post-job">
+                    <Button variant="outline">
+                        Post a Job
+                    </Button>
+                </Link>
+                <Link
+                    href="/login"
+                    className={cn(buttonVariants({ variant: "ghost" }))}
+                >
+                    Sign In
+                </Link>
+                <Link
+                    href="/signup"
+                    className={cn(
+                    buttonVariants({ variant: "default" }),
+                    "bg-accent hover:bg-accent/90"
+                    )}
+                >
+                    Sign Up
+                </Link>
+               </div>
+
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="p-2 sm:hidden"
+                  >
+                    <Menu className="h-6 w-6" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[80%] max-w-xs">
+                    <div className="flex justify-between items-center py-4 px-6 border-b">
+                         <Link href="/" className="flex items-center space-x-2" onClick={() => setIsMobileMenuOpen(false)}>
+                            <Icons.logo className="h-6 w-6 text-primary" />
+                            <span className="font-bold">Dove Jobs</span>
+                        </Link>
+                        <SheetClose asChild>
+                           <Button variant="ghost" size="icon" className="rounded-full">
+                             <X className="h-6 w-6" />
+                             <span className="sr-only">Close menu</span>
+                           </Button>
+                        </SheetClose>
+                    </div>
+                    <div className="p-6">
+                        <div className="flex flex-col space-y-4">
+                            <Link href="/dashboard/list-room" onClick={() => setIsMobileMenuOpen(false)}>
+                                <Button variant="outline" className="w-full justify-start">Lodge Now</Button>
+                            </Link>
+                            <Link href="/dashboard/post-job" onClick={() => setIsMobileMenuOpen(false)}>
+                                <Button variant="outline" className="w-full justify-start">Post a Job</Button>
+                            </Link>
+                            <div className="border-t pt-4">
+                                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Button variant="ghost" className="w-full justify-start">Sign In</Button>
+                                </Link>
+                                <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Button className="w-full justify-start mt-2 bg-accent hover:bg-accent/90">Sign Up</Button>
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </SheetContent>
+              </Sheet>
             </>
           )}
         </div>
