@@ -4,9 +4,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useDoc, useFirestore, useFirebaseApp, updateProfile } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { useUser, useDoc, useFirestore, useFirebaseApp } from '@/firebase';
+import { doc, setDoc }from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { updateProfile } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 
 import { Button } from '@/components/ui/button';
@@ -93,111 +94,116 @@ export default function ProfilePage() {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user || !userDocRef || !firebaseApp) return;
+      const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !user || !userDocRef) return;
 
-    setUploading(true);
+        setUploading(true);
 
-    try {
-      const storage = getStorage(firebaseApp);
-      const storageRef = ref(storage, `profilePictures/${user.uid}/${file.name}`);
-      const snapshot = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
+        try {
+          const storage = getStorage(firebaseApp);
+          const storageRef = ref(storage, `profilePictures/${user.uid}/${file.name}`);
+          const snapshot = await uploadBytes(storageRef, file);
+          const downloadURL = await getDownloadURL(snapshot.ref);
 
-      if (user) {
-        await updateProfile(user, { photoURL: downloadURL });
-      }
-      await user?.reload(); 
-      await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
+          // Update Firebase Authentication profile
+          await updateProfile(user, { photoURL: downloadURL });
 
-      toast({
-        title: 'Profile Picture Updated',
-        description: 'Your new avatar has been saved.',
-      });
-    } catch (error: any) {
-      console.error('Error uploading file:', error);
-      let errorMessage = 'Could not upload your profile picture.';
-      if (error.code) {
-        errorMessage = `Upload Failed: ${error.code}. ${error.message}`;
-        if (error.code === 'storage/unauthorized') {
-          errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
-        } else if (error.code === 'storage/quota-exceeded') {
-          errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.';
-        }
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
+          // Reload user data to ensure latest profile information is fetched
+          // Note: Propagation can sometimes take a moment, consider alternative re-fetch strategies if immediate consistency is critical.
+          await user.reload(); 
 
-      toast({
-        variant: 'destructive',
-        title: 'Upload Failed',
-        description: errorMessage,
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-  
-  const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user || !userDocRef || !firebaseApp) return;
+          // Update Firestore document with photoURL
+          await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
 
-    const allowedResumeTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    if (!allowedResumeTypes.includes(file.type)) {
-        toast({
+          toast({
+            title: 'Profile Picture Updated',
+            description: 'Your new avatar has been saved.',
+          });
+        } catch (error: any) { // Consider more specific error types or cast to Error
+          console.error('Error uploading file:', error);
+          let errorMessage = 'Could not upload your profile picture.';
+          if (error.code) { // Check for Firebase Storage specific error codes
+            errorMessage = `Upload Failed: ${error.code}. ${error.message}`;
+            if (error.code === 'storage/unauthorized') {
+              errorMessage = 'Permission denied. Check Firebase Storage Security Rules.'; // Specific message for permissions [9, 11, 32]
+            } else if (error.code === 'storage/quota-exceeded') {
+              errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.'; // For quota issues [9, 34]
+            }
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+
+          toast({
             variant: 'destructive',
-            title: 'Invalid File Type',
-            description: 'Resume must be a PDF or Word document (DOC, DOCX).',
-        });
-        return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast({
-            variant: 'destructive',
-            title: 'File Too Large',
-            description: 'Resume file must be less than 5MB.',
-        });
-        return;
-    }
-
-    setUploadingResume(true);
-
-    try {
-      const storage = getStorage(firebaseApp);
-      const storageRef = ref(storage, `resumes/${user.uid}/${file.name}`);
-      const snapshot = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-
-      await setDoc(userDocRef, { resumeURL: downloadURL }, { merge: true });
-
-      toast({
-        title: 'Resume Uploaded',
-        description: 'Your resume has been saved successfully.',
-      });
-    } catch (error: any) {
-      console.error('Error uploading resume:', error);
-      let errorMessage = 'Could not upload your resume.';
-      if (error.code) {
-        errorMessage = `Upload Failed: ${error.code}. ${error.message}`;
-         if (error.code === 'storage/unauthorized') {
-          errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
-        } else if (error.code === 'storage/quota-exceeded') {
-          errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.';
+            title: 'Upload Failed',
+            description: errorMessage,
+          });
+        } finally {
+          setUploading(false);
         }
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      toast({
-        variant: 'destructive',
-        title: 'Upload Failed',
-        description: errorMessage,
-      });
-    } finally {
-      setUploadingResume(false);
-    }
-  };
+      };
+
+      const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !user || !userDocRef) return;
+
+        // Client-side file type validation (example: only allow PDF and common Word docs for resumes)
+        const allowedResumeTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        if (!allowedResumeTypes.includes(file.type)) {
+            toast({
+                variant: 'destructive',
+                title: 'Invalid File Type',
+                description: 'Resume must be a PDF or Word document (DOC, DOCX).',
+            });
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+            toast({
+                variant: 'destructive',
+                title: 'File Too Large',
+                description: 'Resume file must be less than 5MB.',
+            });
+            return;
+        }
+
+        setUploadingResume(true);
+
+        try {
+          const storage = getStorage(firebaseApp);
+          const storageRef = ref(storage, `resumes/${user.uid}/${file.name}`);
+          const snapshot = await uploadBytes(storageRef, file);
+          const downloadURL = await getDownloadURL(snapshot.ref);
+
+          await setDoc(userDocRef, { resumeURL: downloadURL }, { merge: true });
+
+          toast({
+            title: 'Resume Uploaded',
+            description: 'Your resume has been saved successfully.',
+          });
+        } catch (error: any) { // Consider more specific error types or cast to Error
+          console.error('Error uploading resume:', error);
+          let errorMessage = 'Could not upload your resume.';
+          if (error.code) { // Check for Firebase Storage specific error codes
+            errorMessage = `Upload Failed: ${error.code}. ${error.message}`;
+             if (error.code === 'storage/unauthorized') {
+              errorMessage = 'Permission denied. Check Firebase Storage Security Rules.'; // Specific message for permissions [9, 11, 32]
+            } else if (error.code === 'storage/quota-exceeded') {
+              errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.'; // For quota issues [9, 34]
+            }
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          toast({
+            variant: 'destructive',
+            title: 'Upload Failed',
+            description: errorMessage,
+          });
+        } finally {
+          setUploadingResume(false);
+        }
+      };
 
 
   async function onSubmit(values: z.infer<typeof profileSchema>) {
