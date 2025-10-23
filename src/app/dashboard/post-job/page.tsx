@@ -30,7 +30,7 @@ const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters long.'),
   companyName: z.string().min(2, 'Company name is required.'),
   location: z.string().min(2, 'Location is required.'),
-  type: z.enum(["Full-time", "Part-time", "Contract", "Internship"]),
+  type: z.enum(["Full-time", "Part-time", "Contract", "Internship", "Remote", "Hybrid"]),
   description: z.string().min(20, 'Description must be at least 20 characters long.'),
   salaryMin: z.coerce.number().min(0).optional(),
   salaryMax: z.coerce.number().min(0).optional(),
@@ -57,7 +57,7 @@ export default function PostJobPage() {
     },
   });
 
-  useEffect(() => {
+   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
     }
@@ -173,6 +173,8 @@ export default function PostJobPage() {
                           <SelectItem value="Part-time">Part-time</SelectItem>
                           <SelectItem value="Contract">Contract</SelectItem>
                            <SelectItem value="Internship">Internship</SelectItem>
+                           <SelectItem value="Remote">Remote</SelectItem>
+                           <SelectItem value="Hybrid">Hybrid</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

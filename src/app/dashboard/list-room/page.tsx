@@ -11,6 +11,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
+import { countries } from '@/lib/countries';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -27,6 +28,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, PlusCircle, Trash2, Upload } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
@@ -35,6 +37,7 @@ const formSchema = z.object({
   description: z.string().min(20, 'Description must be at least 20 characters long.'),
   location: z.string().min(2, 'Location is required.'),
   price: z.coerce.number().min(1, 'Price must be greater than 0.'),
+  currencyInfo: z.string().min(1, 'Currency is required.'),
   images: z.array(z.instanceof(File)).min(1, 'At least one image is required.'),
   amenities: z.array(z.string()).min(1, 'Select at least one amenity.'),
 });
@@ -56,6 +59,7 @@ export default function ListRoomPage() {
       description: '',
       location: '',
       price: 0,
+      currencyInfo: 'USD,$',
       images: [],
       amenities: [],
     },
@@ -66,7 +70,7 @@ export default function ListRoomPage() {
     name: "images",
   });
 
-  useEffect(() => {
+   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
     }
@@ -94,6 +98,7 @@ export default function ListRoomPage() {
       );
       
       const ownerName = user.displayName || `${user.firstName} ${user.lastName}`.trim() || 'Anonymous';
+      const [currency, currencySymbol] = data.currencyInfo.split(',');
 
       await addDoc(collection(firestore, 'rooms'), {
         ownerId: user.uid,
@@ -102,8 +107,8 @@ export default function ListRoomPage() {
         description: data.description,
         location: data.location,
         price: data.price,
-        currency: 'USD',
-        currencySymbol: '$',
+        currency,
+        currencySymbol,
         images: imageUrls,
         amenities: data.amenities,
         createdAt: new Date(),
@@ -188,12 +193,37 @@ export default function ListRoomPage() {
                     </FormItem>
                   )}
                 />
-                <FormField
+                 <FormField
+                    control={form.control}
+                    name="currencyInfo"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Currency</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a currency" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {countries.map(country => (
+                              <SelectItem key={country.code} value={`${country.currency},${country.currencySymbol}`}>
+                                {country.name} ({country.currency})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+              </div>
+               <FormField
                   control={form.control}
                   name="price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Price per night ($)</FormLabel>
+                      <FormLabel>Price per night</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="100" {...field} />
                       </FormControl>
@@ -201,7 +231,6 @@ export default function ListRoomPage() {
                     </FormItem>
                   )}
                 />
-              </div>
 
                <FormField
                 control={form.control}

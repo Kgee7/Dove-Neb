@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -27,7 +28,7 @@
         "title": { "type": "string", "description": "The title of the job." },
         "description": { "type": "string", "description": "A detailed description of the job." },
         "location": { "type": "string", "description": "Location of the job." },
-        "type": { "type": "string", "enum": ["Full-time", "Part-time", "Contract", "Internship"], "description": "Type of employment." },
+        "type": { "type": "string", "enum": ["Full-time", "Part-time", "Contract", "Internship", "Remote", "Hybrid"], "description": "Type of employment." },
         "salaryMin": { "type": "number", "description": "Minimum salary for the position." },
         "salaryMax": { "type": "number", "description": "Maximum salary for the position." },
         "createdAt": { "type": "string", "format": "date-time" }
