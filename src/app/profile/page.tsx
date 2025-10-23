@@ -91,49 +91,51 @@ export default function ProfilePage() {
     fileInputRef.current?.click();
   };
 
-      const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file || !user || !userDocRef || !firebaseApp) return;
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user || !userDocRef || !firebaseApp) return;
 
-        setUploading(true);
+    setUploading(true);
 
-        try {
-          const storage = getStorage(firebaseApp);
-          const storageRef = ref(storage, `profilePictures/${user.uid}/${file.name}`);
-          const snapshot = await uploadBytes(storageRef, file);
-          const downloadURL = await getDownloadURL(snapshot.ref);
+    try {
+      const storage = getStorage(firebaseApp);
+      const storageRef = ref(storage, `profilePictures/${user.uid}/${file.name}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
 
-          await updateProfile(user, { photoURL: downloadURL });
-          await user.reload(); 
-          await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
+      if (user) {
+        await updateProfile(user, { photoURL: downloadURL });
+      }
+      await user?.reload(); 
+      await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
 
-          toast({
-            title: 'Profile Picture Updated',
-            description: 'Your new avatar has been saved.',
-          });
-        } catch (error: any) {
-          console.error('Error uploading file:', error);
-          let errorMessage = 'Could not upload your profile picture.';
-          if (error.code) {
-            errorMessage = `Upload Failed: ${error.code}. ${error.message}`;
-            if (error.code === 'storage/unauthorized') {
-              errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
-            } else if (error.code === 'storage/quota-exceeded') {
-              errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.';
-            }
-          } else if (error.message) {
-            errorMessage = error.message;
-          }
-
-          toast({
-            variant: 'destructive',
-            title: 'Upload Failed',
-            description: errorMessage,
-          });
-        } finally {
-          setUploading(false);
+      toast({
+        title: 'Profile Picture Updated',
+        description: 'Your new avatar has been saved.',
+      });
+    } catch (error: any) {
+      console.error('Error uploading file:', error);
+      let errorMessage = 'Could not upload your profile picture.';
+      if (error.code) {
+        errorMessage = `Upload Failed: ${error.code}. ${error.message}`;
+        if (error.code === 'storage/unauthorized') {
+          errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
+        } else if (error.code === 'storage/quota-exceeded') {
+          errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.';
         }
-      };
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      toast({
+        variant: 'destructive',
+        title: 'Upload Failed',
+        description: errorMessage,
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
 
 
   async function onSubmit(values: z.infer<typeof profileSchema>) {
@@ -184,7 +186,7 @@ export default function ProfilePage() {
           <div className="flex flex-col items-center gap-4 mb-8">
             <div className="relative group">
                 <Avatar className="h-24 w-24">
-                    <AvatarImage src={userProfile?.photoURL || user?.photoURL || ''} alt="Profile picture" />
+                    <AvatarImage src={user?.photoURL || userProfile?.photoURL || ''} alt="Profile picture" />
                     <AvatarFallback className="text-3xl">
                         {getInitials(userProfile?.firstName, userProfile?.lastName)}
                     </AvatarFallback>

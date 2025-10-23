@@ -32,6 +32,9 @@ const amenityIcons: { [key: string]: React.ReactNode } = {
     'TV': <Tv className="h-4 w-4" />,
     'Kitchen': <Utensils className="h-4 w-4" />,
     'Air Conditioning': <Wind className="h-4 w-4" />,
+    'Heating': <Wind className="h-4 w-4" />,
+    'Washer': <Star className="h-4 w-4" />,
+    'Dryer': <Star className="h-4 w-4" />,
 };
 
 
@@ -272,4 +275,3 @@ export default function RoomDetailsPage() {
     </div>
   );
 }
-

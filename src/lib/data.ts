@@ -1,6 +1,7 @@
 
+
 import { PlaceHolderImages } from "./placeholder-images";
-import { collection, getDocs, getDoc, doc, getFirestore, setDoc } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, getFirestore, setDoc, where, query } from 'firebase/firestore';
 import { initializeFirebase } from "@/firebase/init";
 
 export type Room = {
