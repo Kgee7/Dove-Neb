@@ -23,6 +23,7 @@ import { LogOut, User as UserIcon, Loader2 } from "lucide-react";
 type UserProfile = {
   firstName: string;
   lastName: string;
+  preferredName?: string;
   photoURL?: string;
 };
 
@@ -73,7 +74,7 @@ export function SiteHeader() {
     { href: "/dashboard", label: "Dashboard", protected: true },
   ];
 
-  const fullName = userProfile ? `${userProfile.firstName} ${userProfile.lastName}`.trim() : user?.displayName || "My Account";
+  const fullName = userProfile?.preferredName || (userProfile ? `${userProfile.firstName} ${userProfile.lastName}`.trim() : user?.displayName || "My Account");
   const photoURL = user?.photoURL || userProfile?.photoURL;
 
 

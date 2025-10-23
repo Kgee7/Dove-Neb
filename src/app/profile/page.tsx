@@ -34,6 +34,7 @@ type UserProfile = {
     userType: 'seeker' | 'employer' | 'renter' | 'owner';
     firstName: string;
     lastName:string;
+    preferredName?: string;
     email: string;
     photoURL?: string;
     resumeURL?: string;
@@ -42,6 +43,7 @@ type UserProfile = {
 const profileSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
+  preferredName: z.string().optional(),
 });
 
 export default function ProfilePage() {
@@ -65,6 +67,7 @@ export default function ProfilePage() {
     defaultValues: {
       firstName: '',
       lastName: '',
+      preferredName: '',
     },
   });
 
@@ -73,6 +76,7 @@ export default function ProfilePage() {
       form.reset({
         firstName: userProfile.firstName,
         lastName: userProfile.lastName,
+        preferredName: userProfile.preferredName || '',
       });
     }
   }, [userProfile, form]);
@@ -209,6 +213,7 @@ export default function ProfilePage() {
     const dataToUpdate: Partial<UserProfile> = {
       firstName: values.firstName,
       lastName: values.lastName,
+      preferredName: values.preferredName,
     };
     
     setDocumentNonBlocking(userDocRef, dataToUpdate, { merge: true });
@@ -303,6 +308,19 @@ export default function ProfilePage() {
                         )}
                     />
                 </div>
+                <FormField
+                    control={form.control}
+                    name="preferredName"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Preferred Name</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Johnny" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
@@ -354,5 +372,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
