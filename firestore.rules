@@ -1,142 +1,43 @@
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Controls access to user profile documents.
-     * @path /users/{userId}
-     * @allow (create) User with ID 'testUID' can create their profile if request.auth.uid == 'testUID'.
-     * @allow (get, update, delete) User with ID 'testUID' can get, update, and delete their own profile if request.auth.uid == 'testUID'.
-     * @deny (create) User with ID 'testUID' cannot create a profile with a different ID.
-     * @deny (get, update, delete) User with ID 'anotherUID' cannot get, update, or delete the profile of user with ID 'testUID'.
-     * @principle Enforces user-ownership for profile data.
-     */
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // USER PROFILES
+    // Users can read and write to their own profile.
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource.data != null;
-      }
-
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isOwner(userId);
-      allow delete: if isSignedIn() && isOwner(userId);
+      allow read, write: if isOwner(userId);
+    }
+    
+    // USER SUBCOLLECTIONS
+    // A user can manage their own applications and bookings.
+    match /users/{userId}/{collection}/{docId} {
+      allow read, write: if isOwner(userId);
     }
 
-    /**
-     * @description Controls access to job listings.
-     * @path /jobs/{jobId}
-     * @allow (get, list) Any user can read job listings.
-     * @allow (create) User with ID 'testUID' can create a job listing if request.resource.data.employerId == 'testUID'.
-     * @allow (update, delete) User with ID 'testUID' can update/delete a job listing if they are the owner (employerId).
-     * @deny (create) User with ID 'testUID' cannot create a job listing for a different employerId.
-     * @deny (update, delete) User with ID 'anotherUID' cannot update/delete a job listing owned by 'testUID'.
-     * @principle Public read, owner-only writes for job listings.
-     */
+    // PUBLIC JOB LISTINGS
+    // Anyone can read job listings.
+    // Only authenticated employers can create jobs.
+    // Only the employer who created the job can update or delete it.
     match /jobs/{jobId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      function isOwner(jobId) {
-        return resource.data.employerId == request.auth.uid;
-      }
-      function isCreating() {
-        return request.resource.data.keys().hasAll(['employerId']);
-      }
-
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && isCreating() && request.resource.data.employerId == request.auth.uid;
-      allow update: if isSignedIn() && isOwner(jobId);
-      allow delete: if isSignedIn() && isOwner(jobId);
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if isOwner(resource.data.employerId);
     }
 
-    /**
-     * @description Controls access to job applications within a user's subcollection.
-     * @path /users/{userId}/applications/{applicationId}
-     * @allow (create, get, list) User with ID 'testUID' can create, get, and list their own job applications.
-     * @allow (update, delete) User with ID 'testUID' can update and delete their job applications.
-     * @deny (create, get, list) User with ID 'anotherUID' cannot create, get, or list job applications for user 'testUID'.
-     * @deny (update, delete) User with ID 'anotherUID' cannot update or delete job applications for user 'testUID'.
-     * @principle Enforces user-ownership for job applications.
-     */
-    match /users/{userId}/applications/{applicationId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource.data != null;
-      }
-
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isOwner(userId);
-      allow delete: if isSignedIn() && isOwner(userId);
-    }
-
-    /**
-     * @description Controls access to room listings.
-     * @path /rooms/{roomId}
-     * @allow (get, list) Any user can read room listings.
-     * @allow (create) User with ID 'testUID' can create a room listing if request.resource.data.ownerId == 'testUID'.
-     * @allow (update, delete) User with ID 'testUID' can update/delete a room listing if they are the owner (ownerId).
-     * @deny (create) User with ID 'testUID' cannot create a room listing for a different ownerId.
-     * @deny (update, delete) User with ID 'anotherUID' cannot update/delete a room listing owned by 'testUID'.
-     * @principle Public read, owner-only writes for room listings.
-     */
+    // PUBLIC ROOM LISTINGS
+    // Anyone can read room listings.
+    // Only authenticated users can create rooms.
+    // Only the user who created the room can update or delete it.
     match /rooms/{roomId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      function isOwner(roomId) {
-        return resource.data.ownerId == request.auth.uid;
-      }
-       function isCreating() {
-        return request.resource.data.keys().hasAll(['ownerId']);
-      }
-
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && isCreating() && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isSignedIn() && isOwner(roomId);
-      allow delete: if isSignedIn() && isOwner(roomId);
-    }
-
-    /**
-     * @description Controls access to room bookings within a user's subcollection.
-     * @path /users/{userId}/bookings/{bookingId}
-     * @allow (create, get, list) User with ID 'testUID' can create, get, and list their own room bookings.
-     * @allow (update, delete) User with ID 'testUID' can update and delete their room bookings.
-     * @deny (create, get, list) User with ID 'anotherUID' cannot create, get, or list room bookings for user 'testUID'.
-     * @deny (update, delete) User with ID 'anotherUID' cannot update or delete room bookings for user 'testUID'.
-     * @principle Enforces user-ownership for room bookings.
-     */
-    match /users/{userId}/bookings/{bookingId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource.data != null;
-      }
-
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isOwner(userId);
-      allow delete: if isSignedIn() && isOwner(userId);
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if isOwner(resource.data.ownerId);
     }
   }
 }

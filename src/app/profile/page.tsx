@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -5,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUser, useDoc, useFirestore, useFirebaseApp, setDocumentNonBlocking } from '@/firebase';
-import { doc }from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateProfile } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -110,25 +111,25 @@ export default function ProfilePage() {
           const snapshot = await uploadBytes(storageRef, file);
           const downloadURL = await getDownloadURL(snapshot.ref);
 
+          // Update Firebase Authentication profile
           await updateProfile(user, { photoURL: downloadURL });
-          await user.reload(); 
 
-          const dataToUpdate = { photoURL: downloadURL };
-          setDocumentNonBlocking(userDocRef, dataToUpdate, { merge: true });
+          // Update Firestore document with photoURL
+          await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
 
           toast({
             title: 'Profile Picture Updated',
             description: 'Your new avatar has been saved.',
           });
-        } catch (error: any) {
+        } catch (error: any) { // Consider more specific error types or cast to Error
           console.error('Error uploading file:', error);
           let errorMessage = 'Could not upload your profile picture.';
-          if (error.code) { 
+          if (error.code) { // Check for Firebase Storage specific error codes
             errorMessage = `Upload Failed: ${error.code}. ${error.message}`;
             if (error.code === 'storage/unauthorized') {
-              errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
+              errorMessage = 'Permission denied. Check Firebase Storage Security Rules.'; // Specific message for permissions [9, 11, 32]
             } else if (error.code === 'storage/quota-exceeded') {
-              errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.';
+              errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.'; // For quota issues [9, 34]
             }
           } else if (error.message) {
             errorMessage = error.message;
@@ -148,6 +149,7 @@ export default function ProfilePage() {
         const file = event.target.files?.[0];
         if (!file || !user || !userDocRef) return;
 
+        // Client-side file type validation (example: only allow PDF and common Word docs for resumes)
         const allowedResumeTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
         if (!allowedResumeTypes.includes(file.type)) {
             toast({
@@ -175,22 +177,21 @@ export default function ProfilePage() {
           const snapshot = await uploadBytes(storageRef, file);
           const downloadURL = await getDownloadURL(snapshot.ref);
 
-          const dataToUpdate = { resumeURL: downloadURL };
-          setDocumentNonBlocking(userDocRef, dataToUpdate, { merge: true });
+          await setDoc(userDocRef, { resumeURL: downloadURL }, { merge: true });
 
           toast({
             title: 'Resume Uploaded',
             description: 'Your resume has been saved successfully.',
           });
-        } catch (error: any) {
+        } catch (error: any) { // Consider more specific error types or cast to Error
           console.error('Error uploading resume:', error);
           let errorMessage = 'Could not upload your resume.';
-          if (error.code) {
+          if (error.code) { // Check for Firebase Storage specific error codes
             errorMessage = `Upload Failed: ${error.code}. ${error.message}`;
              if (error.code === 'storage/unauthorized') {
-              errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
+              errorMessage = 'Permission denied. Check Firebase Storage Security Rules.'; // Specific message for permissions [9, 11, 32]
             } else if (error.code === 'storage/quota-exceeded') {
-              errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.';
+              errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.'; // For quota issues [9, 34]
             }
           } else if (error.message) {
             errorMessage = error.message;
@@ -210,20 +211,28 @@ export default function ProfilePage() {
     if (!userDocRef) return;
     setLoading(true);
 
-    const dataToUpdate: Partial<UserProfile> = {
+    const dataToUpdate = {
       firstName: values.firstName,
       lastName: values.lastName,
       preferredName: values.preferredName,
     };
     
-    setDocumentNonBlocking(userDocRef, dataToUpdate, { merge: true });
-    
-    toast({
-        title: 'Profile Updated',
-        description: 'Your profile information has been saved successfully.',
-    });
-
-    setLoading(false);
+    try {
+        await setDoc(userDocRef, dataToUpdate, { merge: true });
+        toast({
+            title: 'Profile Updated',
+            description: 'Your profile information has been saved successfully.',
+        });
+    } catch(error: any) {
+        console.error('Error updating profile:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Update Failed',
+            description: error.message || 'Could not save your profile.',
+        });
+    } finally {
+        setLoading(false);
+    }
   }
 
   if (isProfileLoading || isUserLoading) {
@@ -315,7 +324,7 @@ export default function ProfilePage() {
                         <FormItem>
                         <FormLabel>Preferred Name</FormLabel>
                         <FormControl>
-                            <Input placeholder="Johnny" {...field} />
+                            <Input placeholder="Johnny" {...field} value={field.value ?? ''} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -343,7 +352,7 @@ export default function ProfilePage() {
                                 ) : (
                                     <p className="text-sm text-muted-foreground">No resume uploaded.</p>
                                 )}
-                                <Button onClick={() => resumeInputRef.current?.click()} disabled={uploadingResume}>
+                                <Button type="button" onClick={() => resumeInputRef.current?.click()} disabled={uploadingResume}>
                                     {uploadingResume ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                                     {userProfile.resumeURL ? 'Replace Resume' : 'Upload Resume'}
                                 </Button>
