@@ -18,7 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, User as UserIcon, Loader2, Menu, X } from "lucide-react";
 
@@ -195,19 +195,20 @@ export function SiteHeader() {
                     <span className="sr-only">Open menu</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[80%] max-w-xs">
-                    <div className="flex justify-between items-center py-4 px-6 border-b">
+                <SheetContent side="right" className="w-[80%] max-w-xs p-0">
+                    <SheetHeader className="flex flex-row justify-between items-center py-4 px-6 border-b">
                          <Link href="/" className="flex items-center space-x-2" onClick={() => setIsMobileMenuOpen(false)}>
                             <Icons.logo className="h-6 w-6 text-primary" />
                             <span className="font-bold">Dove Jobs</span>
                         </Link>
+                        <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
                         <SheetClose asChild>
                            <Button variant="ghost" size="icon" className="rounded-full">
                              <X className="h-6 w-6" />
                              <span className="sr-only">Close menu</span>
                            </Button>
                         </SheetClose>
-                    </div>
+                    </SheetHeader>
                     <div className="p-6">
                         <div className="flex flex-col space-y-4">
                             <Link href="/dashboard/list-room" onClick={() => setIsMobileMenuOpen(false)}>
