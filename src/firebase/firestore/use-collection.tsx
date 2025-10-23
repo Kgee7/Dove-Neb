@@ -78,7 +78,7 @@ export function useCollection<T = any>(
         }
         const contextualError = new FirestorePermissionError({
           operation: 'list',
-          path: "/",
+          path: (memoizedQuery as any)._query.path.segments.join('/'),
         });
 
         setError(contextualError);
