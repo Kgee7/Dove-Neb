@@ -2,172 +2,172 @@
  * @fileoverview Firestore Security Rules for Prototyping.
  *
  * Core Philosophy:
- * This ruleset prioritizes strict user-ownership and public-read access where appropriate,
- * while maintaining flexibility for rapid data model iteration.
- * All write operations are guarded by authorization checks.
+ * This ruleset prioritizes secure authorization based on user identity and
+ * resource ownership, while relaxing data validation to enable rapid
+ * prototyping. Data types and schema validation are mostly skipped. All write
+ * operations are protected by authorization checks.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profiles, accessible only by the owning user.
- * - /jobs/{jobId}: Publicly readable job listings, writable only by the job poster.
- * - /users/{userId}/applications/{applicationId}: Job applications submitted by a user, accessible only by the user.
- * - /rooms/{roomId}: Publicly readable room listings, writable only by the room owner.
- * - /users/{userId}/bookings/{bookingId}: Room bookings made by a user, accessible only by the user.
+ * - /users/{userId}: Stores user profiles.
+ * - /jobs/{jobId}: Stores job listings.
+ * - /users/{userId}/applications/{applicationId}: Stores job applications.
+ * - /rooms/{roomId}: Stores room listings.
+ * - /users/{userId}/bookings/{bookingId}: Stores room bookings.
  *
  * Key Security Decisions:
- * - User listing is disallowed.
- * - Public read access is granted to the `jobs` and `rooms` collections.
- * - Write operations require authentication.
+ * - User data is strictly controlled by the owning user.
+ * - Job and room listings are publicly readable but writable only by owners.
+ * - Data consistency between path segments and document fields is enforced on create and update.
  *
  * Denormalization for Authorization:
- * - The rules assume that documents in the `jobs` and `rooms` collections contain fields like `employerId` and `ownerId` respectively,
- *   which are used to enforce ownership during write operations.
+ *  - The rules depend on the document `id` fields matching the Firestore document IDs in paths like `/users/{userId}`.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user profiles.
+     * @description Allows users to manage their own profiles.
      * @path /users/{userId}
-     * @allow (get) Authenticated user can read their own profile.
-     * @allow (create) Authenticated user can create their own profile.
-     * @allow (update) Authenticated user can update their own profile.
-     * @allow (delete) Authenticated user can delete their own profile.
-     * @deny (get) Authenticated user cannot read other user profiles.
-     * @deny (create) Authenticated user cannot create profiles for other users.
-     * @deny (update) Authenticated user cannot update other user profiles.
-     * @deny (delete) Authenticated user cannot delete other user profiles.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) User with matching ID can create their profile.
+     * @allow (update) User with matching ID can update their profile.
+     * @allow (delete) User with matching ID can delete their profile.
+     * @allow (get) User with matching ID can get their profile.
+     * @allow (list) Listing users is disallowed.
+     * @deny (create) User tries to create a profile with a different ID.
+     * @deny (update) User tries to update someone else's profile.
+     * @deny (delete) User tries to delete someone else's profile.
+     * @principle Enforces document ownership for writes, restricts listing.
      */
     match /users/{userId} {
       function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
       }
-
       function isExistingOwner(userId) {
         return isOwner(userId) && resource != null;
       }
 
       allow get: if isOwner(userId);
       allow list: if false;
+
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Controls access to job listings.
+     * @description Allows public read access to job listings, with owner-only writes.
      * @path /jobs/{jobId}
      * @allow (get, list) Anyone can read job listings.
-     * @allow (create) Authenticated user can create a job listing with their ID as the employerId.
-     * @allow (update) Authenticated user can update their job listing.
-     * @allow (delete) Authenticated user can delete their job listing.
-     * @deny (create) Unauthenticated user cannot create a job listing.
-     * @deny (update) Authenticated user cannot update other users' job listings.
-     * @deny (delete) Authenticated user cannot delete other users' job listings.
-     * @principle Allows public reads and restricts writes to the job poster.
+     * @allow (create) User can create a job listing with their ID as employerId.
+     * @allow (update) Owner can update a job listing they own.
+     * @allow (delete) Owner can delete a job listing they own.
+     * @deny (create) User tries to create a job listing with incorrect employerId.
+     * @deny (update) User tries to update a job listing they don't own.
+     * @deny (delete) User tries to delete a job listing they don't own.
+     * @principle Public read, owner-only writes, ownership enforced via employerId.
      */
     match /jobs/{jobId} {
       function isSignedIn() {
         return request.auth != null;
       }
-
       function isOwner(employerId) {
         return isSignedIn() && request.auth.uid == employerId;
       }
-
       function isExistingOwner(employerId) {
         return isOwner(employerId) && resource != null;
       }
 
       allow get, list: if true;
+
       allow create: if isSignedIn() && request.resource.data.employerId == request.auth.uid;
       allow update: if isExistingOwner(resource.data.employerId);
       allow delete: if isExistingOwner(resource.data.employerId);
     }
 
     /**
-     * @description Controls access to job applications.
+     * @description Allows users to manage their own job applications.
      * @path /users/{userId}/applications/{applicationId}
-     * @allow (get) Authenticated user can read their own job applications.
-     * @allow (create) Authenticated user can create a job application.
-     * @allow (update) Authenticated user can update their job application.
-     * @allow (delete) Authenticated user can delete their job application.
-     * @deny (get) Authenticated user cannot read other users' job applications.
-     * @deny (create) Authenticated user cannot create job applications for other users.
-     * @deny (update) Authenticated user cannot update other users' job applications.
-     * @deny (delete) Authenticated user cannot delete other users' job applications.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) User with matching ID can create a job application.
+     * @allow (update) User with matching ID can update their job application.
+     * @allow (delete) User with matching ID can delete their job application.
+     * @allow (get) User with matching ID can get their job application.
+     * @allow (list) User with matching ID can list their job applications.
+     * @deny (create) User tries to create a job application for a different user.
+     * @deny (update) User tries to update someone else's job application.
+     * @deny (delete) User tries to delete someone else's job application.
+     * @principle Enforces document ownership, restricts access to a user's own data.
      */
     match /users/{userId}/applications/{applicationId} {
       function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
       }
-
       function isExistingOwner(userId) {
         return isOwner(userId) && resource != null;
       }
 
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
+
       allow create: if isOwner(userId) && request.resource.data.seekerId == request.auth.uid;
       allow update: if isExistingOwner(userId) && request.resource.data.seekerId == resource.data.seekerId;
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Controls access to room listings.
+     * @description Allows public read access to room listings, with owner-only writes.
      * @path /rooms/{roomId}
      * @allow (get, list) Anyone can read room listings.
-     * @allow (create) Authenticated user can create a room listing with their ID as the ownerId.
-     * @allow (update) Authenticated user can update their room listing.
-     * @allow (delete) Authenticated user can delete their room listing.
-     * @deny (create) Unauthenticated user cannot create a room listing.
-     * @deny (update) Authenticated user cannot update other users' room listings.
-     * @deny (delete) Authenticated user cannot delete other users' room listings.
+     * @allow (create) User can create a room listing with their ID as ownerId.
+     * @allow (update) Owner can update a room listing they own.
+     * @allow (delete) Owner can delete a room listing they own.
+     * @deny (create) User tries to create a room listing with incorrect ownerId.
+     * @deny (update) User tries to update a room listing they don't own.
+     * @deny (delete) User tries to delete a room listing they don't own.
+     * @principle Public read, owner-only writes, ownership enforced via ownerId.
      */
     match /rooms/{roomId} {
       function isSignedIn() {
         return request.auth != null;
       }
-
       function isOwner(ownerId) {
         return isSignedIn() && request.auth.uid == ownerId;
       }
-
       function isExistingOwner(ownerId) {
         return isOwner(ownerId) && resource != null;
       }
 
       allow get, list: if true;
+
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
       allow update: if isExistingOwner(resource.data.ownerId);
       allow delete: if isExistingOwner(resource.data.ownerId);
     }
 
     /**
-     * @description Controls access to room bookings.
+     * @description Allows users to manage their own room bookings.
      * @path /users/{userId}/bookings/{bookingId}
-     * @allow (get) Authenticated user can read their own room bookings.
-     * @allow (create) Authenticated user can create a room booking.
-     * @allow (update) Authenticated user can update their room booking.
-     * @allow (delete) Authenticated user can delete their room booking.
-     * @deny (get) Authenticated user cannot read other users' room bookings.
-     * @deny (create) Authenticated user cannot create room bookings for other users.
-     * @deny (update) Authenticated user cannot update other users' room bookings.
-     * @deny (delete) Authenticated user cannot delete other users' room bookings.
+     * @allow (create) User with matching ID can create a room booking.
+     * @allow (update) User with matching ID can update their room booking.
+     * @allow (delete) User with matching ID can delete their room booking.
+     * @allow (get) User with matching ID can get their room booking.
+     * @allow (list) User with matching ID can list their room bookings.
+     * @deny (create) User tries to create a room booking for a different user.
+     * @deny (update) User tries to update someone else's room booking.
+     * @deny (delete) User tries to delete someone else's room booking.
+     * @principle Enforces document ownership, restricts access to a user's own data.
      */
     match /users/{userId}/bookings/{bookingId} {
       function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
       }
-
       function isExistingOwner(userId) {
         return isOwner(userId) && resource != null;
       }
 
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
+
       allow create: if isOwner(userId) && request.resource.data.renterId == request.auth.uid;
       allow update: if isExistingOwner(userId) && request.resource.data.renterId == resource.data.renterId;
       allow delete: if isExistingOwner(userId);
