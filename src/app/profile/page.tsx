@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useDoc, useFirestore, useFirebaseApp, updateProfile, setDoc } from '@/firebase';
+import { useUser, useDoc, useFirestore, useFirebaseApp, setDoc, updateProfile } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
@@ -113,10 +113,10 @@ export default function ProfilePage() {
           const downloadURL = await getDownloadURL(snapshot.ref);
 
           // Update Firebase Authentication profile
-          await updateProfile(user, { photoURL: downloadURL });
-
-          // Reload user data to ensure latest profile information is fetched
-          await user.reload(); 
+          if (user) {
+            await updateProfile(user, { photoURL: downloadURL });
+            await user.reload(); // Reload user data
+          }
 
           // Update Firestore document with photoURL
           await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
@@ -129,14 +129,12 @@ export default function ProfilePage() {
           console.error('Error uploading file:', error);
           let errorMessage = 'Could not upload your profile picture.';
           if (error.code) { 
-            errorMessage = `Upload Failed: ${error.code}. ${error.message}`;
+            errorMessage = `Upload Failed: ${error.code}.`;
             if (error.code === 'storage/unauthorized') {
               errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
             } else if (error.code === 'storage/quota-exceeded') {
-              errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.';
+              errorMessage = 'Storage quota exceeded.';
             }
-          } else if (error.message) {
-            errorMessage = error.message;
           }
 
           toast({
@@ -191,14 +189,12 @@ export default function ProfilePage() {
           console.error('Error uploading resume:', error);
           let errorMessage = 'Could not upload your resume.';
           if (error.code) {
-            errorMessage = `Upload Failed: ${error.code}. ${error.message}`;
+            errorMessage = `Upload Failed: ${error.code}.`;
              if (error.code === 'storage/unauthorized') {
               errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
             } else if (error.code === 'storage/quota-exceeded') {
-              errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.';
+              errorMessage = 'Storage quota exceeded.';
             }
-          } else if (error.message) {
-            errorMessage = error.message;
           }
           toast({
             variant: 'destructive',
@@ -393,4 +389,3 @@ export default function ProfilePage() {
   );
 }
 
-    
