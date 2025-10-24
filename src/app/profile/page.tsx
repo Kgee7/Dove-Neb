@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUser, useDoc, useFirestore, useFirebaseApp, updateProfile } from '@/firebase';
-import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -30,7 +30,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Loader2, Edit, Upload, ArrowLeft } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { FirestorePermissionError } from '@/firebase/errors';
 
 type UserProfile = {
     userType: 'seeker' | 'employer' | 'renter' | 'owner';

@@ -108,9 +108,15 @@
         "definition": { "schema": { "$ref": "#/entities/Room" }, "description": "Top-level collection for all room listings.", "publicRead": true }
       },
       {
+        "path": "/rooms/{roomId}/bookings/{bookingId}",
+        "definition": { "schema": { "$ref": "#/entities/Booking" }, "description": "Subcollection for a room's bookings." }
+      },
+      {
         "path": "/users/{userId}/bookings/{bookingId}",
         "definition": { "schema": { "$ref": "#/entities/Booking" }, "description": "Subcollection for a user's room bookings." }
       }
     ]
   }
 }
+
+    
