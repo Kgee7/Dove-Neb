@@ -86,7 +86,7 @@ export function SiteHeader() {
       <div className="container flex h-14 max-w-screen-2xl items-center">
         <Link href="/" className="mr-6 flex items-center space-x-2">
           <Icons.logo className="h-6 w-6 text-primary" />
-          <span className="font-bold sm:inline-block">Dove Ned</span>
+          <span className="font-bold sm:inline-block">Dove Neb</span>
         </Link>
         <nav className="hidden flex-1 items-center gap-4 text-sm lg:flex">
           {navLinks.map((link) => {
@@ -198,7 +198,7 @@ export function SiteHeader() {
                     <SheetHeader className="flex flex-row justify-between items-center py-4 px-6 border-b">
                          <Link href="/" className="flex items-center space-x-2" onClick={() => setIsMobileMenuOpen(false)}>
                             <Icons.logo className="h-6 w-6 text-primary" />
-                            <span className="font-bold">Dove Ned</span>
+                            <span className="font-bold">Dove Neb</span>
                         </Link>
                         <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
                         <SheetClose asChild>
