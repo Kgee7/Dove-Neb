@@ -109,18 +109,23 @@ export default function ProfilePage() {
         try {
           const storage = getStorage(firebaseApp);
           const storageRef = ref(storage, `profilePictures/${user.uid}/${file.name}`);
-          
           const snapshot = await uploadBytes(storageRef, file, { customMetadata: { owner: user.uid } });
           const downloadURL = await getDownloadURL(snapshot.ref);
 
+          // Update Firebase Authentication profile
           await updateProfile(user, { photoURL: downloadURL });
+
+          // Reload user data to ensure latest profile information is fetched
+          await user.reload(); 
+
+          // Update Firestore document with photoURL
           await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
 
           toast({
             title: 'Profile Picture Updated',
             description: 'Your new avatar has been saved.',
           });
-        } catch (error: any) {
+        } catch (error: any) { 
           console.error('Error uploading file:', error);
           let errorMessage = 'Could not upload your profile picture.';
           if (error.code) { 
@@ -387,3 +392,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
