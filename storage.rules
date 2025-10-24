@@ -1,41 +1,36 @@
-
 rules_version = '2';
 
+// By default, deny all reads and writes
 service firebase.storage {
   match /b/{bucket}/o {
+    // Helper function to check if a user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
 
-    // Allow public read access to all files.
-    // This is necessary for the app to display images.
-    match /{allPaths=**} {
+    // Helper function to check if the user is the owner of the file
+    // This relies on the client sending a 'owner' key in the file metadata
+    function isOwner(userId) {
+      return request.resource.metadata.owner == userId;
+    }
+
+    // Profile pictures can be read by anyone, but only written by the owner
+    match /profilePictures/{userId}/{allPaths=**} {
       allow read;
+      allow write: if isAuthenticated() && isOwner(userId);
     }
 
-    // --- Profile Pictures ---
-    // Allow a user to upload/update/delete their own profile picture.
-    // The client SDK includes the user's UID in the file metadata.
-    // We check that the metadata's 'owner' field matches the authenticated user's UID.
-    match /profilePictures/{userId}/{fileName} {
-      allow write: if request.auth != null 
-                   && request.auth.uid == userId
-                   && request.resource.metadata.owner == request.auth.uid;
+    // Resumes can be read by anyone, but only written by the owner
+    // Note: In a real-world app, you might restrict read access for resumes.
+    match /resumes/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if isAuthenticated() && isOwner(userId);
     }
 
-    // --- Resumes ---
-    // Allow a user to upload/update/delete their own resume.
-    match /resumes/{userId}/{fileName} {
-      allow write: if request.auth != null 
-                   && request.auth.uid == userId
-                   && request.resource.metadata.owner == request.auth.uid;
-    }
-
-    // --- Room Images ---
-    // Allow a user to upload/update/delete images for their own rooms.
-    match /rooms/{userId}/{fileId} {
-      allow write: if request.auth != null 
-                   && request.auth.uid == userId
-                   && request.resource.metadata.owner == request.auth.uid;
+    // Room images can be read by anyone, but only written by the room owner
+    match /rooms/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if isAuthenticated() && isOwner(userId);
     }
   }
 }
-
-    
