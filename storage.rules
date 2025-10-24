@@ -1,24 +1,41 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Profile pictures: Users can write to their own folder, anyone can read.
-    match /profilePictures/{userId}/{allPaths=**} {
+
+    // Allow public read access to all files.
+    // This is necessary for the app to display images.
+    match /{allPaths=**} {
       allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Resumes: Users can write to their own folder, anyone can read.
-    // Consider making read access more restrictive if resumes are private.
-    match /resumes/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // --- Profile Pictures ---
+    // Allow a user to upload/update/delete their own profile picture.
+    // The client SDK includes the user's UID in the file metadata.
+    // We check that the metadata's 'owner' field matches the authenticated user's UID.
+    match /profilePictures/{userId}/{fileName} {
+      allow write: if request.auth != null 
+                   && request.auth.uid == userId
+                   && request.resource.metadata.owner == request.auth.uid;
     }
 
-    // Room images: Users can write to their own room image folders, anyone can read.
-    match /rooms/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // --- Resumes ---
+    // Allow a user to upload/update/delete their own resume.
+    match /resumes/{userId}/{fileName} {
+      allow write: if request.auth != null 
+                   && request.auth.uid == userId
+                   && request.resource.metadata.owner == request.auth.uid;
+    }
+
+    // --- Room Images ---
+    // Allow a user to upload/update/delete images for their own rooms.
+    match /rooms/{userId}/{fileId} {
+      allow write: if request.auth != null 
+                   && request.auth.uid == userId
+                   && request.resource.metadata.owner == request.auth.uid;
     }
   }
 }
+
+    

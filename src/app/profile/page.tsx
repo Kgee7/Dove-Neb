@@ -110,7 +110,7 @@ export default function ProfilePage() {
         try {
           const storage = getStorage(firebaseApp);
           const storageRef = ref(storage, `profilePictures/${user.uid}/${file.name}`);
-          const snapshot = await uploadBytes(storageRef, file);
+          const snapshot = await uploadBytes(storageRef, file, { customMetadata: { owner: user.uid } });
           const downloadURL = await getDownloadURL(snapshot.ref);
           
           if (user) {
@@ -175,7 +175,7 @@ export default function ProfilePage() {
         try {
           const storage = getStorage(firebaseApp);
           const storageRef = ref(storage, `resumes/${user.uid}/${file.name}`);
-          const snapshot = await uploadBytes(storageRef, file);
+          const snapshot = await uploadBytes(storageRef, file, { customMetadata: { owner: user.uid } });
           const downloadURL = await getDownloadURL(snapshot.ref);
 
           await updateDoc(userDocRef, { resumeURL: downloadURL });
@@ -389,3 +389,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    

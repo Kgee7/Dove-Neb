@@ -92,7 +92,7 @@ export default function ListRoomPage() {
         data.images.map(async (image) => {
           const storage = getStorage(firebaseApp);
           const storageRef = ref(storage, `rooms/${user.uid}/${uuidv4()}`);
-          const snapshot = await uploadBytes(storageRef, image);
+          const snapshot = await uploadBytes(storageRef, image, { customMetadata: { owner: user.uid } });
           return getDownloadURL(snapshot.ref);
         })
       );
@@ -340,3 +340,5 @@ export default function ListRoomPage() {
     </div>
   );
 }
+
+    
