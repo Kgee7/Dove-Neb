@@ -134,13 +134,13 @@ export default function JobsPage() {
         {jobsLoading ? (
            <div className="flex justify-center items-center h-64"><Loader2 className="h-12 w-12 animate-spin" /></div>
         ) : displayedJobs.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-9">
             {displayedJobs.map(job => (
               <JobCard key={job.id} job={job} />
             ))}
           </div>
         ) : (
-           <div className='text-center py-12 border-2 border-dashed rounded-lg'>
+           <div className='text-center py-2 border-2 border-dashed rounded-lg'>
               <h3 className="mt-4 text-lg font-medium">No jobs found matching your criteria.</h3>
               <p className="mt-1 text-sm text-muted-foreground">Try adjusting your search filters.</p>
           </div>

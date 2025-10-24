@@ -97,13 +97,14 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
           <div className="container max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight text-white md:text-5xl lg:text-6xl font-headline">
+            <h1 className="text-1.7
+            7xl font-bold tracking-tight text-white md:text-5xl lg:text-6xl font-headline">
               Where Opportunities Take Flight
             </h1>
-            <p className="mt-4 text-lg text-white/90 md:text-xl">
+            <p className="mt-2 text-sg text-white/50 md:text-xl">
               Find your dream job and the perfect place to stay.
             </p>
-            <Card className="mx-auto mt-8 max-w-2xl shadow-lg">
+            <Card className="mx-auto mt-2 max-w-2xl shadow-2lg">
                <Tabs defaultValue="jobs" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="jobs">Find a Job</TabsTrigger>
