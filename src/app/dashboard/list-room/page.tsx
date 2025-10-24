@@ -330,7 +330,7 @@ export default function ListRoomPage() {
                 )}
                 />
 
-              <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'List My Room'}
               </Button>
             </form>

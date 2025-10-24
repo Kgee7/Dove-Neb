@@ -26,7 +26,7 @@ type UserProfile = {
   firstName: string;
   lastName: string;
   preferredName?: string;
-  photoURL?: string;
+  photoURL?: string | null;
 };
 
 export function SiteHeader() {
@@ -177,8 +177,7 @@ export function SiteHeader() {
                 <Link
                     href="/signup"
                     className={cn(
-                    buttonVariants({ variant: "default" }),
-                    "bg-accent hover:bg-accent/90"
+                    buttonVariants({ variant: "default" })
                     )}
                 >
                     Sign Up
@@ -222,7 +221,7 @@ export function SiteHeader() {
                                     <Button variant="ghost" className="w-full justify-start">Sign In</Button>
                                 </Link>
                                 <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <Button className="w-full justify-start mt-2 bg-accent hover:bg-accent/90">Sign Up</Button>
+                                    <Button className="w-full justify-start mt-2">Sign Up</Button>
                                 </Link>
                             </div>
                         </div>

@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useDoc, useFirestore, useFirebaseApp } from '@/firebase';
+import { useUser, useDoc, useFirestore, useFirebaseApp, setDocumentNonBlocking, updateProfile } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
@@ -30,6 +30,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Loader2, Edit, Upload, ArrowLeft } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { FirestorePermissionError } from '@/firebase/errors';
 
 type UserProfile = {
     userType: 'seeker' | 'employer' | 'renter' | 'owner';
@@ -37,7 +38,7 @@ type UserProfile = {
     lastName:string;
     preferredName?: string;
     email: string;
-    photoURL?: string;
+    photoURL?: string | null;
     resumeURL?: string;
 };
 
@@ -111,26 +112,26 @@ export default function ProfilePage() {
           const storageRef = ref(storage, `profilePictures/${user.uid}/${file.name}`);
           const snapshot = await uploadBytes(storageRef, file);
           const downloadURL = await getDownloadURL(snapshot.ref);
+          
+          if (user) {
+            await updateProfile(user, { photoURL: downloadURL });
+          }
 
-          // Update Firebase Authentication profile
-          await updateProfile(user, { photoURL: downloadURL });
-
-          // Update Firestore document with photoURL
           await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
 
           toast({
             title: 'Profile Picture Updated',
             description: 'Your new avatar has been saved.',
           });
-        } catch (error: any) { // Consider more specific error types or cast to Error
+        } catch (error: any) {
           console.error('Error uploading file:', error);
           let errorMessage = 'Could not upload your profile picture.';
           if (error.code) { // Check for Firebase Storage specific error codes
             errorMessage = `Upload Failed: ${error.code}. ${error.message}`;
             if (error.code === 'storage/unauthorized') {
-              errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
+              errorMessage = 'Permission denied. Check Firebase Storage Security Rules.'; // Specific message for permissions [9, 11, 32]
             } else if (error.code === 'storage/quota-exceeded') {
-              errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.';
+              errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.'; // For quota issues [9, 34]
             }
           } else if (error.message) {
             errorMessage = error.message;
@@ -145,12 +146,11 @@ export default function ProfilePage() {
           setUploading(false);
         }
       };
-
+      
       const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file || !user || !userDocRef) return;
 
-        // Client-side file type validation (example: only allow PDF and common Word docs for resumes)
         const allowedResumeTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
         if (!allowedResumeTypes.includes(file.type)) {
             toast({
@@ -190,9 +190,9 @@ export default function ProfilePage() {
           if (error.code) { // Check for Firebase Storage specific error codes
             errorMessage = `Upload Failed: ${error.code}. ${error.message}`;
              if (error.code === 'storage/unauthorized') {
-              errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
+              errorMessage = 'Permission denied. Check Firebase Storage Security Rules.'; // Specific message for permissions [9, 11, 32]
             } else if (error.code === 'storage/quota-exceeded') {
-              errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.';
+              errorMessage = 'Storage quota exceeded. Please upgrade your plan or delete some files.'; // For quota issues [9, 34]
             }
           } else if (error.message) {
             errorMessage = error.message;
@@ -266,7 +266,7 @@ export default function ProfilePage() {
           <div className="flex flex-col items-center gap-4 mb-8">
             <div className="relative group">
                 <Avatar className="h-24 w-24">
-                    {photoURL && <AvatarImage src={photoURL} alt="Profile picture" />}
+                   {photoURL && <AvatarImage src={photoURL} alt="Profile picture" />}
                     <AvatarFallback className="text-3xl">
                         {getInitials(userProfile?.firstName, userProfile?.lastName)}
                     </AvatarFallback>
@@ -377,7 +377,7 @@ export default function ProfilePage() {
                 )}
               
               <div className="flex justify-end">
-                <Button type="submit" className="bg-accent hover:bg-accent/90" disabled={loading || uploading}>
+                <Button type="submit" disabled={loading || uploading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {loading ? 'Saving...' : 'Save Changes'}
                 </Button>

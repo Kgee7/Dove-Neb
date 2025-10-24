@@ -94,13 +94,13 @@ export default function HomePage() {
             priority
           />
         )}
-        <div className="absolute inset-0 bg-background/40" />
+        <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
-          <div className="container max-w-4xl">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl font-headline">
+          <div className="container max-w-3xl">
+            <h1 className="text-4xl font-bold tracking-tight text-white md:text-5xl lg:text-6xl font-headline">
               Where Opportunities Take Flight
             </h1>
-            <p className="mt-4 text-lg text-foreground/90 md:text-xl">
+            <p className="mt-4 text-lg text-white/90 md:text-xl">
               Find your dream job and the perfect place to stay.
             </p>
             <Card className="mx-auto mt-8 max-w-2xl shadow-lg">
@@ -130,7 +130,7 @@ export default function HomePage() {
                           onChange={(e) => setJobLocationQuery(e.target.value)}
                         />
                       </div>
-                      <Button type="submit" className="bg-accent hover:bg-accent/90">
+                      <Button type="submit">
                         Search Jobs
                       </Button>
                     </form>
@@ -157,7 +157,7 @@ export default function HomePage() {
                           onChange={(e) => setRoomLocationQuery(e.target.value)}
                         />
                       </div>
-                      <Button type="submit" className="bg-accent hover:bg-accent/90">
+                      <Button type="submit">
                         Search Rooms
                       </Button>
                     </form>
@@ -187,15 +187,15 @@ export default function HomePage() {
               {jobs?.map((job) => (
                 <Card
                   key={job.id}
-                  className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-2xl"
+                  className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg"
                 >
                   <CardHeader>
-                     <CardTitle className="text-lg">
+                     <CardTitle className="text-xl">
                         <Link href={`/jobs/${job.id}`} className="hover:underline">
                           {job.title}
                         </Link>
                     </CardTitle>
-                     <p className="text-sm text-muted-foreground flex items-center">
+                     <p className="text-sm text-muted-foreground flex items-center pt-1">
                         <Building2 className="h-4 w-4 mr-2" />
                         {job.companyName}
                     </p>
@@ -208,9 +208,11 @@ export default function HomePage() {
                     <div className="mt-4 flex-grow" />
                      <div className="flex justify-between items-center mt-2">
                         <Badge variant="outline">{job.type}</Badge>
-                        <p className="text-lg font-semibold">
-                            ${job.salaryMin/1000}k - ${job.salaryMax/1000}k
-                        </p>
+                        {(job.salaryMin && job.salaryMax) && (
+                           <p className="text-lg font-semibold">
+                              ${job.salaryMin/1000}k - ${job.salaryMax/1000}k
+                          </p>
+                        )}
                      </div>
                   </CardContent>
                 </Card>
@@ -247,7 +249,7 @@ export default function HomePage() {
               {rooms?.map((room) => (
                 <Card
                   key={room.id}
-                  className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-2xl"
+                  className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg"
                 >
                   <CardHeader className="p-0">
                     <Link href={`/rooms/${room.id}`}>
@@ -262,7 +264,7 @@ export default function HomePage() {
                     </Link>
                   </CardHeader>
                   <CardContent className="flex flex-1 flex-col p-4">
-                    <CardTitle className="text-lg">
+                    <CardTitle className="text-xl">
                         <Link href={`/rooms/${room.id}`} className="hover:underline">
                           {room.title}
                         </Link>
@@ -277,7 +279,7 @@ export default function HomePage() {
                             {room.currencySymbol}{room.price}
                             <span className="text-sm font-normal text-muted-foreground">/night</span>
                         </p>
-                        <Badge variant="outline">New</Badge>
+                        <Badge variant="secondary">New</Badge>
                      </div>
                   </CardContent>
                 </Card>
