@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useDoc, useFirestore, useFirebaseApp, setDocumentNonBlocking, updateProfile } from '@/firebase';
+import { useUser, useDoc, useFirestore, useFirebaseApp, updateProfile, updateDoc } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
@@ -117,7 +117,7 @@ export default function ProfilePage() {
             await updateProfile(user, { photoURL: downloadURL });
           }
 
-          await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
+          await updateDoc(userDocRef, { photoURL: downloadURL });
 
           toast({
             title: 'Profile Picture Updated',
@@ -178,7 +178,7 @@ export default function ProfilePage() {
           const snapshot = await uploadBytes(storageRef, file);
           const downloadURL = await getDownloadURL(snapshot.ref);
 
-          await setDoc(userDocRef, { resumeURL: downloadURL }, { merge: true });
+          await updateDoc(userDocRef, { resumeURL: downloadURL });
 
           toast({
             title: 'Resume Uploaded',
@@ -219,7 +219,7 @@ export default function ProfilePage() {
     };
     
     try {
-        await setDoc(userDocRef, dataToUpdate, { merge: true });
+        await updateDoc(userDocRef, dataToUpdate);
         toast({
             title: 'Profile Updated',
             description: 'Your profile information has been saved successfully.',
