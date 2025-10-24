@@ -77,7 +77,7 @@ export default function ListRoomPage() {
   }, [isUserLoading, user, router]);
 
   const onSubmit = async (data: ListRoomFormValues) => {
-    if (!user) {
+    if (!user || !firebaseApp) {
       toast({
         variant: 'destructive',
         title: 'Authentication Error',
@@ -88,9 +88,9 @@ export default function ListRoomPage() {
     setIsLoading(true);
 
     try {
+      const storage = getStorage(firebaseApp);
       const imageUrls = await Promise.all(
         data.images.map(async (image) => {
-          const storage = getStorage(firebaseApp);
           const storageRef = ref(storage, `rooms/${user.uid}/${uuidv4()}`);
           const snapshot = await uploadBytes(storageRef, image, { customMetadata: { owner: user.uid } });
           return getDownloadURL(snapshot.ref);
@@ -340,5 +340,3 @@ export default function ListRoomPage() {
     </div>
   );
 }
-
-    

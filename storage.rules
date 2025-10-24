@@ -3,27 +3,28 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow public read access to all files
-    match /{allPaths=**} {
+    
+    // Helper function to check ownership via metadata
+    function isOwner(userId) {
+      return request.auth != null && request.resource.metadata.owner == userId;
+    }
+
+    // Profile pictures: users can only upload to their own folder
+    match /profilePictures/{userId}/{allPaths=**} {
       allow read;
+      allow write: if isOwner(userId);
     }
 
-    // Secure user-specific folders
-    match /profilePictures/{userId}/{fileName} {
-      allow write: if request.auth != null && request.auth.uid == userId 
-                      && request.resource.metadata.owner == request.auth.uid;
+    // Resumes: users can only upload to their own folder
+    match /resumes/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if isOwner(userId);
     }
 
-    match /resumes/{userId}/{fileName} {
-      allow write: if request.auth != null && request.auth.uid == userId
-                      && request.resource.metadata.owner == request.auth.uid;
-    }
-
-    match /rooms/{userId}/{fileName} {
-      allow write: if request.auth != null && request.auth.uid == userId
-                      && request.resource.metadata.owner == request.auth.uid;
+    // Room images: users can only upload to their own folder
+    match /rooms/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if isOwner(userId);
     }
   }
 }
-
-    
