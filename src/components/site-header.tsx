@@ -160,7 +160,7 @@ export function SiteHeader() {
                <div className="hidden sm:flex items-center space-x-2">
                 <Link href="/dashboard/list-room">
                     <Button variant="outline">
-                        List your space
+                        Lodge Now
                     </Button>
                 </Link>
                 <Link href="/dashboard/post-job">
