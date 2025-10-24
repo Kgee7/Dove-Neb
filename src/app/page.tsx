@@ -90,6 +90,7 @@ export default function HomePage() {
             alt={heroImage.description}
             data-ai-hint={heroImage.imageHint}
             fill
+            sizes="100vw"
             className="object-cover"
             priority
           />
@@ -97,8 +98,8 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
           <div className="container max-w-3xl">
-            <h1 className="text-1.7
-            7xl font-bold tracking-tight text-white md:text-5xl lg:text-6xl font-headline">
+            <h1 className="text-1.5
+            7xl font-bold tracking-tight text-white md:text-3xl lg:text-4xl font-headline">
               Where Opportunities Take Flight
             </h1>
             <p className="mt-2 text-sg text-white/50 md:text-xl">
@@ -260,6 +261,7 @@ export default function HomePage() {
                             alt={room.title}
                             fill
                             className="object-cover"
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         />
                       </div>
                     </Link>
