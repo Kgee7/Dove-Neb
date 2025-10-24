@@ -72,7 +72,7 @@ export default function RoomsListingPage() {
           <CardContent className="p-4">
             <form className="flex flex-col gap-4 sm:flex-row" onSubmit={handleSearch}>
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   placeholder="Destination, e.g., 'beach house'"
                   className="pl-10"
@@ -81,7 +81,7 @@ export default function RoomsListingPage() {
                 />
               </div>
               <div className="relative flex-1">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input 
                   placeholder="Location, e.g., 'Paris'" 
                   className="pl-10"
@@ -89,7 +89,7 @@ export default function RoomsListingPage() {
                   onChange={(e) => setLocationQuery(e.target.value)}
                 />
               </div>
-              <Button type="submit" className="bg-accent hover:bg-accent/90">
+              <Button type="submit">
                 Search
               </Button>
             </form>
@@ -101,21 +101,21 @@ export default function RoomsListingPage() {
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredRooms.length > 0 ? (
             filteredRooms.map((room) => (
               <Card
                 key={room.id}
-                className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-2xl"
+                className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-2xl group"
               >
                 <CardHeader className="p-0">
                     <Link href={`/rooms/${room.id}`}>
-                        <div className="relative aspect-video">
+                        <div className="relative aspect-video overflow-hidden">
                             <Image
                                 src={room.images[0] || "/placeholder.jpg"}
                                 alt={room.title}
                                 fill
-                                className="object-cover"
+                                className="object-cover transition-transform duration-300 group-hover:scale-105"
                             />
                         </div>
                     </Link>

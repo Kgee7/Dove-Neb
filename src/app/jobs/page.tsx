@@ -134,13 +134,13 @@ export default function JobsPage() {
         {jobsLoading ? (
            <div className="flex justify-center items-center h-64"><Loader2 className="h-12 w-12 animate-spin" /></div>
         ) : displayedJobs.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-9">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {displayedJobs.map(job => (
               <JobCard key={job.id} job={job} />
             ))}
           </div>
         ) : (
-           <div className='text-center py-2 border-2 border-dashed rounded-lg'>
+           <div className='text-center py-20 border-2 border-dashed rounded-lg'>
               <h3 className="mt-4 text-lg font-medium">No jobs found matching your criteria.</h3>
               <p className="mt-1 text-sm text-muted-foreground">Try adjusting your search filters.</p>
           </div>
@@ -164,7 +164,7 @@ function JobCard({ job }: { job: Job }) {
                 <CardTitle className="text-lg font-bold leading-tight">{job.title}</CardTitle>
                 <CardDescription className="mt-1">{job.companyName}</CardDescription>
             </div>
-             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center font-bold text-lg">
+             <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center font-bold text-lg">
                 {job.companyName?.charAt(0) || '?'}
             </div>
         </div>

@@ -98,14 +98,13 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
           <div className="container max-w-3xl">
-            <h1 className="text-1.5
-            7xl font-bold tracking-tight text-white md:text-3xl lg:text-4xl font-headline">
+            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl font-headline">
               Where Opportunities Take Flight
             </h1>
-            <p className="mt-2 text-sg text-white/50 md:text-xl">
+            <p className="mt-4 text-lg text-white/80 md:text-xl">
               Find your dream job and the perfect place to stay.
             </p>
-            <Card className="mx-auto mt-2 max-w-2xl shadow-2lg">
+            <Card className="mx-auto mt-8 max-w-2xl shadow-2xl">
                <Tabs defaultValue="jobs" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="jobs">Find a Job</TabsTrigger>
@@ -172,7 +171,7 @@ export default function HomePage() {
       </section>
       
        {/* Featured Jobs Section */}
-      <section className="bg-secondary/50 py-16 sm:py-24">
+      <section className="bg-muted/30 py-16 sm:py-24">
         <div className="container">
           <div className="mb-12 text-center">
             <h2 className="text-3xl font-bold tracking-tight md:text-4xl font-headline">
