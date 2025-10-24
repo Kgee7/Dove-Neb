@@ -97,8 +97,8 @@ export default function HomePage() {
         )}
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
-          <div className="container max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl font-headline">
+          <div className="container max-w-2xl">
+            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl font-headline">
               Where Opportunities Take Flight
             </h1>
             <p className="mt-4 text-lg text-white/80 md:text-xl">

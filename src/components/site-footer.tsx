@@ -10,7 +10,7 @@ export function SiteFooter() {
           <div className="flex items-center space-x-2">
             <Icons.logo className="h-6 w-6" />
             <p className="text-center text-sm font-bold leading-loose md:text-left">
-              Dove Jobs
+              Dove Ned
             </p>
           </div>
           <div className="flex flex-col items-center gap-2 text-center md:flex-row md:gap-4">
@@ -19,7 +19,7 @@ export function SiteFooter() {
             </p>
           </div>
           <p className="text-center text-sm text-muted-foreground md:text-left">
-            &copy; {new Date().getFullYear()} Dove Jobs, Inc. All rights reserved.
+            &copy; {new Date().getFullYear()} Dove Ned, Inc. All rights reserved.
           </p>
         </div>
       </div>

@@ -20,7 +20,7 @@ export default function AuthLayout({
             className="mb-8 flex items-center justify-center gap-2 text-2xl font-bold text-foreground"
           >
             <Icons.logo className="h-7 w-7 text-primary" />
-            <span>Dove Jobs</span>
+            <span>Dove Ned</span>
           </Link>
           {children}
         </div>
