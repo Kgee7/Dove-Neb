@@ -33,6 +33,7 @@ export default function AuthLayout({
             alt={heroImage.description}
             data-ai-hint={heroImage.imageHint}
             fill
+            sizes="50vw"
             className="object-cover"
             priority
           />
