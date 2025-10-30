@@ -59,7 +59,7 @@ export default function ListRoomPage() {
       description: '',
       location: '',
       price: 0,
-      currencyInfo: 'US', // Default to US
+      currencyInfo: 'US',
       images: [],
       amenities: [],
     },
@@ -124,10 +124,18 @@ export default function ListRoomPage() {
       router.push('/dashboard');
     } catch (error: any) {
       console.error('Error listing room:', error);
+      let errorMessage = 'Could not list your room.';
+
+      if (error.code === 'storage/retry-limit-exceeded') {
+        errorMessage = 'Upload failed due to a network issue. Please check your connection and try again.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       toast({
         variant: 'destructive',
         title: 'Listing Failed',
-        description: error.message || 'Could not list your room.',
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);

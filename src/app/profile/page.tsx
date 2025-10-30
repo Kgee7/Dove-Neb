@@ -112,13 +112,11 @@ export default function ProfilePage() {
           const snapshot = await uploadBytes(storageRef, file, { customMetadata: { owner: user.uid } });
           const downloadURL = await getDownloadURL(snapshot.ref);
 
-          // Update Firebase Authentication profile
           if (user) {
             await updateProfile(user, { photoURL: downloadURL });
-            await user.reload(); // Reload user data
+            await user.reload();
           }
 
-          // Update Firestore document with photoURL
           await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
 
           toast({
@@ -128,9 +126,12 @@ export default function ProfilePage() {
         } catch (error: any) { 
           console.error('Error uploading file:', error);
           let errorMessage = 'Could not upload your profile picture.';
-          if (error.code) { 
+
+          if (error.code) {
             errorMessage = `Upload Failed: ${error.code}.`;
-            if (error.code === 'storage/unauthorized') {
+            if (error.code === 'storage/retry-limit-exceeded') {
+                errorMessage = 'Upload failed due to a network issue. Please check your connection and try again.';
+            } else if (error.code === 'storage/unauthorized') {
               errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
             } else if (error.code === 'storage/quota-exceeded') {
               errorMessage = 'Storage quota exceeded.';
@@ -188,9 +189,12 @@ export default function ProfilePage() {
         } catch (error: any) {
           console.error('Error uploading resume:', error);
           let errorMessage = 'Could not upload your resume.';
+          
           if (error.code) {
             errorMessage = `Upload Failed: ${error.code}.`;
-             if (error.code === 'storage/unauthorized') {
+            if (error.code === 'storage/retry-limit-exceeded') {
+                errorMessage = 'Upload failed due to a network issue. Please check your connection and try again.';
+            } else if (error.code === 'storage/unauthorized') {
               errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
             } else if (error.code === 'storage/quota-exceeded') {
               errorMessage = 'Storage quota exceeded.';
@@ -388,4 +392,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
