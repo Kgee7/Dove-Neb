@@ -29,7 +29,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Loader2, PlusCircle, Trash2, Upload } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { firebaseConfig } from '@/firebase/config';
 
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
@@ -89,7 +88,7 @@ export default function ListRoomPage() {
     setIsLoading(true);
 
     try {
-      const storage = getStorage(firebaseApp, firebaseConfig.storageBucket);
+      const storage = getStorage(firebaseApp);
       const imageUrls = await Promise.all(
         data.images.map(async (image) => {
           const storageRef = ref(storage, `rooms/${user.uid}/${uuidv4()}`);
@@ -332,7 +331,7 @@ export default function ListRoomPage() {
                             )
                         }}
                         />
-                    ))}
+                    ))}\
                     </div>
                     <FormMessage />
                     </FormItem>
