@@ -29,8 +29,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Loader2, PlusCircle, Trash2, Upload } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { firebaseConfig } from '@/firebase/config';
 
-const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
+const amenitiesList = [\"Wifi\", \"TV\", \"Kitchen\", \"Air Conditioning\", \"Heating\", \"Washer\", \"Dryer\"];
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters long.'),
@@ -67,7 +68,7 @@ export default function ListRoomPage() {
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: "images",
+    name: \"images\",
   });
 
    useEffect(() => {
@@ -88,7 +89,7 @@ export default function ListRoomPage() {
     setIsLoading(true);
 
     try {
-      const storage = getStorage(firebaseApp);
+      const storage = getStorage(firebaseApp, firebaseConfig.storageBucket);
       const imageUrls = await Promise.all(
         data.images.map(async (image) => {
           const storageRef = ref(storage, `rooms/${user.uid}/${uuidv4()}`);
@@ -144,14 +145,14 @@ export default function ListRoomPage() {
 
   if (isUserLoading || !user) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className=\"flex h-screen w-full items-center justify-center\">
+        <Loader2 className=\"h-12 w-12 animate-spin text-primary\" />
       </div>
     );
   }
   
   return (
-    <div className="container max-w-3xl py-12">
+    <div className=\"container max-w-3xl py-12\">
       <Card>
         <CardHeader>
           <CardTitle>List a New Room</CardTitle>
@@ -159,15 +160,15 @@ export default function ListRoomPage() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className=\"space-y-8\">
               <FormField
                 control={form.control}
-                name="title"
+                name=\"title\"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Room Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Cozy Downtown Apartment" {...field} />
+                      <Input placeholder=\"e.g., Cozy Downtown Apartment\" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -175,14 +176,14 @@ export default function ListRoomPage() {
               />
               <FormField
                 control={form.control}
-                name="description"
+                name=\"description\"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Tell guests about your space..."
-                        className="min-h-[120px]"
+                        placeholder=\"Tell guests about your space...\"
+                        className=\"min-h-[120px]\"
                         {...field}
                       />
                     </FormControl>
@@ -190,15 +191,15 @@ export default function ListRoomPage() {
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className=\"grid grid-cols-1 md:grid-cols-2 gap-6\">
                 <FormField
                   control={form.control}
-                  name="location"
+                  name=\"location\"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Location</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Paris, France" {...field} />
+                        <Input placeholder=\"e.g., Paris, France\" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -206,14 +207,14 @@ export default function ListRoomPage() {
                 />
                  <FormField
                     control={form.control}
-                    name="currencyInfo"
+                    name=\"currencyInfo\"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Currency</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a currency" />
+                              <SelectValue placeholder=\"Select a currency\" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -231,12 +232,12 @@ export default function ListRoomPage() {
               </div>
                <FormField
                   control={form.control}
-                  name="price"
+                  name=\"price\"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Price per night</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="100" {...field} />
+                        <Input type=\"number\" placeholder=\"100\" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -245,43 +246,43 @@ export default function ListRoomPage() {
 
                <FormField
                 control={form.control}
-                name="images"
+                name=\"images\"
                 render={() => (
                   <FormItem>
                     <FormLabel>Room Images</FormLabel>
                     <FormControl>
                       <Input
-                        type="file"
+                        type=\"file\"
                         multiple
-                        accept="image/*"
+                        accept=\"image/*\"
                         onChange={(e) => {
                           const files = Array.from(e.target.files || []);
                            form.setValue('images', [...form.getValues('images'), ...files]);
                         }}
-                        className="hidden"
-                        id="image-upload"
+                        className=\"hidden\"
+                        id=\"image-upload\"
                       />
                     </FormControl>
-                    <label htmlFor="image-upload" className="flex items-center justify-center w-full p-6 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted">
-                        <div className="text-center">
-                            <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-                            <p className="mt-2 text-sm text-muted-foreground">Click or drag to upload images</p>
+                    <label htmlFor=\"image-upload\" className=\"flex items-center justify-center w-full p-6 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted\">
+                        <div className=\"text-center\">
+                            <Upload className=\"mx-auto h-8 w-8 text-muted-foreground\" />
+                            <p className=\"mt-2 text-sm text-muted-foreground\">Click or drag to upload images</p>
                         </div>
                     </label>
                     <FormMessage />
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                    <div className=\"grid grid-cols-2 md:grid-cols-3 gap-4 mt-4\">
                         {form.watch('images').map((file, index) => (
-                           <div key={index} className="relative group">
-                                <img src={URL.createObjectURL(file)} alt={`preview ${index}`} className="w-full h-24 object-cover rounded-md" />
-                                <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => {
+                           <div key={index} className=\"relative group\">
+                                <img src={URL.createObjectURL(file)} alt={`preview ${index}`} className=\"w-full h-24 object-cover rounded-md\" />
+                                <Button variant=\"destructive\" size=\"icon\" className=\"absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100\" onClick={() => {
                                     const currentImages = form.getValues('images');
                                     currentImages.splice(index, 1);
                                     form.setValue('images', currentImages);
                                 }}>
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className=\"h-4 w-4\" />
                                 </Button>
                            </div>
-                        ))}
+                        ))}\
                     </div>
                   </FormItem>
                 )}
@@ -289,27 +290,27 @@ export default function ListRoomPage() {
 
                 <FormField
                 control={form.control}
-                name="amenities"
+                name=\"amenities\"
                 render={() => (
                     <FormItem>
-                    <div className="mb-4">
-                        <FormLabel className="text-base">Amenities</FormLabel>
+                    <div className=\"mb-4\">
+                        <FormLabel className=\"text-base\">Amenities</FormLabel>
                         <FormDescription>
                         Select the amenities available in your room.
                         </FormDescription>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className=\"grid grid-cols-2 md:grid-cols-3 gap-4\">
                     {amenitiesList.map((amenity) => (
                         <FormField
                         key={amenity}
                         control={form.control}
-                        name="amenities"
+                        name=\"amenities\"
                         render={({ field }) => {
                             return (
                             <FormItem
                                 key={amenity}
-                                className="flex flex-row items-start space-x-3 space-y-0"
-                            >
+                                className=\"flex flex-row items-start space-x-3 space-y-0\"
+                            >\
                                 <FormControl>
                                 <Checkbox
                                     checked={field.value?.includes(amenity)}
@@ -320,26 +321,26 @@ export default function ListRoomPage() {
                                             field.value?.filter(
                                             (value) => value !== amenity
                                             )
-                                        )
-                                    }}
+                                        )\
+                                    }}\
                                 />
                                 </FormControl>
-                                <FormLabel className="font-normal">
+                                <FormLabel className=\"font-normal\">\
                                 {amenity}
                                 </FormLabel>
                             </FormItem>
                             )
-                        }}
+                        }}\
                         />
-                    ))}
+                    ))}\
                     </div>
                     <FormMessage />
                     </FormItem>
                 )}
                 />
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'List My Room'}
+              <Button type=\"submit\" className=\"w-full\" disabled={isLoading}>\
+                {isLoading ? <Loader2 className=\"mr-2 h-4 w-4 animate-spin\" /> : 'List My Room'}\
               </Button>
             </form>
           </Form>
