@@ -9,22 +9,22 @@ service firebase.storage {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // Profile pictures: users can only upload to their own folder, if they own the content.
+    // Profile pictures: users can only upload to their own folder.
     match /profilePictures/{userId}/{allPaths=**} {
       allow read;
-      allow write: if isOwner(userId) && request.resource.metadata.owner == request.auth.uid;
+      allow write: if isOwner(userId);
     }
 
-    // Resumes: users can only upload to their own folder, if they own the content.
+    // Resumes: users can only upload to their own folder.
     match /resumes/{userId}/{allPaths=**} {
       allow read;
-      allow write: if isOwner(userId) && request.resource.metadata.owner == request.auth.uid;
+      allow write: if isOwner(userId);
     }
 
-    // Room images: users can only upload to their own folder, if they own the content.
+    // Room images: users can only upload to their own folder.
     match /rooms/{userId}/{allPaths=**} {
       allow read;
-      allow write: if isOwner(userId) && request.resource.metadata.owner == request.auth.uid;
+      allow write: if isOwner(userId);
     }
   }
 }
