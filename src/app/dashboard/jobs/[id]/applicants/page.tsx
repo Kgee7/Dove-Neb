@@ -30,8 +30,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function JobApplicantsPage() {
   const firestore = useFirestore();
@@ -55,7 +53,7 @@ export default function JobApplicantsPage() {
 
   const { data: applicants, isLoading: areApplicantsLoading } = useCollection<JobApplicant>(applicantsQuery);
 
-  const handleStatusChange = (applicantId: string, newStatus: 'reviewed' | 'rejected' | 'hired') => {
+  const handleStatusChange = async (applicantId: string, newStatus: 'reviewed' | 'rejected' | 'hired') => {
     if (!firestore || !id || !user) return;
 
     const applicantDocRef = doc(firestore, 'jobs', id, 'applicants', applicantId);
@@ -65,47 +63,37 @@ export default function JobApplicantsPage() {
         toast({ variant: 'destructive', title: 'Error', description: 'Applicant not found.' });
         return;
     }
-    
-    // Non-blocking update.
-    updateDoc(applicantDocRef, { status: newStatus })
-      .then(() => {
-        // If the first update succeeds, proceed to find and update the second document.
-        const userApplicationQuery = query(
-          collection(firestore, 'users', applicant.seekerId, 'applications'),
-          where('jobId', '==', id)
-        );
 
-        getDocs(userApplicationQuery).then((userApplicationSnapshot) => {
-          if (!userApplicationSnapshot.empty) {
-            const userApplicationDocRef = userApplicationSnapshot.docs[0].ref;
-            updateDoc(userApplicationDocRef, { status: newStatus }).catch((error) => {
-              console.error("Error updating user's application status:", error);
-              // Handle this nested error if necessary
-              toast({
-                  variant: 'destructive',
-                  title: 'Update Failed',
-                  description: "Could not update the application status in the user's profile.",
-              });
-            });
-          }
-        }).catch((error) => {
-           console.error("Error finding user's application:", error);
-        });
+    try {
+      // Step 1: Update the status in the /jobs/{jobId}/applicants subcollection
+      await updateDoc(applicantDocRef, { status: newStatus });
 
-        toast({
-            title: 'Status Updated',
-            description: `Applicant status changed to ${newStatus}.`,
-        });
+      // Step 2: Find and update the corresponding application in the /users/{userId}/applications subcollection
+      const userApplicationQuery = query(
+        collection(firestore, 'users', applicant.seekerId, 'applications'),
+        where('jobId', '==', id)
+      );
+      
+      const userApplicationSnapshot = await getDocs(userApplicationQuery);
+      
+      if (!userApplicationSnapshot.empty) {
+        const userApplicationDocRef = userApplicationSnapshot.docs[0].ref;
+        await updateDoc(userApplicationDocRef, { status: newStatus });
+      }
 
-      })
-      .catch((error: any) => {
-        console.error("Error updating application status:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Update Failed',
-            description: error.message || 'Could not update the application status.',
-        });
+      toast({
+        title: 'Status Updated',
+        description: `Applicant status changed to ${newStatus}.`,
       });
+
+    } catch (error: any) {
+      console.error("Error updating application status:", error);
+      toast({
+          variant: 'destructive',
+          title: 'Update Failed',
+          description: error.message || 'Could not update the application status.',
+      });
+    }
   };
 
 
