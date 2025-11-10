@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -31,7 +30,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -57,39 +55,66 @@ export default function JobApplicantsPage() {
 
   const { data: applicants, isLoading: areApplicantsLoading } = useCollection<JobApplicant>(applicantsQuery);
 
-  const handleStatusChange = async (applicantId: string, newStatus: 'reviewed' | 'rejected' | 'hired') => {
+  const handleStatusChange = (applicantId: string, newStatus: 'reviewed' | 'rejected' | 'hired') => {
     if (!firestore || !id || !user) return;
-
-    const applicantDocRef = doc(firestore, 'jobs', id, 'applicants', applicantId);
-    updateDocumentNonBlocking(applicantDocRef, { status: newStatus });
     
-    const applicant = applicants?.find(a => a.id === applicantId);
-    if (applicant) {
-        const userApplicationQuery = query(
-            collection(firestore, 'users', applicant.seekerId, 'applications'),
-            where('jobId', '==', id)
-        );
+    const applicantDocRef = doc(firestore, 'jobs', id, 'applicants', applicantId);
+    
+    // First, update the status on the job's applicant subcollection
+    updateDoc(applicantDocRef, { status: newStatus })
+      .then(() => {
+        // On successful update, proceed to update the user's application subcollection
+        const applicant = applicants?.find(a => a.id === applicantId);
+        if (applicant) {
+            const userApplicationQuery = query(
+                collection(firestore, 'users', applicant.seekerId, 'applications'),
+                where('jobId', '==', id)
+            );
+            
+            getDocs(userApplicationQuery)
+              .then(userApplicationSnapshot => {
+                if (!userApplicationSnapshot.empty) {
+                    const userApplicationDocRef = userApplicationSnapshot.docs[0].ref;
+                    updateDoc(userApplicationDocRef, { status: newStatus })
+                      .catch(error => {
+                          console.error("Error updating user's application status:", error);
+                          // Emit a contextual error for the second, nested write
+                          errorEmitter.emit('permission-error', new FirestorePermissionError({
+                              operation: 'update',
+                              path: userApplicationDocRef.path,
+                              requestResourceData: { status: newStatus },
+                          }));
+                      });
+                }
+              })
+              .catch(error => {
+                 console.error("Error querying user's application:", error);
+                 // It's harder to create a perfect contextual error for a failed read query,
+                 // but we can still signal that something went wrong.
+                 toast({
+                    variant: 'destructive',
+                    title: 'Update Partially Failed',
+                    description: `Could not update the application status in the user's profile. ${error.message}`,
+                 });
+              });
+        }
         
-        getDocs(userApplicationQuery).then(userApplicationSnapshot => {
-            if (!userApplicationSnapshot.empty) {
-                const userApplicationDocRef = userApplicationSnapshot.docs[0].ref;
-                updateDocumentNonBlocking(userApplicationDocRef, { status: newStatus });
-            }
-        }).catch(error => {
-            console.error("Error finding user application to update status: ", error);
-            const contextualError = new FirestorePermissionError({
-              operation: 'list',
-              path: `users/${applicant.seekerId}/applications`,
-            });
-            errorEmitter.emit('permission-error', contextualError);
+        toast({
+          title: 'Status Updated',
+          description: `Applicant status changed to ${newStatus}.`,
         });
-    }
-
-    toast({
-      title: 'Status Updated',
-      description: `Applicant status changed to ${newStatus}.`,
-    });
+      })
+      .catch(error => {
+        // This catch block handles errors for the *first* updateDoc call
+        console.error("Error updating applicant status:", error);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            operation: 'update',
+            path: applicantDocRef.path,
+            requestResourceData: { status: newStatus },
+        }));
+      });
   };
+
 
   const isLoading = isUserLoading || isJobLoading || areApplicantsLoading;
 
@@ -166,7 +191,7 @@ export default function JobApplicantsPage() {
                     </TableCell>
                     <TableCell>{format(applicant.appliedAt.toDate(), 'MMM d, yyyy')}</TableCell>
                     <TableCell>
-                      <Badge variant={applicant.status === 'pending' ? 'secondary' : 'default'}>
+                      <Badge variant={applicant.status === 'pending' ? 'secondary' : applicant.status === 'rejected' ? 'destructive' : 'default'}>
                         {applicant.status}
                       </Badge>
                     </TableCell>
@@ -190,7 +215,7 @@ export default function JobApplicantsPage() {
                                 <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, 'hired')}>
                                     <Check className="mr-2 h-4 w-4" /> Mark as Hired
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, 'rejected')}>
+                                <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, 'rejected')} className="text-red-600">
                                     <X className="mr-2 h-4 w-4" /> Reject
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
