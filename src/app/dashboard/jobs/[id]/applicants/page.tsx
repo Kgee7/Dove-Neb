@@ -57,61 +57,54 @@ export default function JobApplicantsPage() {
 
   const handleStatusChange = (applicantId: string, newStatus: 'reviewed' | 'rejected' | 'hired') => {
     if (!firestore || !id || !user) return;
-    
+
     const applicantDocRef = doc(firestore, 'jobs', id, 'applicants', applicantId);
+    const applicant = applicants?.find(a => a.id === applicantId);
+
+    if (!applicant) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Applicant not found.' });
+        return;
+    }
     
-    // First, update the status on the job's applicant subcollection
+    // Non-blocking update.
     updateDoc(applicantDocRef, { status: newStatus })
       .then(() => {
-        // On successful update, proceed to update the user's application subcollection
-        const applicant = applicants?.find(a => a.id === applicantId);
-        if (applicant) {
-            const userApplicationQuery = query(
-                collection(firestore, 'users', applicant.seekerId, 'applications'),
-                where('jobId', '==', id)
-            );
-            
-            getDocs(userApplicationQuery)
-              .then(userApplicationSnapshot => {
-                if (!userApplicationSnapshot.empty) {
-                    const userApplicationDocRef = userApplicationSnapshot.docs[0].ref;
-                    updateDoc(userApplicationDocRef, { status: newStatus })
-                      .catch(error => {
-                          console.error("Error updating user's application status:", error);
-                          // Emit a contextual error for the second, nested write
-                          errorEmitter.emit('permission-error', new FirestorePermissionError({
-                              operation: 'update',
-                              path: userApplicationDocRef.path,
-                              requestResourceData: { status: newStatus },
-                          }));
-                      });
-                }
-              })
-              .catch(error => {
-                 console.error("Error querying user's application:", error);
-                 // It's harder to create a perfect contextual error for a failed read query,
-                 // but we can still signal that something went wrong.
-                 toast({
-                    variant: 'destructive',
-                    title: 'Update Partially Failed',
-                    description: `Could not update the application status in the user's profile. ${error.message}`,
-                 });
+        // If the first update succeeds, proceed to find and update the second document.
+        const userApplicationQuery = query(
+          collection(firestore, 'users', applicant.seekerId, 'applications'),
+          where('jobId', '==', id)
+        );
+
+        getDocs(userApplicationQuery).then((userApplicationSnapshot) => {
+          if (!userApplicationSnapshot.empty) {
+            const userApplicationDocRef = userApplicationSnapshot.docs[0].ref;
+            updateDoc(userApplicationDocRef, { status: newStatus }).catch((error) => {
+              console.error("Error updating user's application status:", error);
+              // Handle this nested error if necessary
+              toast({
+                  variant: 'destructive',
+                  title: 'Update Failed',
+                  description: "Could not update the application status in the user's profile.",
               });
-        }
-        
-        toast({
-          title: 'Status Updated',
-          description: `Applicant status changed to ${newStatus}.`,
+            });
+          }
+        }).catch((error) => {
+           console.error("Error finding user's application:", error);
         });
+
+        toast({
+            title: 'Status Updated',
+            description: `Applicant status changed to ${newStatus}.`,
+        });
+
       })
-      .catch(error => {
-        // This catch block handles errors for the *first* updateDoc call
-        console.error("Error updating applicant status:", error);
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-            operation: 'update',
-            path: applicantDocRef.path,
-            requestResourceData: { status: newStatus },
-        }));
+      .catch((error: any) => {
+        console.error("Error updating application status:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Update Failed',
+            description: error.message || 'Could not update the application status.',
+        });
       });
   };
 
