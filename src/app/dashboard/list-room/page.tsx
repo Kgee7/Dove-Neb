@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import { countries } from '@/lib/countries';
+import { handleFirebaseError } from '@/firebase/error-handler';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -26,7 +27,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, PlusCircle, Trash2, Upload } from 'lucide-react';
+import { Loader2, Trash2, Upload } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -65,12 +66,7 @@ export default function ListRoomPage() {
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "images",
-  });
-
-   useEffect(() => {
+  useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
     }
@@ -122,26 +118,7 @@ export default function ListRoomPage() {
       });
       router.push('/dashboard');
     } catch (error: any) {
-      console.error('Error listing room:', error);
-      let errorMessage = 'Could not list your room.';
-
-      if (error.code) {
-        if (error.code === 'storage/unauthorized') {
-          errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
-        } else if (error.code === 'storage/quota-exceeded') {
-          errorMessage = 'Storage quota exceeded.';
-        } else if (error.code === 'storage/retry-limit-exceeded') {
-            errorMessage = 'Network error. Please check your connection and try again.';
-        } else {
-          errorMessage = `Upload Failed: ${error.code}.`;
-        }
-      }
-
-      toast({
-        variant: 'destructive',
-        title: 'Listing Failed',
-        description: errorMessage,
-      });
+      handleFirebaseError(error, toast);
     } finally {
       setIsLoading(false);
     }
@@ -251,7 +228,7 @@ export default function ListRoomPage() {
                <FormField
                 control={form.control}
                 name="images"
-                render={() => (
+                render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel>Room Images</FormLabel>
                     <FormControl>
@@ -273,7 +250,7 @@ export default function ListRoomPage() {
                             <p className="mt-2 text-sm text-muted-foreground">Click or drag to upload images</p>
                         </div>
                     </label>
-                    <FormMessage />
+                    {fieldState.error && <FormMessage />}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                         {form.watch('images').map((file, index) => (
                            <div key={index} className="relative group">
@@ -336,7 +313,7 @@ export default function ListRoomPage() {
                             )
                         }}
                         />
-                    ))}\
+                    ))}
                     </div>
                     <FormMessage />
                     </FormItem>
