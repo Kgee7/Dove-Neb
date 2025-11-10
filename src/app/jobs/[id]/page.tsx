@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -9,14 +10,14 @@ import Link from 'next/link';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Loader2, MapPin, Building2, DollarSign, Briefcase } from 'lucide-react';
+import { ArrowLeft, Loader2, MapPin, Building2, DollarSign, Briefcase, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from "@/hooks/use-toast";
 
 export default function JobDetailsPage() {
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -30,6 +31,14 @@ export default function JobDetailsPage() {
   }, [firestore, id]);
 
   const { data: job, isLoading } = useDoc<Job>(jobDocRef);
+  
+  const userDocRef = useMemo(() => {
+      if (!firestore || !user?.uid) return null;
+      return doc(firestore, 'users', user.uid);
+  }, [firestore, user?.uid]);
+
+  const { data: userProfile } = useDoc(userDocRef);
+
 
   const handleApply = async () => {
     if (!user || !job) {
@@ -41,10 +50,34 @@ export default function JobDetailsPage() {
       router.push(`/login?redirect=/jobs/${id}`);
       return;
     }
+
+    if (!userProfile?.resumeURL) {
+      toast({
+        variant: "destructive",
+        title: "Application Failed",
+        description: "Please upload a resume to your profile before applying.",
+      });
+      router.push('/profile');
+      return;
+    }
+
     setApplying(true);
     try {
-      const applicationsCollectionRef = collection(firestore, 'users', user.uid, 'applications');
-      await addDoc(applicationsCollectionRef, {
+      const seekerName = user.displayName || `${userProfile.firstName} ${userProfile.lastName}`.trim();
+
+      const applicantsCollectionRef = collection(firestore, 'jobs', job.id, 'applicants');
+      await addDoc(applicantsCollectionRef, {
+        seekerId: user.uid,
+        status: 'pending',
+        appliedAt: serverTimestamp(),
+        seekerName: seekerName,
+        seekerEmail: user.email,
+        resumeURL: userProfile.resumeURL,
+        photoURL: user.photoURL || userProfile.photoURL,
+      });
+
+      const userApplicationsCollectionRef = collection(firestore, 'users', user.uid, 'applications');
+       await addDoc(userApplicationsCollectionRef, {
         jobId: job.id,
         seekerId: user.uid,
         status: 'pending',
@@ -53,11 +86,13 @@ export default function JobDetailsPage() {
         companyName: job.companyName,
       });
 
+
       toast({
         title: "Application Successful!",
         description: `You have applied for the ${job.title} position.`,
       });
     } catch (error: any) {
+      console.error(error);
       toast({
         variant: "destructive",
         title: "Application Failed",
@@ -68,7 +103,7 @@ export default function JobDetailsPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isUserLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -124,9 +159,24 @@ export default function JobDetailsPage() {
             </div>
             <Separator className="my-6" />
             <div className="flex justify-center">
-              <Button onClick={handleApply} size="lg" disabled={applying}>
-                {applying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Apply Now'}
-              </Button>
+              {job.applicationMethod === 'in-app' ? (
+                <Button onClick={handleApply} size="lg" disabled={applying}>
+                  {applying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Apply Now'}
+                </Button>
+              ) : (
+                <Card className="bg-secondary p-6 w-full max-w-md">
+                    <CardHeader className="p-0">
+                        <CardTitle className="text-xl flex items-center gap-2">
+                            <Mail className="h-5 w-5"/>
+                            Apply via Email
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0 mt-4">
+                        <p className="text-muted-foreground">To apply for this position, please send your resume and cover letter to:</p>
+                        <a href={`mailto:${job.applicationEmail}`} className="font-semibold text-primary text-lg break-all">{job.applicationEmail}</a>
+                    </CardContent>
+                </Card>
+              )}
             </div>
           </CardContent>
         </Card>

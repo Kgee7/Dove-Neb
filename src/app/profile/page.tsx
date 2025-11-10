@@ -114,10 +114,11 @@ export default function ProfilePage() {
 
           if (user) {
             await updateProfile(user, { photoURL: downloadURL });
-            await user.reload();
           }
-
+          
           await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
+          
+          if(user) await user.reload();
 
           toast({
             title: 'Profile Picture Updated',
@@ -128,13 +129,12 @@ export default function ProfilePage() {
           let errorMessage = 'Could not upload your profile picture.';
 
           if (error.code) {
-            errorMessage = `Upload Failed: ${error.code}.`;
-            if (error.code === 'storage/retry-limit-exceeded') {
-                errorMessage = 'Upload failed due to a network issue. Please check your connection and try again.';
-            } else if (error.code === 'storage/unauthorized') {
+            if (error.code === 'storage/unauthorized') {
               errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
             } else if (error.code === 'storage/quota-exceeded') {
               errorMessage = 'Storage quota exceeded.';
+            } else {
+              errorMessage = `Upload Failed: ${error.code}.`;
             }
           }
 
@@ -191,13 +191,12 @@ export default function ProfilePage() {
           let errorMessage = 'Could not upload your resume.';
           
           if (error.code) {
-            errorMessage = `Upload Failed: ${error.code}.`;
-            if (error.code === 'storage/retry-limit-exceeded') {
-                errorMessage = 'Upload failed due to a network issue. Please check your connection and try again.';
-            } else if (error.code === 'storage/unauthorized') {
+             if (error.code === 'storage/unauthorized') {
               errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
             } else if (error.code === 'storage/quota-exceeded') {
               errorMessage = 'Storage quota exceeded.';
+            } else {
+              errorMessage = `Upload Failed: ${error.code}.`;
             }
           }
           toast({

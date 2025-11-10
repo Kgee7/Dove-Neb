@@ -25,6 +25,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters long.'),
@@ -34,7 +36,18 @@ const formSchema = z.object({
   description: z.string().min(20, 'Description must be at least 20 characters long.'),
   salaryMin: z.coerce.number().min(0).optional(),
   salaryMax: z.coerce.number().min(0).optional(),
+  applicationMethod: z.enum(['in-app', 'email'], { required_error: 'Please select an application method.'}),
+  applicationEmail: z.string().email('Please enter a valid email.').optional(),
+}).refine(data => {
+    if (data.applicationMethod === 'email' && !data.applicationEmail) {
+        return false;
+    }
+    return true;
+}, {
+    message: 'Application email is required when application method is "Email".',
+    path: ['applicationEmail'],
 });
+
 
 type PostJobFormValues = z.infer<typeof formSchema>;
 
@@ -54,6 +67,8 @@ export default function PostJobPage() {
       description: '',
       salaryMin: undefined,
       salaryMax: undefined,
+      applicationMethod: 'in-app',
+      applicationEmail: '',
     },
   });
 
@@ -105,6 +120,8 @@ export default function PostJobPage() {
       </div>
     );
   }
+
+  const applicationMethod = form.watch('applicationMethod');
 
   return (
     <div className="container max-w-3xl py-12">
@@ -230,6 +247,58 @@ export default function PostJobPage() {
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="applicationMethod"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Application Method</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-col space-y-1"
+                      >
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="in-app" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            Receive applications within the app
+                          </FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="email" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            Receive applications via email
+                          </FormLabel>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {applicationMethod === 'email' && (
+                <FormField
+                  control={form.control}
+                  name="applicationEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Application Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="recruiting@example.com" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormDescription>
+                        Job seekers will send their applications to this email address.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Post Job'}
               </Button>

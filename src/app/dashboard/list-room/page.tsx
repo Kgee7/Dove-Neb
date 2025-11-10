@@ -77,7 +77,7 @@ export default function ListRoomPage() {
   }, [isUserLoading, user, router]);
 
   const onSubmit = async (data: ListRoomFormValues) => {
-    if (!user || !firebaseApp) {
+    if (!user || !firebaseApp || !firestore) {
       toast({
         variant: 'destructive',
         title: 'Authentication Error',
@@ -126,10 +126,14 @@ export default function ListRoomPage() {
       console.error('Error listing room:', error);
       let errorMessage = 'Could not list your room.';
 
-      if (error.code === 'storage/retry-limit-exceeded') {
-        errorMessage = 'Upload failed due to a network issue. Please check your connection and try again.';
-      } else if (error.message) {
-        errorMessage = error.message;
+      if (error.code) {
+        if (error.code === 'storage/unauthorized') {
+          errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
+        } else if (error.code === 'storage/quota-exceeded') {
+          errorMessage = 'Storage quota exceeded.';
+        } else {
+          errorMessage = `Upload Failed: ${error.code}.`;
+        }
       }
 
       toast({

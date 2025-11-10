@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import React, { useMemo } from 'react';
 import { useUser, useFirestore, useDoc, useCollection, where } from '@/firebase';
 import { doc, collection, query, orderBy } from 'firebase/firestore';
-import { Loader2, PlusCircle, Home, BedDouble, Briefcase, Building2 } from "lucide-react";
+import { Loader2, PlusCircle, Home, BedDouble, Briefcase, Building2, Users } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -189,9 +189,17 @@ export default function DashboardPage() {
                                         <CardDescription>{job.location}</CardDescription>
                                       </CardHeader>
                                       <CardContent>
-                                        <Link href={`/jobs/${job.id}`}>
-                                            <Button variant="outline" size="sm">View Listing</Button>
-                                        </Link>
+                                        <div className="flex gap-2">
+                                          <Link href={`/jobs/${job.id}`}>
+                                              <Button variant="outline" size="sm">View Listing</Button>
+                                          </Link>
+                                           <Link href={`/dashboard/jobs/${job.id}/applicants`}>
+                                              <Button size="sm">
+                                                <Users className="mr-2 h-4 w-4"/>
+                                                View Applicants
+                                              </Button>
+                                          </Link>
+                                        </div>
                                       </CardContent>
                                     </Card>
                                 ))}

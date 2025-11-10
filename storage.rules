@@ -6,25 +6,25 @@ service firebase.storage {
     
     // Helper function to check ownership via metadata
     function isOwner(userId) {
-      return request.auth != null && request.resource.metadata.owner == userId;
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    // Profile pictures: users can only upload to their own folder
+    // Profile pictures: users can only upload to their own folder, if they own the content.
     match /profilePictures/{userId}/{allPaths=**} {
       allow read;
-      allow write: if isOwner(userId);
+      allow write: if isOwner(userId) && request.resource.metadata.owner == request.auth.uid;
     }
 
-    // Resumes: users can only upload to their own folder
+    // Resumes: users can only upload to their own folder, if they own the content.
     match /resumes/{userId}/{allPaths=**} {
       allow read;
-      allow write: if isOwner(userId);
+      allow write: if isOwner(userId) && request.resource.metadata.owner == request.auth.uid;
     }
 
-    // Room images: users can only upload to their own folder
+    // Room images: users can only upload to their own folder, if they own the content.
     match /rooms/{userId}/{allPaths=**} {
       allow read;
-      allow write: if isOwner(userId);
+      allow write: if isOwner(userId) && request.resource.metadata.owner == request.auth.uid;
     }
   }
 }

@@ -32,9 +32,11 @@
         "type": { "type": "string", "enum": ["Full-time", "Part-time", "Contract", "Internship", "Remote", "Hybrid"], "description": "Type of employment." },
         "salaryMin": { "type": "number", "description": "Minimum salary for the position." },
         "salaryMax": { "type": "number", "description": "Maximum salary for the position." },
+        "applicationMethod": { "type": "string", "enum": ["in-app", "email"], "description": "How job seekers should apply."},
+        "applicationEmail": { "type": "string", "format": "email", "description": "Email for applications if method is 'email'."},
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "employerId", "companyName", "title", "description", "location", "type"]
+      "required": ["id", "employerId", "companyName", "title", "description", "location", "type", "applicationMethod"]
     },
     "JobApplication": {
         "title": "Job Application",
@@ -50,6 +52,22 @@
             "appliedAt": { "type": "string", "format": "date-time" }
         },
         "required": ["id", "jobId", "jobTitle", "companyName", "seekerId", "status", "appliedAt"]
+    },
+    "JobApplicant": {
+      "title": "Job Applicant",
+      "type": "object",
+      "description": "Represents a seeker's application to a specific job, stored under the job.",
+      "properties": {
+        "id": { "type": "string" },
+        "seekerId": { "type": "string" },
+        "seekerName": { "type": "string" },
+        "seekerEmail": { "type": "string", "format": "email" },
+        "resumeURL": { "type": "string", "format": "uri" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "status": { "type": "string", "enum": ["pending", "reviewed", "rejected", "hired"] },
+        "appliedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "seekerId", "seekerName", "seekerEmail", "status", "appliedAt"]
     },
     "Room": {
       "title": "Room",
@@ -100,6 +118,10 @@
         "definition": { "schema": { "$ref": "#/entities/Job" }, "description": "Top-level collection for all job listings.", "publicRead": true }
       },
       {
+        "path": "/jobs/{jobId}/applicants/{applicantId}",
+        "definition": { "schema": { "$ref": "#/entities/JobApplicant" }, "description": "Subcollection for applicants to a specific job." }
+      },
+      {
         "path": "/users/{userId}/applications/{applicationId}",
         "definition": { "schema": { "$ref": "#/entities/JobApplication" }, "description": "Subcollection for a user's job applications." }
       },
@@ -118,5 +140,3 @@
     ]
   }
 }
-
-    
