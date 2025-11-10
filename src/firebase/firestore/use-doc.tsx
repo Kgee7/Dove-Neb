@@ -71,6 +71,7 @@ export function useDoc<T = any>(
         setIsLoading(false);
       },
       (error: FirestoreError) => {
+        // Guard clause inside error handler to prevent a crash when creating a contextual error.
         if (!memoizedDocRef?.path) {
             setError(error);
             setData(null);
