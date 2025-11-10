@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from "next/image";
@@ -28,13 +29,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Room } from "@/lib/data";
 import { Job } from "@/lib/job-data";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
+import data from "@/lib/placeholder-images.json";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 export default function HomePage() {
-  const heroImage = PlaceHolderImages.find(
+  const heroImage = data.placeholderImages.find(
     (img) => img.id === "hero-background"
   );
   

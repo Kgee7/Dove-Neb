@@ -2,14 +2,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Icons } from "@/components/icons";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
+import data from "@/lib/placeholder-images.json";
 
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const heroImage = PlaceHolderImages.find(
+  const heroImage = data.placeholderImages.find(
     (img) => img.id === "hero-background"
   );
   return (

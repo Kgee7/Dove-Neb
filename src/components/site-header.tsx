@@ -38,9 +38,12 @@ export function SiteHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const userDocRef = useMemo(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
+    // Only create a doc ref if the user is loaded and exists
+    if (!isUserLoading && user && firestore) {
+      return doc(firestore, 'users', user.uid);
+    }
+    return null;
+  }, [firestore, user, isUserLoading]);
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
