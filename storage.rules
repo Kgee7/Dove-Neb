@@ -11,19 +11,19 @@ service firebase.storage {
 
     // Profile pictures: users can only upload to their own folder.
     match /profilePictures/{userId}/{allPaths=**} {
-      allow read;
+      allow read: if request.auth != null;
       allow write: if isOwner(userId);
     }
 
     // Resumes: users can only upload to their own folder.
     match /resumes/{userId}/{allPaths=**} {
-      allow read;
+      allow read: if request.auth != null;
       allow write: if isOwner(userId);
     }
 
     // Room images: users can only upload to their own folder.
     match /rooms/{userId}/{allPaths=**} {
-      allow read;
+      allow read: if request.auth != null;
       allow write: if isOwner(userId);
     }
   }
