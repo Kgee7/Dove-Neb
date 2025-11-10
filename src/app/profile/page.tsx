@@ -5,9 +5,9 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useDoc, useFirestore, useFirebaseApp, setDoc, updateProfile } from '@/firebase';
+import { useUser, useDoc, useFirestore, useStorage, setDoc, updateProfile } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -50,7 +50,7 @@ const profileSchema = z.object({
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
-  const firebaseApp = useFirebaseApp();
+  const storage = useStorage();
   const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -102,12 +102,11 @@ export default function ProfilePage() {
 
       const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (!file || !user || !userDocRef || !firebaseApp) return;
+        if (!file || !user || !userDocRef) return;
 
         setUploading(true);
 
         try {
-          const storage = getStorage(firebaseApp);
           const storageRef = ref(storage, `profilePictures/${user.uid}/${file.name}`);
           const snapshot = await uploadBytes(storageRef, file);
           const downloadURL = await getDownloadURL(snapshot.ref);
@@ -152,7 +151,7 @@ export default function ProfilePage() {
       
       const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (!file || !user || !userDocRef || !firebaseApp) return;
+        if (!file || !user || !userDocRef) return;
 
         const allowedResumeTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
         if (!allowedResumeTypes.includes(file.type)) {
@@ -176,7 +175,6 @@ export default function ProfilePage() {
         setUploadingResume(true);
 
         try {
-          const storage = getStorage(firebaseApp);
           const storageRef = ref(storage, `resumes/${user.uid}/${file.name}`);
           
           const snapshot = await uploadBytes(storageRef, file);

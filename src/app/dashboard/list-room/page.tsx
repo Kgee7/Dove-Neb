@@ -5,9 +5,9 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirebaseApp, useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, useStorage } from '@/firebase';
 import { addDoc, collection } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
@@ -46,7 +46,7 @@ type ListRoomFormValues = z.infer<typeof formSchema>;
 
 export default function ListRoomPage() {
   const firestore = useFirestore();
-  const firebaseApp = useFirebaseApp();
+  const storage = useStorage();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
@@ -77,7 +77,7 @@ export default function ListRoomPage() {
   }, [isUserLoading, user, router]);
 
   const onSubmit = async (data: ListRoomFormValues) => {
-    if (!user || !firebaseApp || !firestore) {
+    if (!user || !firestore) {
       toast({
         variant: 'destructive',
         title: 'Authentication Error',
@@ -88,7 +88,6 @@ export default function ListRoomPage() {
     setIsLoading(true);
 
     try {
-      const storage = getStorage(firebaseApp);
       const imageUrls = await Promise.all(
         data.images.map(async (image) => {
           const storageRef = ref(storage, `rooms/${user.uid}/${uuidv4()}`);
