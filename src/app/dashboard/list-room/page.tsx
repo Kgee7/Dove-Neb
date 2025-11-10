@@ -92,7 +92,7 @@ export default function ListRoomPage() {
       const imageUrls = await Promise.all(
         data.images.map(async (image) => {
           const storageRef = ref(storage, `rooms/${user.uid}/${uuidv4()}`);
-          const snapshot = await uploadBytes(storageRef, image, { customMetadata: { owner: user.uid } });
+          const snapshot = await uploadBytes(storageRef, image);
           return getDownloadURL(snapshot.ref);
         })
       );
@@ -131,6 +131,8 @@ export default function ListRoomPage() {
           errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
         } else if (error.code === 'storage/quota-exceeded') {
           errorMessage = 'Storage quota exceeded.';
+        } else if (error.code === 'storage/retry-limit-exceeded') {
+            errorMessage = 'Network error. Please check your connection and try again.';
         } else {
           errorMessage = `Upload Failed: ${error.code}.`;
         }
@@ -260,7 +262,7 @@ export default function ListRoomPage() {
                         accept="image/*"
                         onChange={(e) => {
                           const files = Array.from(e.target.files || []);
-                           form.setValue('images', [...form.getValues('images'), ...files]);
+                           form.setValue('images', [...form.getValues('images'), ...files], { shouldValidate: true });
                         }}
                         className="hidden"
                         id="image-upload"
@@ -279,8 +281,8 @@ export default function ListRoomPage() {
                                 <img src={URL.createObjectURL(file)} alt={`preview ${index}`} className="w-full h-24 object-cover rounded-md" />
                                 <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => {
                                     const currentImages = form.getValues('images');
-                                    currentImages.splice(index, 1);
-                                    form.setValue('images', currentImages);
+                                    const updatedImages = currentImages.filter((_, i) => i !== index);
+                                    form.setValue('images', updatedImages, { shouldValidate: true });
                                 }}>
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
