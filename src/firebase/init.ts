@@ -13,6 +13,11 @@ interface FirebaseServices {
 }
 
 export function initializeFirebase(): FirebaseServices {
+  // Prevent Firebase initialization on the server.
+  if (typeof window === 'undefined') {
+    return { firebaseApp: null, auth: null, firestore: null, storage: null };
+  }
+
   try {
     const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     const auth = getAuth(app);
