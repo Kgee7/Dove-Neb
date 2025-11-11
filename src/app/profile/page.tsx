@@ -123,15 +123,11 @@ export default function ProfilePage() {
 
     try {
       const dataUrl = await toBase64(file);
-
-      if (user) {
-        await updateProfile(user, { photoURL: dataUrl });
-      }
       
+      // We only save the photo URL to the Firestore document.
+      // We DO NOT save it to the Auth user profile, as it's too long.
       await setDoc(userDocRef, { photoURL: dataUrl }, { merge: true });
       
-      if(user) await user.reload();
-
       toast({
         title: 'Profile Picture Updated',
         description: 'Your new avatar has been saved.',
