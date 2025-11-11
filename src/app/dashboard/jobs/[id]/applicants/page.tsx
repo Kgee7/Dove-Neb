@@ -78,7 +78,8 @@ export default function JobApplicantsPage() {
       
       if (!userApplicationSnapshot.empty) {
         const userApplicationDocRef = userApplicationSnapshot.docs[0].ref;
-        await updateDoc(userApplicationDocRef, { status: newStatus });
+        // Pass jobId along with status to satisfy security rules
+        await updateDoc(userApplicationDocRef, { status: newStatus, jobId: id });
       }
 
       toast({

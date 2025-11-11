@@ -24,7 +24,7 @@ service cloud.firestore {
       // A user can read their own applications.
       allow read: if isOwner(userId);
       // An employer can update the status of an application for a job they posted.
-      allow update: if isOwner(get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.employerId);
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'jobId']) && isOwner(get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.employerId);
       // Only the user can create or delete their own application records.
       allow create, delete: if isOwner(userId);
     }
