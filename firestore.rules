@@ -15,9 +15,18 @@ service cloud.firestore {
     }
     
     // USER SUBCOLLECTIONS
-    // A user can manage their own applications and bookings.
-    match /users/{userId}/{collection}/{docId} {
+    // A user can manage their own bookings and create their own applications.
+    match /users/{userId}/bookings/{docId} {
       allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/applications/{applicationId} {
+      // A user can read their own applications.
+      allow read: if isOwner(userId);
+      // An employer can update the status of an application for a job they posted.
+      allow update: if isOwner(get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.employerId);
+      // Only the user can create or delete their own application records.
+      allow create, delete: if isOwner(userId);
     }
 
     // PUBLIC JOB LISTINGS
