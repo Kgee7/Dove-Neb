@@ -161,7 +161,7 @@ export default function Rooms() {
                                 </>
                             ) : null}
                         </p>
-                        <Badge variant={room.listingType === 'sale' ? 'default' : 'secondary'}>{room.listingType}</Badge>
+                        <Badge variant={room.listingType === 'sale' ? 'default' : 'outline'} className="capitalize">{room.listingType}</Badge>
                      </div>
                   </CardContent>
               </Card>
@@ -176,3 +176,5 @@ export default function Rooms() {
     </div>
   );
 }
+
+    

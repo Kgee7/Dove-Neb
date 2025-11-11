@@ -202,7 +202,7 @@ export default function DashboardPage() {
                                       </CardHeader>
                                       <CardContent>
                                         <p className="text-sm text-muted-foreground">Applied: {format(app.appliedAt.toDate(), 'MMM d, yyyy')}</p>
-                                        <Badge className="mt-2" variant={app.status === 'pending' ? 'secondary' : 'default'}>{app.status}</Badge>
+                                        <Badge className="mt-2 capitalize" variant={app.status === 'pending' ? 'outline' : app.status === 'rejected' ? 'destructive' : 'default'}>{app.status}</Badge>
                                       </CardContent>
                                     </Card>
                                 ))}
@@ -401,3 +401,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
