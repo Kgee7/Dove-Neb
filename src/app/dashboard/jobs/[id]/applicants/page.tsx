@@ -40,16 +40,18 @@ export default function JobApplicantsPage() {
   const { toast } = useToast();
 
   const jobDocRef = useMemo(() => {
-    if (!firestore || !id) return null;
+    // Wait until user is loaded and exists before creating the ref
+    if (!firestore || !id || isUserLoading || !user) return null;
     return doc(firestore, 'jobs', id);
-  }, [firestore, id]);
+  }, [firestore, id, isUserLoading, user]);
 
   const { data: job, isLoading: isJobLoading } = useDoc<Job>(jobDocRef);
 
   const applicantsQuery = useMemo(() => {
-    if (!firestore || !id) return null;
+    // Wait until user is loaded and exists before creating the query
+    if (!firestore || !id || isUserLoading || !user) return null;
     return query(collection(firestore, `jobs/${id}/applicants`), orderBy('appliedAt', 'desc'));
-  }, [firestore, id]);
+  }, [firestore, id, isUserLoading, user]);
 
   const { data: applicants, isLoading: areApplicantsLoading } = useCollection<JobApplicant>(applicantsQuery);
 
@@ -78,7 +80,7 @@ export default function JobApplicantsPage() {
       
       if (!userApplicationSnapshot.empty) {
         const userApplicationDocRef = userApplicationSnapshot.docs[0].ref;
-        // Pass jobId along with status to satisfy security rules
+        // The security rule requires the 'jobId' to be present in the update payload to verify ownership.
         await updateDoc(userApplicationDocRef, { status: newStatus, jobId: id });
       }
 
@@ -108,6 +110,16 @@ export default function JobApplicantsPage() {
     );
   }
 
+  // After loading, if the user is not present, redirect.
+  if (!isUserLoading && !user) {
+    router.push('/login');
+    return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
+  }
+  
   if (!job) {
     return (
       <div className="container py-12 text-center">
