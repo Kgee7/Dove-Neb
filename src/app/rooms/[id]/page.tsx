@@ -134,7 +134,9 @@ export default function RoomDetailsPage() {
 
   const nights = date?.from && date?.to ? differenceInDays(date.to, date.from) : 0;
   const totalCost = nights > 0 && room.priceNight ? room.priceNight * nights : 0;
-  const ownerDisplayName = room.ownerName && room.ownerName.trim() !== 'undefined' ? `Hosted by ${room.ownerName}` : 'Hosted by a verified owner';
+  const ownerDisplayName = room.ownerName && room.ownerName.trim() && !room.ownerName.includes('undefined')
+    ? `Hosted by ${room.ownerName}` 
+    : 'Hosted by a verified owner';
 
   return (
     <div className="bg-muted/40">
@@ -187,7 +189,7 @@ export default function RoomDetailsPage() {
                     <h2 className="text-2xl font-semibold font-headline">{ownerDisplayName}</h2>
                     <Separator className="my-6" />
                     <div>
-                        <h3 className="font-semibold text-xl mb-3">About this space</h3>
+                        <h3 className="font-semibold text-xl mb-3">About {room.title}</h3>
                         <p className="text-muted-foreground whitespace-pre-wrap">{room.description}</p>
                     </div>
                     <Separator className="my-6" />
