@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, collection, query, orderBy, updateDoc, where, getDocs } from 'firebase/firestore';
 import { useDoc, useCollection, useFirestore, useUser } from '@/firebase';
@@ -38,6 +39,13 @@ export default function JobApplicantsPage() {
   const router = useRouter();
   const id = params.id as string;
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Redirect if user is not loaded and not present
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [isUserLoading, user, router]);
 
   const jobDocRef = useMemo(() => {
     // Wait until user is loaded and exists before creating the ref
@@ -102,21 +110,11 @@ export default function JobApplicantsPage() {
 
   const isLoading = isUserLoading || isJobLoading || areApplicantsLoading;
 
-  if (isLoading) {
+  if (isLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
-    );
-  }
-
-  // After loading, if the user is not present, redirect.
-  if (!isUserLoading && !user) {
-    router.push('/login');
-    return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
     );
   }
   
