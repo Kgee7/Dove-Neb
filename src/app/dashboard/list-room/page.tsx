@@ -140,7 +140,7 @@ export default function ListRoomPage() {
     try {
         const imageUrls = await Promise.all(data.images.map(image => toBase64(image)));
         
-        const ownerName = user.displayName || `${userProfile.firstName} ${userProfile.lastName}`.trim() || 'Anonymous';
+        const ownerName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
         const selectedCountry = countries.find(c => c.code === data.currencyInfo);
         const currency = selectedCountry?.currency || 'USD';
         const currencySymbol = selectedCountry?.currencySymbol || '$';
@@ -503,5 +503,3 @@ export default function ListRoomPage() {
     </div>
   );
 }
-
-    
