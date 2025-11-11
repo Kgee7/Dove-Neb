@@ -137,7 +137,7 @@ export default function RoomDetailsPage() {
 
   return (
     <div className="bg-muted/40">
-        <div className="container max-w-5xl py-12">
+        <div className="container max-w-5xl py-12 mx-auto">
             <div className="mb-4">
                 <Link href="/rooms" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary">
                     <ArrowLeft className="mr-2 h-4 w-4" />
