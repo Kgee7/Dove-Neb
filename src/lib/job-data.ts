@@ -7,6 +7,8 @@ export type Job = {
   description: string;
   salaryMin?: number;
   salaryMax?: number;
+  salaryCurrency?: string;
+  salaryCurrencySymbol?: string;
   applicationMethod: 'in-app' | 'email';
   applicationEmail?: string;
   employerId: string;

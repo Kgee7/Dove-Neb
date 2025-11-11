@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -156,6 +157,7 @@ export default function JobsPage() {
 }
 
 function JobCard({ job }: { job: Job }) {
+  const salarySymbol = job.salaryCurrencySymbol || '$';
   return (
     <Card className="hover:shadow-xl transition-shadow duration-300 h-full flex flex-col">
       <CardHeader>
@@ -184,7 +186,7 @@ function JobCard({ job }: { job: Job }) {
         <div className="flex items-center justify-between">
             <div>
                 {job.salaryMin && job.salaryMax ? (
-                    <p className="font-semibold text-base">${job.salaryMin/1000}k - ${job.salaryMax/1000}k</p>
+                    <p className="font-semibold text-base">{salarySymbol}{job.salaryMin/1000}k - {salarySymbol}{job.salaryMax/1000}k</p>
                 ) : (
                      <p className="font-semibold text-base">Competitive</p>
                 )}

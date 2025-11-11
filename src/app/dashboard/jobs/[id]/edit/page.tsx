@@ -10,6 +10,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Job } from '@/lib/job-data';
+import { countries } from '@/lib/countries';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -37,6 +38,7 @@ const formSchema = z.object({
   description: z.string().min(20, 'Description must be at least 20 characters long.'),
   salaryMin: z.coerce.number().min(0).optional(),
   salaryMax: z.coerce.number().min(0).optional(),
+  currencyInfo: z.string().optional(),
   applicationMethod: z.enum(['in-app', 'email'], { required_error: 'Please select an application method.'}),
   applicationEmail: z.string().email('Please enter a valid email.').optional(),
 }).refine(data => {
@@ -76,6 +78,7 @@ export default function EditJobPage() {
         description: '',
         salaryMin: undefined,
         salaryMax: undefined,
+        currencyInfo: 'US',
         applicationMethod: 'in-app',
         applicationEmail: '',
     },
@@ -88,7 +91,11 @@ export default function EditJobPage() {
         router.push('/dashboard');
         return;
       }
-      form.reset(job);
+      const countryCode = countries.find(c => c.currency === job.salaryCurrency)?.code || 'US';
+      form.reset({
+        ...job,
+        currencyInfo: countryCode,
+      });
     }
   }, [job, user, router, form, toast]);
 
@@ -96,8 +103,17 @@ export default function EditJobPage() {
     if (!user || !jobDocRef) return;
 
     setIsLoading(true);
+    
+    const selectedCountry = countries.find(c => c.code === data.currencyInfo);
+    const salaryCurrency = selectedCountry?.currency || 'USD';
+    const salaryCurrencySymbol = selectedCountry?.currencySymbol || '$';
+
     try {
-      await updateDoc(jobDocRef, { ...data });
+      await updateDoc(jobDocRef, { 
+          ...data,
+          salaryCurrency,
+          salaryCurrencySymbol,
+      });
       toast({
         title: 'Job Updated!',
         description: 'Your job listing has been successfully updated.',
@@ -218,13 +234,37 @@ export default function EditJobPage() {
                   )}
                 />
               </div>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <FormField
+                  control={form.control}
+                  name="currencyInfo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Currency</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a currency" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {countries.map(country => (
+                            <SelectItem key={country.code} value={country.code}>
+                              {country.name} ({country.currency})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="salaryMin"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Minimum Salary ($)</FormLabel>
+                      <FormLabel>Minimum Salary</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="70000" {...field} value={field.value ?? ''} />
                       </FormControl>
@@ -237,7 +277,7 @@ export default function EditJobPage() {
                   name="salaryMax"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Maximum Salary ($)</FormLabel>
+                      <FormLabel>Maximum Salary</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="120000" {...field} value={field.value ?? ''} />
                       </FormControl>

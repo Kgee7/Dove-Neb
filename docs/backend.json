@@ -32,6 +32,8 @@
         "type": { "type": "string", "enum": ["Full-time", "Part-time", "Contract", "Internship", "Remote", "Hybrid"], "description": "Type of employment." },
         "salaryMin": { "type": "number", "description": "Minimum salary for the position." },
         "salaryMax": { "type": "number", "description": "Maximum salary for the position." },
+        "salaryCurrency": { "type": "string", "description": "The currency for the salary." },
+        "salaryCurrencySymbol": { "type": "string", "description": "The symbol for the salary currency." },
         "applicationMethod": { "type": "string", "enum": ["in-app", "email"], "description": "How job seekers should apply."},
         "applicationEmail": { "type": "string", "format": "email", "description": "Email for applications if method is 'email'."},
         "createdAt": { "type": "string", "format": "date-time" }

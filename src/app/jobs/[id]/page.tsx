@@ -122,6 +122,8 @@ export default function JobDetailsPage() {
       </div>
     );
   }
+  
+  const salarySymbol = job.salaryCurrencySymbol || '$';
 
   return (
     <div className="bg-muted/40">
@@ -146,7 +148,7 @@ export default function JobDetailsPage() {
               </div>
               {job.salaryMin && job.salaryMax && (
                 <div className="flex items-center gap-1">
-                  <DollarSign className="h-4 w-4" /> ${job.salaryMin.toLocaleString()} - ${job.salaryMax.toLocaleString()}
+                  <DollarSign className="h-4 w-4" /> {salarySymbol}{job.salaryMin.toLocaleString()} - {salarySymbol}{job.salaryMax.toLocaleString()}
                 </div>
               )}
             </div>

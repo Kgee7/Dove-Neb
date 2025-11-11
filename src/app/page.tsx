@@ -198,7 +198,9 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {jobs?.map((job) => (
+              {jobs?.map((job) => {
+                const salarySymbol = job.salaryCurrencySymbol || '$';
+                return (
                 <Card
                   key={job.id}
                   className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg"
@@ -224,13 +226,13 @@ export default function HomePage() {
                         <Badge variant="outline">{job.type}</Badge>
                         {(job.salaryMin && job.salaryMax) && (
                            <p className="text-lg font-semibold">
-                              ${job.salaryMin/1000}k - ${job.salaryMax/1000}k
+                              {salarySymbol}{job.salaryMin/1000}k - {salarySymbol}{job.salaryMax/1000}k
                           </p>
                         )}
                      </div>
                   </CardContent>
                 </Card>
-              ))}
+              )})}
             </div>
           )}
           <div className="mt-12 text-center">
