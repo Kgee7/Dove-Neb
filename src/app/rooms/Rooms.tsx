@@ -7,13 +7,14 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useCollection, useFirestore } from '@/firebase';
 import { Room } from '@/lib/data';
 import { useState, useMemo } from 'react';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Loader2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function Rooms() {
   const firestore = useFirestore();
@@ -22,15 +23,18 @@ export default function Rooms() {
 
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [locationQuery, setLocationQuery] = useState(searchParams.get('loc') || '');
+  const [listingTypeFilter, setListingTypeFilter] = useState(searchParams.get('type') || 'all');
 
   const roomsQuery = useMemo(() => {
     if (!firestore) return null;
-    return collection(firestore, 'rooms');
-  }, [firestore]);
+    let q = query(collection(firestore, 'rooms'));
+    if (listingTypeFilter !== 'all') {
+      q = query(q, where('listingType', '==', listingTypeFilter));
+    }
+    return q;
+  }, [firestore, listingTypeFilter]);
   
-  const { data: rooms, isLoading } = useCollection<Room>(
-    roomsQuery
-  );
+  const { data: rooms, isLoading } = useCollection<Room>(roomsQuery);
 
   const filteredRooms = useMemo(() => {
     if (!rooms) return [];
@@ -51,9 +55,10 @@ export default function Rooms() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams();
-    if (searchQuery) params.set('q', searchQuery);
-    if (locationQuery) params.set('loc', locationQuery);
+    const params = new URLSearchParams(searchParams);
+    if (searchQuery) params.set('q', searchQuery); else params.delete('q');
+    if (locationQuery) params.set('loc', locationQuery); else params.delete('loc');
+    if (listingTypeFilter !== 'all') params.set('type', listingTypeFilter); else params.delete('type');
     router.push(`/rooms?${params.toString()}`);
   };
 
@@ -61,17 +66,17 @@ export default function Rooms() {
     <div className="container py-12">
       <div className="mb-12 text-center">
         <h1 className="text-4xl font-bold tracking-tight md:text-5xl font-headline">
-          Explore Stays
+          Explore Spaces
         </h1>
         <p className="mt-3 text-lg text-muted-foreground">
-          Find your next home away from home.
+          Find your next home away from home, or your next home.
         </p>
       </div>
 
        <Card className="mx-auto mb-12 max-w-4xl shadow-lg">
           <CardContent className="p-4">
-            <form className="flex flex-col gap-4 sm:flex-row" onSubmit={handleSearch}>
-              <div className="relative flex-1">
+            <form className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" onSubmit={handleSearch}>
+              <div className="relative lg:col-span-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   placeholder="Destination, e.g., 'beach house'"
@@ -80,7 +85,7 @@ export default function Rooms() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <div className="relative flex-1">
+              <div className="relative lg:col-span-1">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input 
                   placeholder="Location, e.g., 'Paris'" 
@@ -89,9 +94,21 @@ export default function Rooms() {
                   onChange={(e) => setLocationQuery(e.target.value)}
                 />
               </div>
-              <Button type="submit">
-                Search
-              </Button>
+               <div className="grid grid-cols-2 gap-2">
+                 <Select value={listingTypeFilter} onValueChange={setListingTypeFilter}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Listing Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="rent">For Rent</SelectItem>
+                        <SelectItem value="sale">For Sale</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Button type="submit" className='w-full'>
+                    Search
+                </Button>
+               </div>
             </form>
           </CardContent>
         </Card>
@@ -133,17 +150,25 @@ export default function Rooms() {
                     <div className="mt-4 flex-grow" />
                      <div className="flex justify-between items-center mt-2">
                         <p className="text-lg font-semibold">
-                            {room.currencySymbol}{room.price}
-                            <span className="text-sm font-normal text-muted-foreground">/night</span>
+                            {room.listingType === 'sale' && room.salePrice ? (
+                                <>
+                                    {room.currencySymbol}{room.salePrice.toLocaleString()}
+                                </>
+                            ) : room.listingType === 'rent' && room.priceNight ? (
+                                <>
+                                    {room.currencySymbol}{room.priceNight}
+                                    <span className="text-sm font-normal text-muted-foreground">/night</span>
+                                </>
+                            ) : null}
                         </p>
-                        <Badge variant="secondary">3 guests</Badge>
+                        <Badge variant={room.listingType === 'sale' ? 'default' : 'secondary'}>{room.listingType}</Badge>
                      </div>
                   </CardContent>
               </Card>
             ))
           ) : (
             <p className="col-span-full text-center text-muted-foreground py-16">
-              No rooms found matching your criteria. Try broadening your search!
+              No spaces found matching your criteria. Try broadening your search!
             </p>
           )}
         </div>

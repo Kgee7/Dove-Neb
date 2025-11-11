@@ -13,7 +13,7 @@ import { addDays, format, differenceInDays } from "date-fns";
 
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Loader2, Wifi, Tv, Utensils, Wind, Star, CalendarIcon } from 'lucide-react';
+import { ArrowLeft, Loader2, Wifi, Tv, Utensils, Wind, Star, CalendarIcon, Phone, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -87,7 +87,7 @@ export default function RoomDetailsPage() {
             renterId: user.uid,
             checkInDate: date.from,
             checkOutDate: date.to,
-            totalPrice: room.price * nights,
+            totalPrice: (room.priceNight || 0) * nights,
             status: 'confirmed', // Or 'pending' if you want a confirmation step
             createdAt: serverTimestamp(),
             roomTitle: room.title,
@@ -133,7 +133,7 @@ export default function RoomDetailsPage() {
   }
 
   const nights = date?.from && date?.to ? differenceInDays(date.to, date.from) : 0;
-  const totalCost = nights > 0 ? room.price * nights : 0;
+  const totalCost = nights > 0 && room.priceNight ? room.priceNight * nights : 0;
 
   return (
     <div className="bg-muted/40">
@@ -205,67 +205,101 @@ export default function RoomDetailsPage() {
                 <div className="md:col-span-1">
                      <Card className="sticky top-24 shadow-lg">
                         <CardHeader>
-                            <CardTitle className='text-2xl'>
-                                {room.currencySymbol}{room.price}{' '}
-                                <span className="text-base font-normal text-muted-foreground">night</span>
-                            </CardTitle>
+                            {room.listingType === 'sale' && room.salePrice && (
+                                <CardTitle className='text-2xl'>
+                                    {room.currencySymbol}{room.salePrice.toLocaleString()}
+                                </CardTitle>
+                            )}
+                            {room.listingType === 'rent' && (
+                                <CardTitle className='text-2xl'>
+                                    {room.priceNight ? `${room.currencySymbol}${room.priceNight.toLocaleString()}` : room.priceMonth ? `${room.currencySymbol}${room.priceMonth.toLocaleString()}`: 'Contact for price'}
+                                    <span className="text-base font-normal text-muted-foreground">
+                                        {room.priceNight ? '/night' : room.priceMonth ? '/month' : ''}
+                                    </span>
+                                </CardTitle>
+                            )}
                         </CardHeader>
                         <CardContent className="grid gap-4">
-                             <Popover>
-                                <PopoverTrigger asChild>
-                                <Button
-                                    id="date"
-                                    variant={"outline"}
-                                    className={cn(
-                                    "w-full justify-start text-left font-normal",
-                                    !date && "text-muted-foreground"
+                            {room.listingType === 'rent' && room.priceNight ? (
+                                <>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                        <Button
+                                            id="date"
+                                            variant={"outline"}
+                                            className={cn(
+                                            "w-full justify-start text-left font-normal",
+                                            !date && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {date?.from ? (
+                                            date.to ? (
+                                                <>
+                                                {format(date.from, "LLL dd, y")} -{" "}
+                                                {format(date.to, "LLL dd, y")}
+                                                </>
+                                            ) : (
+                                                format(date.from, "LLL dd, y")
+                                            )
+                                            ) : (
+                                            <span>Pick a date</span>
+                                            )}
+                                        </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            initialFocus
+                                            mode="range"
+                                            defaultMonth={date?.from}
+                                            selected={date}
+                                            onSelect={setDate}
+                                            numberOfMonths={1}
+                                            disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
+                                        />
+                                        </PopoverContent>
+                                    </Popover>
+                                    {nights > 0 && totalCost > 0 && (
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between">
+                                                <span>{room.currencySymbol}{room.priceNight} x {nights} nights</span>
+                                                <span>{room.currencySymbol}{totalCost}</span>
+                                            </div>
+                                            <Separator />
+                                            <div className="flex justify-between font-bold">
+                                                <span>Total</span>
+                                                <span>{room.currencySymbol}{totalCost}</span>
+                                            </div>
+                                        </div>
                                     )}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {date?.from ? (
-                                    date.to ? (
-                                        <>
-                                        {format(date.from, "LLL dd, y")} -{" "}
-                                        {format(date.to, "LLL dd, y")}
-                                        </>
-                                    ) : (
-                                        format(date.from, "LLL dd, y")
-                                    )
-                                    ) : (
-                                    <span>Pick a date</span>
+
+                                    <Button onClick={handleBooking} className="w-full" size="lg" disabled={bookingLoading}>
+                                        {bookingLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Book Now"}
+                                    </Button>
+                                    <p className="text-xs text-muted-foreground text-center mt-2">You won't be charged yet</p>
+                                </>
+                            ) : (
+                                <div className="space-y-3">
+                                    <h3 className='font-semibold'>Contact Information</h3>
+                                    {room.contactPhone && (
+                                        <a href={`tel:${room.contactPhone}`} className='w-full'>
+                                            <Button variant="outline" className='w-full'>
+                                                <Phone className='mr-2 h-4 w-4' /> Call
+                                            </Button>
+                                        </a>
                                     )}
-                                </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    initialFocus
-                                    mode="range"
-                                    defaultMonth={date?.from}
-                                    selected={date}
-                                    onSelect={setDate}
-                                    numberOfMonths={1}
-                                    disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
-                                />
-                                </PopoverContent>
-                            </Popover>
-                            {nights > 0 && (
-                                <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                        <span>{room.currencySymbol}{room.price} x {nights} nights</span>
-                                        <span>{room.currencySymbol}{totalCost}</span>
-                                    </div>
-                                    <Separator />
-                                    <div className="flex justify-between font-bold">
-                                        <span>Total</span>
-                                        <span>{room.currencySymbol}{totalCost}</span>
-                                    </div>
+                                    {room.contactWhatsapp && (
+                                        <a href={`https://wa.me/${room.contactWhatsapp.replace(/\D/g, '')}`} target='_blank' rel='noopener noreferrer' className='w-full'>
+                                            <Button variant="outline" className='w-full'>
+                                                <MessageSquare className='mr-2 h-4 w-4' /> WhatsApp
+                                            </Button>
+                                        </a>
+                                    )}
+                                    {!room.contactPhone && !room.contactWhatsapp && (
+                                        <p className="text-sm text-muted-foreground">Contact information not provided.</p>
+                                    )}
                                 </div>
                             )}
-
-                            <Button onClick={handleBooking} className="w-full bg-accent hover:bg-accent/90" size="lg" disabled={bookingLoading}>
-                                {bookingLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Book Now"}
-                            </Button>
-                             <p className="text-xs text-muted-foreground text-center mt-2">You won't be charged yet</p>
                         </CardContent>
                      </Card>
                 </div>

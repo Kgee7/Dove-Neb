@@ -79,16 +79,21 @@
         "id": { "type": "string" },
         "ownerId": { "type": "string" },
         "ownerName": { "type": "string" },
+        "listingType": { "type": "string", "enum": ["rent", "sale"] },
         "title": { "type": "string" },
         "description": { "type": "string" },
         "location": { "type": "string" },
-        "price": { "type": "number" },
+        "priceNight": { "type": "number", "description": "Price per night if for rent." },
+        "priceMonth": { "type": "number", "description": "Price per month if for rent." },
+        "salePrice": { "type": "number", "description": "Total price if for sale." },
         "currency": { "type": "string" },
         "currencySymbol": { "type": "string" },
+        "contactPhone": { "type": "string" },
+        "contactWhatsapp": { "type": "string" },
         "images": { "type": "array", "items": { "type": "string", "format": "uri" } },
         "amenities": { "type": "array", "items": { "type": "string" } }
       },
-      "required": ["id", "ownerId", "ownerName", "title", "description", "location", "price", "images"]
+      "required": ["id", "ownerId", "ownerName", "listingType", "title", "description", "location", "images"]
     },
     "Booking": {
       "title": "Booking",

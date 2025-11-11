@@ -116,7 +116,7 @@ export default function HomePage() {
                <Tabs defaultValue="jobs" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="jobs">Find a Job</TabsTrigger>
-                  <TabsTrigger value="rooms">Find a Room</TabsTrigger>
+                  <TabsTrigger value="rooms">Find a Space</TabsTrigger>
                 </TabsList>
                 <TabsContent value="jobs">
                   <CardContent className="p-4">
@@ -167,7 +167,7 @@ export default function HomePage() {
                         />
                       </div>
                       <Button type="submit">
-                        Search Rooms
+                        Search Spaces
                       </Button>
                     </form>
                   </CardContent>
@@ -255,7 +255,7 @@ export default function HomePage() {
               Featured Stays
             </h2>
             <p className="mt-2 text-lg text-muted-foreground">
-              Explore some of our most popular and highly-rated rooms.
+              Explore some of our most popular and highly-rated spaces.
             </p>
           </div>
           {roomsLoading ? (
@@ -297,10 +297,18 @@ export default function HomePage() {
                     <div className="mt-4 flex-grow" />
                      <div className="flex justify-between items-center mt-2">
                         <p className="text-lg font-semibold">
-                            {room.currencySymbol}{room.price}
-                            <span className="text-sm font-normal text-muted-foreground">/night</span>
+                            {room.listingType === 'sale' && room.salePrice ? (
+                                <>
+                                    {room.currencySymbol}{room.salePrice.toLocaleString()}
+                                </>
+                            ) : room.listingType === 'rent' && room.priceNight ? (
+                                <>
+                                    {room.currencySymbol}{room.priceNight}
+                                    <span className="text-sm font-normal text-muted-foreground">/night</span>
+                                </>
+                            ) : null}
                         </p>
-                        <Badge variant="secondary">New</Badge>
+                        <Badge variant={room.listingType === 'sale' ? 'default' : 'secondary'}>{room.listingType}</Badge>
                      </div>
                   </CardContent>
                 </Card>
@@ -312,7 +320,7 @@ export default function HomePage() {
               href="/rooms"
               className={cn(buttonVariants({ size: "lg" }))}
             >
-              Explore All Rooms
+              Explore All Spaces
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </div>

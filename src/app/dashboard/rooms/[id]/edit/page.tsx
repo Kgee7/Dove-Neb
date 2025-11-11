@@ -1,14 +1,15 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser } from '@/firebase';
-import { collection, addDoc } from 'firebase/firestore';
-import { useRouter } from 'next/navigation';
+import { useFirestore, useUser, useDoc } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { Room } from '@/lib/data';
 import { countries } from '@/lib/countries';
 
 import { Button } from '@/components/ui/button';
@@ -24,34 +25,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Trash2, Upload } from 'lucide-react';
+import { Loader2, Trash2, Upload, ArrowLeft } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import Link from 'next/link';
 
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
-
-const MAX_IMAGE_SIZE = 500 * 1024; // 500KB per image
-const MAX_TOTAL_SIZE = 4 * 1024 * 1024; // 4MB total for all images
-const MAX_IMAGES = 5;
-
-const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-});
-
-const fileArraySchema = z.array(z.instanceof(File))
-  .min(1, 'At least one image is required.')
-  .max(MAX_IMAGES, `You can upload a maximum of ${MAX_IMAGES} images.`)
-  .refine(files => files.every(file => file.size <= MAX_IMAGE_SIZE), {
-    message: `Each image must be less than ${MAX_IMAGE_SIZE / 1024}KB.`,
-  })
-  .refine(files => files.reduce((acc, file) => acc + file.size, 0) <= MAX_TOTAL_SIZE, {
-    message: `Total size of images must be less than ${MAX_TOTAL_SIZE / (1024 * 1024)}MB.`,
-  });
 
 const formSchema = z.object({
   listingType: z.enum(['rent', 'sale'], { required_error: 'Please select a listing type.' }),
@@ -64,7 +45,6 @@ const formSchema = z.object({
   currencyInfo: z.string().min(1, 'Currency is required.'),
   contactPhone: z.string().optional(),
   contactWhatsapp: z.string().optional(),
-  images: fileArraySchema,
   amenities: z.array(z.string()).optional(),
 }).refine(data => {
     if (data.listingType === 'rent') return data.priceNight || data.priceMonth;
@@ -80,17 +60,25 @@ const formSchema = z.object({
     path: ['salePrice'],
 });
 
+type EditRoomFormValues = z.infer<typeof formSchema>;
 
-type ListRoomFormValues = z.infer<typeof formSchema>;
-
-export default function ListRoomPage() {
+export default function EditRoomPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const params = useParams();
+  const id = params.id as string;
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<ListRoomFormValues>({
+  const roomDocRef = useMemo(() => {
+    if (!firestore || !id) return null;
+    return doc(firestore, 'rooms', id);
+  }, [firestore, id]);
+
+  const { data: room, isLoading: isRoomLoading } = useDoc<Room>(roomDocRef);
+
+  const form = useForm<EditRoomFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       listingType: 'rent',
@@ -101,69 +89,58 @@ export default function ListRoomPage() {
       priceMonth: undefined,
       salePrice: undefined,
       currencyInfo: 'US',
-      images: [],
       amenities: [],
     },
   });
 
-  const listingType = form.watch('listingType');
-
   useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/login');
-    }
-  }, [isUserLoading, user, router]);
-
-  const onSubmit = async (data: ListRoomFormValues) => {
-    if (!user || !firestore) {
-      toast({
-        variant: 'destructive',
-        title: 'Authentication Error',
-        description: 'You must be logged in to list a room.',
+    if (room) {
+      if (user?.uid !== room.ownerId) {
+        toast({ variant: 'destructive', title: 'Unauthorized', description: 'You cannot edit this room.' });
+        router.push('/dashboard');
+        return;
+      }
+      const countryCode = countries.find(c => c.currency === room.currency)?.code || 'US';
+      form.reset({
+        ...room,
+        priceNight: room.priceNight || undefined,
+        priceMonth: room.priceMonth || undefined,
+        salePrice: room.salePrice || undefined,
+        contactPhone: room.contactPhone || '',
+        contactWhatsapp: room.contactWhatsapp || '',
+        currencyInfo: countryCode,
       });
-      return;
     }
+  }, [room, user, router, form, toast]);
+
+  const onSubmit = async (data: EditRoomFormValues) => {
+    if (!user || !roomDocRef) return;
     setIsLoading(true);
 
     try {
-        const imageUrls = await Promise.all(data.images.map(image => toBase64(image)));
-        
-        const ownerName = user.displayName || `${user.firstName} ${user.lastName}`.trim() || 'Anonymous';
         const selectedCountry = countries.find(c => c.code === data.currencyInfo);
         const currency = selectedCountry?.currency || 'USD';
         const currencySymbol = selectedCountry?.currencySymbol || '$';
 
-        const roomData = {
-          ownerId: user.uid,
-          ownerName: ownerName,
-          listingType: data.listingType,
-          title: data.title,
-          description: data.description,
-          location: data.location,
+        await updateDoc(roomDocRef, {
+          ...data,
           priceNight: data.priceNight || null,
           priceMonth: data.priceMonth || null,
           salePrice: data.salePrice || null,
           currency,
           currencySymbol,
-          contactPhone: data.contactPhone || null,
-          contactWhatsapp: data.contactWhatsapp || null,
-          images: imageUrls,
-          amenities: data.amenities || [],
-          createdAt: new Date(),
-        };
-
-        await addDoc(collection(firestore, 'rooms'), roomData);
+        });
 
         toast({
-            title: 'Room Listed!',
-            description: 'Your room is now available.',
+            title: 'Room Updated!',
+            description: 'Your listing has been successfully updated.',
         });
         router.push('/dashboard');
     } catch (error: any) {
-        console.error("Error listing room: ", error);
+        console.error("Error updating room: ", error);
         toast({
             variant: "destructive",
-            title: "Listing Failed",
+            title: "Update Failed",
             description: error.message || "An unexpected error occurred."
         })
     } finally {
@@ -171,20 +148,39 @@ export default function ListRoomPage() {
     }
   };
 
-  if (isUserLoading || !user) {
+  if (isUserLoading || isRoomLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
+
+  if (!room) {
+    return (
+      <div className="container py-12 text-center">
+        <h1 className="text-3xl font-bold">Room not found</h1>
+        <Link href="/dashboard">
+          <Button variant="link" className="mt-4">Back to Dashboard</Button>
+        </Link>
+      </div>
+    );
+  }
   
+  const listingType = form.watch('listingType');
+
   return (
     <div className="container max-w-3xl py-12">
+      <div className="mb-8">
+        <Link href="/dashboard" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Dashboard
+        </Link>
+      </div>
       <Card>
         <CardHeader>
-          <CardTitle>List Your Space</CardTitle>
-          <CardDescription>Fill out the details below to put your space on the market.</CardDescription>
+          <CardTitle>Edit Your Space</CardTitle>
+          <CardDescription>Update the details for your space listing.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -198,7 +194,7 @@ export default function ListRoomPage() {
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="grid grid-cols-2 gap-4"
                         >
                           <FormItem>
@@ -281,7 +277,7 @@ export default function ListRoomPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Currency</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a currency" />
@@ -376,61 +372,8 @@ export default function ListRoomPage() {
                     )}
                 />
             </div>
-
-
-               <FormField
-                control={form.control}
-                name="images"
-                render={({ field, fieldState }) => (
-                  <FormItem>
-                    <FormLabel>Room Images</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={(e) => {
-                          const files = Array.from(e.target.files || []);
-                          const currentFiles = form.getValues('images');
-                          if (currentFiles.length + files.length > MAX_IMAGES) {
-                              toast({ variant: 'destructive', title: 'Too many images', description: `You can only upload up to ${MAX_IMAGES} images.` });
-                              return;
-                          }
-                           form.setValue('images', [...currentFiles, ...files], { shouldValidate: true });
-                        }}
-                        className="hidden"
-                        id="image-upload"
-                      />
-                    </FormControl>
-                    <label htmlFor="image-upload" className="flex items-center justify-center w-full p-6 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted">
-                        <div className="text-center">
-                            <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-                            <p className="mt-2 text-sm text-muted-foreground">Click or drag to upload images</p>
-                        </div>
-                    </label>
-                    <FormDescription>
-                        Up to {MAX_IMAGES} images. Each under 500KB. Total under 4MB.
-                    </FormDescription>
-                    {fieldState.error && <FormMessage />}
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                        {form.watch('images').map((file, index) => (
-                           <div key={index} className="relative group">
-                                <img src={URL.createObjectURL(file)} alt={`preview ${index}`} className="w-full h-24 object-cover rounded-md" />
-                                <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => {
-                                    const currentImages = form.getValues('images');
-                                    const updatedImages = currentImages.filter((_, i) => i !== index);
-                                    form.setValue('images', updatedImages, { shouldValidate: true });
-                                }}>
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                           </div>
-                        ))}
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-                <FormField
+            
+             <FormField
                 control={form.control}
                 name="amenities"
                 render={() => (
@@ -482,7 +425,7 @@ export default function ListRoomPage() {
                 />
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'List My Space'}
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Changes'}
               </Button>
             </form>
           </Form>

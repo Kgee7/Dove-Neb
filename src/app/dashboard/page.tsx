@@ -27,6 +27,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { Job } from '@/lib/job-data';
+import { Room } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 
@@ -46,15 +47,6 @@ type Booking = {
     totalPrice: number;
 }
 
-type Room = {
-    id: string;
-    title: string;
-    location: string;
-    images: string[];
-    price: number;
-    currencySymbol: string;
-}
-
 type JobApplication = {
     id: string;
     jobTitle: string;
@@ -70,6 +62,7 @@ export default function DashboardPage() {
   const { toast } = useToast();
 
   const [jobToDelete, setJobToDelete] = useState<string | null>(null);
+  const [roomToDelete, setRoomToDelete] = useState<string | null>(null);
 
   const userDocRef = useMemo(() => {
     if (!firestore || !user?.uid) return null;
@@ -130,6 +123,26 @@ export default function DashboardPage() {
     }
   };
 
+  const handleDeleteRoom = async () => {
+    if (!firestore || !roomToDelete) return;
+    try {
+        const roomRef = doc(firestore, 'rooms', roomToDelete);
+        await deleteDoc(roomRef);
+        toast({
+            title: 'Room Deleted',
+            description: 'The room listing has been successfully removed.',
+        });
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Deletion Failed',
+            description: error.message || 'Could not delete the room listing.',
+        });
+    } finally {
+        setRoomToDelete(null);
+    }
+  };
+
 
   const isLoading = isUserLoading || isProfileLoading || bookingsLoading || roomListingsLoading || applicationsLoading || jobListingsLoading;
 
@@ -157,7 +170,7 @@ export default function DashboardPage() {
             <Link href="/dashboard/list-room">
                 <Button>
                     <PlusCircle className="mr-2 h-4 w-4"/>
-                    List a Room
+                    List a Space
                 </Button>
             </Link>
             {isEmployer && (
@@ -307,25 +320,37 @@ export default function DashboardPage() {
             {/* Room Listings View (For Owners) */}
             <Card>
                 <CardHeader>
-                    <CardTitle>My Room Listings</CardTitle>
-                    <CardDescription>Manage the rooms you are hosting.</CardDescription>
+                    <CardTitle>My Space Listings</CardTitle>
+                    <CardDescription>Manage the spaces you are hosting.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {roomListings && roomListings.length > 0 ? (
                         <div className="grid gap-6 md:grid-cols-2">
                             {roomListings.map(listing => (
-                                 <Card key={listing.id} className="overflow-hidden">
+                                 <Card key={listing.id}>
                                     <div className="flex">
-                                        <div className="relative w-1/3 aspect-square">
-                                            <Image src={listing.images[0]} alt={listing.title} fill className="object-cover" />
+                                        <div className="relative w-1/3 aspect-video">
+                                            <Image src={listing.images[0]} alt={listing.title} fill className="object-cover rounded-l-lg" />
                                         </div>
                                         <div className='p-4 flex-1'>
                                             <h3 className="font-semibold">{listing.title}</h3>
                                             <p className="text-sm text-muted-foreground">{listing.location}</p>
-                                            <p className="text-sm mt-2 font-semibold">{listing.currencySymbol}{listing.price}/night</p>
-                                            <Link href={`/rooms/${listing.id}`} className="mt-2">
-                                                <Button variant="outline" size="sm">View Listing</Button>
-                                            </Link>
+                                            <p className="text-sm mt-2 font-semibold">
+                                                {listing.listingType === 'sale' && listing.salePrice ? `${listing.currencySymbol}${listing.salePrice.toLocaleString()}` : ''}
+                                                {listing.listingType === 'rent' && listing.priceNight ? `${listing.currencySymbol}${listing.priceNight}/night` : ''}
+                                                {listing.listingType === 'rent' && listing.priceMonth ? ` | ${listing.currencySymbol}${listing.priceMonth}/month` : ''}
+                                            </p>
+                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                <Link href={`/rooms/${listing.id}`}>
+                                                    <Button variant="outline" size="sm">View</Button>
+                                                </Link>
+                                                <Link href={`/dashboard/rooms/${listing.id}/edit`}>
+                                                    <Button variant="secondary" size="sm"><Edit className="mr-2 h-4 w-4" />Edit</Button>
+                                                </Link>
+                                                <Button variant="destructive" size="sm" onClick={() => setRoomToDelete(listing.id)}>
+                                                    <Trash2 className="mr-2 h-4 w-4" />Delete
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
                                 </Card>
@@ -334,10 +359,10 @@ export default function DashboardPage() {
                     ) : (
                        <div className='text-center py-12 border-2 border-dashed rounded-lg'>
                             <Home className="mx-auto h-12 w-12 text-muted-foreground" />
-                            <h3 className="mt-4 text-lg font-medium">You have no active room listings.</h3>
+                            <h3 className="mt-4 text-lg font-medium">You have no active listings.</h3>
                             <p className="mt-1 text-sm text-muted-foreground">List your space to start earning.</p>
                             <Link href="/dashboard/list-room">
-                                <Button variant="default" className="mt-4">List a Room</Button>
+                                <Button variant="default" className="mt-4">List a Space</Button>
                             </Link>
                         </div>
                     )}
@@ -356,6 +381,20 @@ export default function DashboardPage() {
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleDeleteJob}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    <AlertDialog open={!!roomToDelete} onOpenChange={(open) => !open && setRoomToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete this room listing from the platform.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteRoom}>Delete</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
