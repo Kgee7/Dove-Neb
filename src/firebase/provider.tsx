@@ -21,6 +21,8 @@ export function FirebaseProvider({
   children,
   ...value
 }: { children: React.ReactNode } & FirebaseContextValue) {
+  // If firebaseApp is null, it means initialization failed.
+  // We'll render the children without the provider to allow the app to run in a degraded state.
   if (!value.firebaseApp) {
     return <>{children}</>;
   }
@@ -36,22 +38,26 @@ export function FirebaseProvider({
 
 export const useFirebaseApp = (): FirebaseApp | null => {
   const context = useContext(FirebaseContext);
-  return context?.firebaseApp ?? null;
+  if (!context) return null;
+  return context.firebaseApp;
 };
 
 export const useAuth = (): Auth | null => {
   const context = useContext(FirebaseContext);
-  return context?.auth ?? null;
+  if (!context) return null;
+  return context.auth;
 };
 
 export const useFirestore = (): Firestore | null => {
   const context = useContext(FirebaseContext);
-  return context?.firestore ?? null;
+  if (!context) return null;
+  return context.firestore;
 };
 
 export const useStorage = (): FirebaseStorage | null => {
     const context = useContext(FirebaseContext);
-    return context?.storage ?? null;
+    if (!context) return null;
+    return context.storage;
 };
 
 export const useUser = () => {
@@ -60,6 +66,7 @@ export const useUser = () => {
   const [isUserLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
+    // If auth is not available (initialization failed), immediately set state to not loading and no user.
     if (!auth) {
       setUser(null);
       setIsLoading(false);

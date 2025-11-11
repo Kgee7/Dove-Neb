@@ -21,7 +21,7 @@ export function initializeFirebase(): FirebaseServices {
     return { firebaseApp: app, auth, firestore, storage };
   } catch (error) {
     console.error("Firebase initialization failed:", error);
-    // Return null services to prevent app crash
+    // Return null services to prevent app crash if config is invalid.
     return { firebaseApp: null, auth: null, firestore: null, storage: null };
   }
 }
