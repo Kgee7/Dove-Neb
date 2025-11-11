@@ -4,7 +4,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   ArrowRight,
   Briefcase,
@@ -47,6 +47,11 @@ export default function HomePage() {
   const [jobLocationQuery, setJobLocationQuery] = useState('');
   const [roomSearchQuery, setRoomSearchQuery] = useState('');
   const [roomLocationQuery, setRoomLocationQuery] = useState('');
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   const roomsQuery = useMemo(() => {
     if (!firestore) return null;
@@ -107,6 +112,7 @@ export default function HomePage() {
               Find your dream job and the perfect place to stay.
             </p>
             <Card className="mx-auto mt-8 max-w-2xl shadow-2xl">
+              {isClient && 
                <Tabs defaultValue="jobs" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="jobs">Find a Job</TabsTrigger>
@@ -167,6 +173,7 @@ export default function HomePage() {
                   </CardContent>
                 </TabsContent>
               </Tabs>
+              }
             </Card>
           </div>
         </div>
