@@ -203,7 +203,7 @@ export default function HomePage() {
                 return (
                 <Card
                   key={job.id}
-                  className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg w-full max-w-sm bg-secondary"
+                  className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg w-full max-w-sm bg-[#88E788] text-white"
                 >
                   <CardHeader>
                      <CardTitle className="text-xl">
@@ -211,19 +211,19 @@ export default function HomePage() {
                           {job.title}
                         </Link>
                     </CardTitle>
-                     <p className="text-sm text-muted-foreground flex items-center pt-1">
+                     <p className="text-sm text-white/80 flex items-center pt-1">
                         <Building2 className="h-4 w-4 mr-2" />
                         {job.companyName}
                     </p>
                   </CardHeader>
                   <CardContent className="flex flex-1 flex-col">
-                    <p className="text-sm text-muted-foreground mt-1 flex items-center">
+                    <p className="text-sm text-white/80 mt-1 flex items-center">
                         <MapPin className="h-4 w-4 mr-2" />
                         {job.location}
                     </p>
                     <div className="mt-4 flex-grow" />
                      <div className="flex justify-between items-center mt-2">
-                        <Badge variant="outline">{job.type}</Badge>
+                        <Badge variant="outline" className="bg-white/20 border-white/50 text-white">{job.type}</Badge>
                         {(job.salaryMin && job.salaryMax) && (
                            <p className="text-lg font-semibold">
                               {salarySymbol}{job.salaryMin/1000}k - {salarySymbol}{job.salaryMax/1000}k
