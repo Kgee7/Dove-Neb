@@ -64,11 +64,15 @@ export const useStorage = (): FirebaseStorage => {
 };
 
 export const useUser = () => {
-  const auth = useAuth();
+  const auth = useContext(FirebaseContext)?.auth;
   const [user, setUser] = React.useState<any>(null);
   const [isUserLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
+    if (!auth) {
+      setIsLoading(false);
+      return;
+    }
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
       setIsLoading(false);
