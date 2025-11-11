@@ -26,12 +26,13 @@ export interface Room {
     title: string;
     description: string;
     price: number;
+    currency: string;
     currencySymbol: string;
     location: string;
     images: string[];
     amenities: string[];
     ownerName: string;
-    ownerPhotoURL: string;
+    ownerId: string;
 }
 
 // Firestore data converters
@@ -41,11 +42,13 @@ export const roomConverter: FirestoreDataConverter<Room> = {
             title: room.title,
             description: room.description,
             price: room.price,
+            currency: room.currency,
+            currencySymbol: room.currencySymbol,
             location: room.location,
             images: room.images,
             amenities: room.amenities,
             ownerName: room.ownerName,
-            ownerPhotoURL: room.ownerPhotoURL
+            ownerId: room.ownerId,
         };
     },
     fromFirestore(snapshot, options): Room {
@@ -55,12 +58,15 @@ export const roomConverter: FirestoreDataConverter<Room> = {
             title: data.title,
             description: data.description,
             price: data.price,
-            currencySymbol: data.price > 200 ? '€' : '$',
+            currency: data.currency,
+            currencySymbol: data.currencySymbol,
             location: data.location,
-            images: data.images, // Now passing the raw image paths
+            images: data.images,
             amenities: data.amenities,
             ownerName: data.ownerName,
-            ownerPhotoURL: data.ownerPhotoURL,
+            ownerId: data.ownerId,
         };
     },
 };
+
+    
