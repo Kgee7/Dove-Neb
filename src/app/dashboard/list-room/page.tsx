@@ -1,12 +1,12 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser } from '@/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { useFirestore, useUser, useDoc } from '@/firebase';
+import { collection, addDoc, doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { countries } from '@/lib/countries';
@@ -83,12 +83,24 @@ const formSchema = z.object({
 
 type ListRoomFormValues = z.infer<typeof formSchema>;
 
+type UserProfile = {
+  firstName: string;
+  lastName: string;
+};
+
 export default function ListRoomPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+
+  const userDocRef = useMemo(() => {
+      if (!firestore || !user?.uid) return null;
+      return doc(firestore, 'users', user.uid);
+  }, [firestore, user?.uid]);
+  
+  const { data: userProfile } = useDoc<UserProfile>(userDocRef);
 
   const form = useForm<ListRoomFormValues>({
     resolver: zodResolver(formSchema),
@@ -115,7 +127,7 @@ export default function ListRoomPage() {
   }, [isUserLoading, user, router]);
 
   const onSubmit = async (data: ListRoomFormValues) => {
-    if (!user || !firestore) {
+    if (!user || !firestore || !userProfile) {
       toast({
         variant: 'destructive',
         title: 'Authentication Error',
@@ -128,7 +140,7 @@ export default function ListRoomPage() {
     try {
         const imageUrls = await Promise.all(data.images.map(image => toBase64(image)));
         
-        const ownerName = user.displayName || `${user.firstName} ${user.lastName}`.trim() || 'Anonymous';
+        const ownerName = user.displayName || `${userProfile.firstName} ${userProfile.lastName}`.trim() || 'Anonymous';
         const selectedCountry = countries.find(c => c.code === data.currencyInfo);
         const currency = selectedCountry?.currency || 'USD';
         const currencySymbol = selectedCountry?.currencySymbol || '$';
@@ -491,3 +503,5 @@ export default function ListRoomPage() {
     </div>
   );
 }
+
+    
