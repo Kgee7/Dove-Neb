@@ -5,9 +5,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useDoc, useFirestore, useStorage, setDoc, updateProfile } from '@/firebase';
+import { useUser, useDoc, useFirestore, setDoc, updateProfile } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -30,6 +29,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Loader2, Edit, Upload, ArrowLeft } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { handleFirebaseError } from '@/firebase/error-handler';
 
 type UserProfile = {
     userType: 'seeker' | 'employer' | 'renter' | 'owner';
@@ -47,10 +47,16 @@ const profileSchema = z.object({
   preferredName: z.string().optional(),
 });
 
+const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+});
+
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
-  const storage = useStorage();
   const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -100,116 +106,81 @@ export default function ProfilePage() {
     fileInputRef.current?.click();
   };
 
-      const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file || !user || !userDocRef) return;
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user || !userDocRef) return;
 
-        setUploading(true);
-
-        try {
-          const storageRef = ref(storage, `profilePictures/${user.uid}/${file.name}`);
-          const snapshot = await uploadBytes(storageRef, file);
-          const downloadURL = await getDownloadURL(snapshot.ref);
-
-          if (user) {
-            await updateProfile(user, { photoURL: downloadURL });
-          }
-          
-          await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
-          
-          if(user) await user.reload();
-
-          toast({
-            title: 'Profile Picture Updated',
-            description: 'Your new avatar has been saved.',
-          });
-        } catch (error: any) { 
-          console.error('Error uploading file:', error);
-          let errorMessage = 'Could not upload your profile picture.';
-
-          if (error.code) {
-            if (error.code === 'storage/unauthorized') {
-              errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
-            } else if (error.code === 'storage/quota-exceeded') {
-              errorMessage = 'Storage quota exceeded.';
-            } else if (error.code === 'storage/retry-limit-exceeded') {
-              errorMessage = 'Network error. Please check your connection and try again.';
-            } else {
-              errorMessage = `Upload Failed: ${error.code}.`;
-            }
-          }
-
-          toast({
+    if (file.size > 1024 * 1024) { // 1MB limit for safety with base64 encoding
+        toast({
             variant: 'destructive',
-            title: 'Upload Failed',
-            description: errorMessage,
-          });
-        } finally {
-          setUploading(false);
-        }
-      };
+            title: 'File Too Large',
+            description: 'Profile picture must be less than 1MB.',
+        });
+        return;
+    }
+
+    setUploading(true);
+
+    try {
+      const dataUrl = await toBase64(file);
+
+      if (user) {
+        await updateProfile(user, { photoURL: dataUrl });
+      }
       
-      const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file || !user || !userDocRef) return;
+      await setDoc(userDocRef, { photoURL: dataUrl }, { merge: true });
+      
+      if(user) await user.reload();
 
-        const allowedResumeTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-        if (!allowedResumeTypes.includes(file.type)) {
-            toast({
-                variant: 'destructive',
-                title: 'Invalid File Type',
-                description: 'Resume must be a PDF or Word document (DOC, DOCX).',
-            });
-            return;
-        }
+      toast({
+        title: 'Profile Picture Updated',
+        description: 'Your new avatar has been saved.',
+      });
+    } catch (error: any) { 
+      handleFirebaseError(error, toast);
+    } finally {
+      setUploading(false);
+    }
+  };
+      
+  const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user || !userDocRef) return;
 
-        if (file.size > 5 * 1024 * 1024) { // 5MB limit
-            toast({
-                variant: 'destructive',
-                title: 'File Too Large',
-                description: 'Resume file must be less than 5MB.',
-            });
-            return;
-        }
-
-        setUploadingResume(true);
-
-        try {
-          const storageRef = ref(storage, `resumes/${user.uid}/${file.name}`);
-          
-          const snapshot = await uploadBytes(storageRef, file);
-          const downloadURL = await getDownloadURL(snapshot.ref);
-
-          await setDoc(userDocRef, { resumeURL: downloadURL }, { merge: true });
-
-          toast({
-            title: 'Resume Uploaded',
-            description: 'Your resume has been saved successfully.',
-          });
-        } catch (error: any) {
-          console.error('Error uploading resume:', error);
-          let errorMessage = 'Could not upload your resume.';
-          
-          if (error.code) {
-             if (error.code === 'storage/unauthorized') {
-              errorMessage = 'Permission denied. Check Firebase Storage Security Rules.';
-            } else if (error.code === 'storage/quota-exceeded') {
-              errorMessage = 'Storage quota exceeded.';
-            } else if (error.code === 'storage/retry-limit-exceeded') {
-              errorMessage = 'Network error. Please check your connection and try again.';
-            } else {
-              errorMessage = `Upload Failed: ${error.code}.`;
-            }
-          }
-          toast({
+    const allowedResumeTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedResumeTypes.includes(file.type)) {
+        toast({
             variant: 'destructive',
-            title: 'Upload Failed',
-            description: errorMessage,
-          });
-        } finally {
-          setUploadingResume(false);
-        }
-      };
+            title: 'Invalid File Type',
+            description: 'Resume must be a PDF or Word document (DOC, DOCX).',
+        });
+        return;
+    }
+
+    if (file.size > 1.5 * 1024 * 1024) { // 1.5MB limit for safety, Firestore limit is 1MB per document but fields are smaller
+        toast({
+            variant: 'destructive',
+            title: 'File Too Large',
+            description: 'Resume file must be less than 1.5MB.',
+        });
+        return;
+    }
+
+    setUploadingResume(true);
+
+    try {
+      const dataUrl = await toBase64(file);
+      await setDoc(userDocRef, { resumeURL: dataUrl }, { merge: true });
+      toast({
+        title: 'Resume Uploaded',
+        description: 'Your resume has been saved successfully.',
+      });
+    } catch (error: any) {
+      handleFirebaseError(error, toast);
+    } finally {
+      setUploadingResume(false);
+    }
+  };
 
 
   async function onSubmit(values: z.infer<typeof profileSchema>) {

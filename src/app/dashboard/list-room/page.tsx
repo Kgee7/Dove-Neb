@@ -2,15 +2,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser, useStorage } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { addDoc, collection } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
 import { countries } from '@/lib/countries';
 import { handleFirebaseError } from '@/firebase/error-handler';
 
@@ -33,13 +31,34 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
+const MAX_IMAGE_SIZE = 500 * 1024; // 500KB per image
+const MAX_TOTAL_SIZE = 4 * 1024 * 1024; // 4MB total for all images
+const MAX_IMAGES = 5;
+
+const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+});
+
+const fileArraySchema = z.array(z.instanceof(File))
+  .min(1, 'At least one image is required.')
+  .max(MAX_IMAGES, `You can upload a maximum of ${MAX_IMAGES} images.`)
+  .refine(files => files.every(file => file.size <= MAX_IMAGE_SIZE), {
+    message: `Each image must be less than ${MAX_IMAGE_SIZE / 1024}KB.`,
+  })
+  .refine(files => files.reduce((acc, file) => acc + file.size, 0) <= MAX_TOTAL_SIZE, {
+    message: `Total size of images must be less than ${MAX_TOTAL_SIZE / (1024 * 1024)}MB.`,
+  });
+
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters long.'),
   description: z.string().min(20, 'Description must be at least 20 characters long.'),
   location: z.string().min(2, 'Location is required.'),
   price: z.coerce.number().min(1, 'Price must be greater than 0.'),
   currencyInfo: z.string().min(1, 'Currency is required.'),
-  images: z.array(z.instanceof(File)).min(1, 'At least one image is required.'),
+  images: fileArraySchema,
   amenities: z.array(z.string()).min(1, 'Select at least one amenity.'),
 });
 
@@ -47,7 +66,6 @@ type ListRoomFormValues = z.infer<typeof formSchema>;
 
 export default function ListRoomPage() {
   const firestore = useFirestore();
-  const storage = useStorage();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
@@ -84,19 +102,12 @@ export default function ListRoomPage() {
     setIsLoading(true);
 
     try {
-      const imageUrls = await Promise.all(
-        data.images.map(async (image) => {
-          const storageRef = ref(storage, `rooms/${user.uid}/${uuidv4()}`);
-          const snapshot = await uploadBytes(storageRef, image);
-          return getDownloadURL(snapshot.ref);
-        })
-      );
+      const imageUrls = await Promise.all(data.images.map(image => toBase64(image)));
       
       const ownerName = user.displayName || `${user.firstName} ${user.lastName}`.trim() || 'Anonymous';
       const selectedCountry = countries.find(c => c.code === data.currencyInfo);
       const currency = selectedCountry?.currency || 'USD';
       const currencySymbol = selectedCountry?.currencySymbol || '$';
-
 
       await addDoc(collection(firestore, 'rooms'), {
         ownerId: user.uid,
@@ -238,7 +249,12 @@ export default function ListRoomPage() {
                         accept="image/*"
                         onChange={(e) => {
                           const files = Array.from(e.target.files || []);
-                           form.setValue('images', [...form.getValues('images'), ...files], { shouldValidate: true });
+                          const currentFiles = form.getValues('images');
+                          if (currentFiles.length + files.length > MAX_IMAGES) {
+                              toast({ variant: 'destructive', title: 'Too many images', description: `You can only upload up to ${MAX_IMAGES} images.` });
+                              return;
+                          }
+                           form.setValue('images', [...currentFiles, ...files], { shouldValidate: true });
                         }}
                         className="hidden"
                         id="image-upload"
@@ -250,6 +266,9 @@ export default function ListRoomPage() {
                             <p className="mt-2 text-sm text-muted-foreground">Click or drag to upload images</p>
                         </div>
                     </label>
+                    <FormDescription>
+                        Up to {MAX_IMAGES} images. Each under 500KB. Total under 4MB.
+                    </FormDescription>
                     {fieldState.error && <FormMessage />}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                         {form.watch('images').map((file, index) => (
@@ -330,5 +349,3 @@ export default function ListRoomPage() {
     </div>
   );
 }
-
-    

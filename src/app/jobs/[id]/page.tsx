@@ -3,7 +3,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, addDoc, collection, serverTimestamp, getDocs, where, query } from 'firebase/firestore';
 import { useDoc, useFirestore, useUser } from '@/firebase';
 import { Job } from '@/lib/job-data';
 import Link from 'next/link';
@@ -24,6 +24,7 @@ export default function JobDetailsPage() {
   const id = params.id as string;
 
   const [applying, setApplying] = useState(false);
+  const [alreadyApplied, setAlreadyApplied] = useState(false);
 
   const jobDocRef = useMemo(() => {
     if (!firestore || !id) return null;
@@ -38,6 +39,20 @@ export default function JobDetailsPage() {
   }, [firestore, user?.uid]);
 
   const { data: userProfile } = useDoc(userDocRef);
+
+  // Check if user has already applied
+  React.useEffect(() => {
+    if (!firestore || !user || !id) return;
+    const checkApplication = async () => {
+        const q = query(
+            collection(firestore, 'users', user.uid, 'applications'),
+            where('jobId', '==', id)
+        );
+        const querySnapshot = await getDocs(q);
+        setAlreadyApplied(!querySnapshot.empty);
+    };
+    checkApplication();
+  }, [firestore, user, id]);
 
 
   const handleApply = async () => {
@@ -91,6 +106,7 @@ export default function JobDetailsPage() {
         title: "Application Successful!",
         description: `You have applied for the ${job.title} position.`,
       });
+      setAlreadyApplied(true);
     } catch (error: any) {
       console.error(error);
       toast({
@@ -162,8 +178,8 @@ export default function JobDetailsPage() {
             <Separator className="my-6" />
             <div className="flex justify-center">
               {job.applicationMethod === 'in-app' ? (
-                <Button onClick={handleApply} size="lg" disabled={applying}>
-                  {applying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Apply Now'}
+                <Button onClick={handleApply} size="lg" disabled={applying || alreadyApplied}>
+                  {applying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : alreadyApplied ? 'Applied' : 'Apply Now'}
                 </Button>
               ) : (
                 <Card className="bg-secondary p-6 w-full max-w-md">
