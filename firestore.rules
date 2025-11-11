@@ -25,7 +25,7 @@ service cloud.firestore {
       allow read: if isOwner(userId);
       // An employer can update the status of an application for a job they posted.
       // This rule is more secure: it checks that only the status can be changed,
-      // and verifies the request is coming from the actual job owner.
+      // and verifies the request is coming from the actual job owner by checking the jobId on the document.
       allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
                     && isOwner(get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.employerId);
       // Only the user can create or delete their own application records.
