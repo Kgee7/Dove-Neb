@@ -1,10 +1,10 @@
 
 'use client';
 import { useRouter } from 'next/navigation';
-import React, { useMemo } from 'react';
-import { useUser, useFirestore, useDoc, useCollection, where } from '@/firebase';
+import React, { useMemo, useState } from 'react';
+import { useUser, useFirestore, useDoc, useCollection, where, deleteDoc } from '@/firebase';
 import { doc, collection, query, orderBy } from 'firebase/firestore';
-import { Loader2, PlusCircle, Home, BedDouble, Briefcase, Building2, Users } from "lucide-react";
+import { Loader2, PlusCircle, Home, BedDouble, Briefcase, Building2, Users, Edit, Trash2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -12,12 +12,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { Job } from '@/lib/job-data';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 type UserProfile = {
   userType: 'seeker' | 'employer' | 'renter' | 'owner';
@@ -56,6 +67,9 @@ export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const { toast } = useToast();
+
+  const [jobToDelete, setJobToDelete] = useState<string | null>(null);
 
   const userDocRef = useMemo(() => {
     if (!firestore || !user?.uid) return null;
@@ -95,6 +109,27 @@ export default function DashboardPage() {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
+  
+  const handleDeleteJob = async () => {
+    if (!firestore || !jobToDelete) return;
+    try {
+        const jobRef = doc(firestore, 'jobs', jobToDelete);
+        await deleteDoc(jobRef);
+        toast({
+            title: 'Job Deleted',
+            description: 'The job listing has been successfully removed.',
+        });
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Deletion Failed',
+            description: error.message || 'Could not delete the job listing.',
+        });
+    } finally {
+        setJobToDelete(null);
+    }
+  };
+
 
   const isLoading = isUserLoading || isProfileLoading || bookingsLoading || roomListingsLoading || applicationsLoading || jobListingsLoading;
 
@@ -111,6 +146,7 @@ export default function DashboardPage() {
 
 
   return (
+    <>
     <div className="container py-10">
        <div className="flex items-center justify-between mb-8">
         <div>
@@ -189,7 +225,7 @@ export default function DashboardPage() {
                                         <CardDescription>{job.location}</CardDescription>
                                       </CardHeader>
                                       <CardContent>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-wrap gap-2">
                                           <Link href={`/jobs/${job.id}`}>
                                               <Button variant="outline" size="sm">View Listing</Button>
                                           </Link>
@@ -199,6 +235,16 @@ export default function DashboardPage() {
                                                 View Applicants
                                               </Button>
                                           </Link>
+                                          <Link href={`/dashboard/jobs/${job.id}/edit`}>
+                                            <Button variant="secondary" size="sm">
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                Edit
+                                            </Button>
+                                          </Link>
+                                          <Button variant="destructive" size="sm" onClick={() => setJobToDelete(job.id)}>
+                                              <Trash2 className="mr-2 h-4 w-4" />
+                                              Delete
+                                          </Button>
                                         </div>
                                       </CardContent>
                                     </Card>
@@ -299,5 +345,20 @@ export default function DashboardPage() {
             </Card>
         </div>
     </div>
+    <AlertDialog open={!!jobToDelete} onOpenChange={(open) => !open && setJobToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete this job listing and all associated applicant data.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteJob}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
