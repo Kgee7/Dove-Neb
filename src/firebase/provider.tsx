@@ -1,18 +1,18 @@
 
 'use client';
 
-import { getApp, getApps, initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
-import { getStorage, FirebaseStorage } from 'firebase/storage';
 import React, { createContext, useContext } from 'react';
+import type { FirebaseApp } from 'firebase/app';
+import type { Auth } from 'firebase/auth';
+import type { Firestore } from 'firebase/firestore';
+import type { FirebaseStorage } from 'firebase/storage';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export interface FirebaseContextValue {
-  firebaseApp: FirebaseApp;
-  auth: Auth;
-  firestore: Firestore;
-  storage: FirebaseStorage;
+  firebaseApp: FirebaseApp | null;
+  auth: Auth | null;
+  firestore: Firestore | null;
+  storage: FirebaseStorage | null;
 }
 
 const FirebaseContext = createContext<FirebaseContextValue | null>(null);
@@ -21,6 +21,9 @@ export function FirebaseProvider({
   children,
   ...value
 }: { children: React.ReactNode } & FirebaseContextValue) {
+  if (!value.firebaseApp) {
+    return <>{children}</>;
+  }
   return (
     <FirebaseContext.Provider value={value}>
       {children}
@@ -31,45 +34,34 @@ export function FirebaseProvider({
 
 // Custom hooks to access Firebase services
 
-export const useFirebaseApp = (): FirebaseApp => {
+export const useFirebaseApp = (): FirebaseApp | null => {
   const context = useContext(FirebaseContext);
-  if (!context) {
-    throw new Error('useFirebaseApp must be used within a FirebaseProvider');
-  }
-  return context.firebaseApp;
+  return context?.firebaseApp ?? null;
 };
 
-export const useAuth = (): Auth => {
+export const useAuth = (): Auth | null => {
   const context = useContext(FirebaseContext);
-  if (!context) {
-    throw new Error('useAuth must be used within a FirebaseProvider');
-  }
-  return context.auth;
+  return context?.auth ?? null;
 };
 
-export const useFirestore = (): Firestore => {
+export const useFirestore = (): Firestore | null => {
   const context = useContext(FirebaseContext);
-  if (!context) {
-    throw new Error('useFirestore must be used within a FirebaseProvider');
-  }
-  return context.firestore;
+  return context?.firestore ?? null;
 };
 
-export const useStorage = (): FirebaseStorage => {
+export const useStorage = (): FirebaseStorage | null => {
     const context = useContext(FirebaseContext);
-    if (!context) {
-        throw new Error('useStorage must be used within a FirebaseProvider');
-    }
-    return context.storage;
+    return context?.storage ?? null;
 };
 
 export const useUser = () => {
-  const auth = useContext(FirebaseContext)?.auth;
+  const auth = useAuth();
   const [user, setUser] = React.useState<any>(null);
   const [isUserLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
     if (!auth) {
+      setUser(null);
       setIsLoading(false);
       return;
     }

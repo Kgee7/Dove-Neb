@@ -13,6 +13,7 @@ import {
   Search,
   MapPin,
   BedDouble,
+  Loader2,
 } from "lucide-react";
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, limit } from 'firebase/firestore';
@@ -183,7 +184,11 @@ export default function HomePage() {
             </p>
           </div>
           {jobsLoading ? (
-             <div className="flex justify-center items-center h-40">...loading</div>
+             <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin" /></div>
+          ) : !jobs || jobs.length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-muted-foreground">Could not load jobs. The backend may be offline.</p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {jobs?.map((job) => (
@@ -245,7 +250,11 @@ export default function HomePage() {
             </p>
           </div>
           {roomsLoading ? (
-             <div className="flex justify-center items-center h-40">...loading</div>
+             <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin" /></div>
+          ) : !rooms || rooms.length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-muted-foreground">Could not load rooms. The backend may be offline.</p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {rooms?.map((room) => (

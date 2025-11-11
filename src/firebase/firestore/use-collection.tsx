@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -67,7 +68,7 @@ export function useCollection<T = any>(
         setIsLoading(false);
         setError(null); 
       },
-      async (error: FirestoreError) => {
+      (error: FirestoreError) => {
         // Guard clause inside error handler to prevent a crash when creating a contextual error.
         // This ensures that if the query is invalid when the error is caught, we don't crash.
         if (!memoizedQuery || !(memoizedQuery as any)._query) {
