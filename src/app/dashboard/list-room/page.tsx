@@ -6,11 +6,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser } from '@/firebase';
-import { addDoc, collection } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { countries } from '@/lib/countries';
-import { handleFirebaseError } from '@/firebase/error-handler';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -101,38 +101,40 @@ export default function ListRoomPage() {
     }
     setIsLoading(true);
 
-    try {
-      const imageUrls = await Promise.all(data.images.map(image => toBase64(image)));
-      
-      const ownerName = user.displayName || `${user.firstName} ${user.lastName}`.trim() || 'Anonymous';
-      const selectedCountry = countries.find(c => c.code === data.currencyInfo);
-      const currency = selectedCountry?.currency || 'USD';
-      const currencySymbol = selectedCountry?.currencySymbol || '$';
+    const imageUrls = await Promise.all(data.images.map(image => toBase64(image)));
+    
+    const ownerName = user.displayName || `${user.firstName} ${user.lastName}`.trim() || 'Anonymous';
+    const selectedCountry = countries.find(c => c.code === data.currencyInfo);
+    const currency = selectedCountry?.currency || 'USD';
+    const currencySymbol = selectedCountry?.currencySymbol || '$';
 
-      await addDoc(collection(firestore, 'rooms'), {
-        ownerId: user.uid,
-        ownerName: ownerName,
-        title: data.title,
-        description: data.description,
-        location: data.location,
-        price: data.price,
-        currency,
-        currencySymbol,
-        images: imageUrls,
-        amenities: data.amenities,
-        createdAt: new Date(),
-      });
+    const roomData = {
+      ownerId: user.uid,
+      ownerName: ownerName,
+      title: data.title,
+      description: data.description,
+      location: data.location,
+      price: data.price,
+      currency,
+      currencySymbol,
+      images: imageUrls,
+      amenities: data.amenities,
+      createdAt: new Date(),
+    };
 
-      toast({
-        title: 'Room Listed!',
-        description: 'Your room is now available for booking.',
-      });
-      router.push('/dashboard');
-    } catch (error: any) {
-      handleFirebaseError(error, toast);
-    } finally {
-      setIsLoading(false);
+    const docRef = await addDocumentNonBlocking(collection(firestore, 'rooms'), roomData);
+
+    setIsLoading(false);
+
+    if (docRef) {
+        toast({
+            title: 'Room Listed!',
+            description: 'Your room is now available for booking.',
+        });
+        router.push('/dashboard');
     }
+    // If docRef is undefined, it means an error occurred and was emitted by addDocumentNonBlocking.
+    // The FirebaseErrorListener will catch it and display it in the dev overlay.
   };
 
   if (isUserLoading || !user) {
@@ -349,3 +351,5 @@ export default function ListRoomPage() {
     </div>
   );
 }
+
+    
