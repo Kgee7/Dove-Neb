@@ -197,13 +197,13 @@ export default function HomePage() {
               <p className="text-muted-foreground">Could not load jobs. The backend may be offline.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 justify-center">
               {jobs?.map((job) => {
                 const salarySymbol = job.salaryCurrencySymbol || '$';
                 return (
                 <Card
                   key={job.id}
-                  className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg"
+                  className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg w-full max-w-sm"
                 >
                   <CardHeader>
                      <CardTitle className="text-xl">
@@ -265,11 +265,11 @@ export default function HomePage() {
               <p className="text-muted-foreground">Could not load rooms. The backend may be offline.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 justify-center">
               {rooms?.map((room) => (
                 <Card
                   key={room.id}
-                  className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg"
+                  className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg w-full max-w-sm"
                 >
                   <CardHeader className="p-0">
                     <Link href={`/rooms/${room.id}`}>
