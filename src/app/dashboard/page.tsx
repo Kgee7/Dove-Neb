@@ -51,7 +51,7 @@ type JobApplication = {
     id: string;
     jobTitle: string;
     companyName: string;
-    status: string;
+    status: 'pending' | 'reviewed' | 'rejected' | 'hired';
     appliedAt: { toDate: () => Date };
 }
 
@@ -143,6 +143,19 @@ export default function DashboardPage() {
     }
   };
 
+  const renderApplicationStatus = (app: JobApplication) => {
+    switch (app.status) {
+      case 'hired':
+        return <p className="text-sm text-green-600 font-semibold">Congratulations, you have been hired as a {app.jobTitle}.</p>;
+      case 'rejected':
+        return <p className="text-sm text-red-600 font-semibold">Sorry, your application for {app.jobTitle} has been rejected. Please consider applying for a different position.</p>;
+      case 'reviewed':
+        return <Badge className="mt-2 capitalize" variant="default">Under Review</Badge>;
+      default:
+        return <Badge className="mt-2 capitalize" variant="outline">{app.status}</Badge>;
+    }
+  };
+
 
   const isLoading = isUserLoading || isProfileLoading || bookingsLoading || roomListingsLoading || applicationsLoading || jobListingsLoading;
 
@@ -202,7 +215,7 @@ export default function DashboardPage() {
                                       </CardHeader>
                                       <CardContent>
                                         <p className="text-sm text-muted-foreground">Applied: {format(app.appliedAt.toDate(), 'MMM d, yyyy')}</p>
-                                        <Badge className="mt-2 capitalize" variant={app.status === 'pending' ? 'outline' : app.status === 'rejected' ? 'destructive' : 'default'}>{app.status}</Badge>
+                                        {renderApplicationStatus(app)}
                                       </CardContent>
                                     </Card>
                                 ))}
@@ -401,5 +414,7 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
 
     
