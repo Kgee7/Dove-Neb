@@ -49,6 +49,7 @@ type Booking = {
 
 type JobApplication = {
     id: string;
+    jobId: string;
     jobTitle: string;
     companyName: string;
     status: 'pending' | 'reviewed' | 'rejected' | 'hired';

@@ -50,11 +50,7 @@ export const updateApplicationStatus = onCall(async (request) => {
 
     // Start a transaction to update both documents atomically.
     await db.runTransaction(async (transaction) => {
-      // 3. Update the applicant document in the employer's subcollection.
-      const applicantDocRef = jobDocRef.collection("applicants").doc(applicantId);
-      transaction.update(applicantDocRef, {status: newStatus});
-
-      // 4. Find and update the corresponding application in the seeker's subcollection.
+      // Find the seeker's application first (READ operation)
       const userApplicationsQuery = db
           .collection("users")
           .doc(seekerId)
@@ -63,6 +59,12 @@ export const updateApplicationStatus = onCall(async (request) => {
 
       const userApplicationsSnapshot = await transaction.get(userApplicationsQuery);
 
+      // Now perform the WRITE operations
+      // 3. Update the applicant document in the employer's subcollection.
+      const applicantDocRef = jobDocRef.collection("applicants").doc(applicantId);
+      transaction.update(applicantDocRef, {status: newStatus});
+
+      // 4. Update the corresponding application in the seeker's subcollection.
       if (userApplicationsSnapshot.empty) {
         // This is not a fatal error, but worth logging.
         // It could happen if the user deletes their application record.
