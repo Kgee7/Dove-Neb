@@ -2,12 +2,12 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from 'react';
 
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Icons } from "@/components/icons";
 import { useUser, useAuth, useDoc, useFirestore } from "@/firebase";
 import { doc } from "firebase/firestore";
 import {
@@ -88,7 +88,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 max-w-screen-2xl items-center">
         <Link href="/" className="mr-6 flex items-center space-x-2">
-          <Icons.logo className="h-6 w-6 text-primary" />
+          <Image src="/logo.svg" alt="Dove Neb Logo" width={24} height={24} className="text-primary" />
           <span className="font-bold sm:inline-block">Dove Neb</span>
         </Link>
         <nav className="hidden flex-1 items-center gap-4 text-sm lg:flex">
@@ -200,7 +200,7 @@ export function SiteHeader() {
                 <SheetContent side="right" className="w-[80%] max-w-xs p-0">
                     <SheetHeader className="flex flex-row justify-between items-center py-4 px-6 border-b">
                          <Link href="/" className="flex items-center space-x-2" onClick={() => setIsMobileMenuOpen(false)}>
-                            <Icons.logo className="h-6 w-6 text-primary" />
+                            <Image src="/logo.svg" alt="Dove Neb Logo" width={24} height={24} className="text-primary" />
                             <span className="font-bold">Dove Neb</span>
                         </Link>
                         <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
