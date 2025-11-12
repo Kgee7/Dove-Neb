@@ -140,6 +140,15 @@ export default function JobApplicantsPage() {
       </div>
     );
   }
+  
+  const getResumeFileName = (resumeURL: string | undefined): string => {
+    if (!resumeURL) return 'resume.txt';
+    if (resumeURL.startsWith('data:application/pdf')) return 'resume.pdf';
+    if (resumeURL.startsWith('data:application/msword')) return 'resume.doc';
+    if (resumeURL.startsWith('data:application/vnd.openxmlformats-officedocument.wordprocessingml.document')) return 'resume.docx';
+    return 'resume.txt';
+  };
+
 
   return (
     <div className="container py-10">
@@ -190,7 +199,10 @@ export default function JobApplicantsPage() {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         {applicant.resumeURL && (
-                            <a href={applicant.resumeURL} target="_blank" rel="noopener noreferrer">
+                            <a 
+                                href={applicant.resumeURL} 
+                                download={getResumeFileName(applicant.resumeURL)}
+                            >
                                 <Button variant="outline" size="sm"><Download className="mr-2 h-4 w-4" />Resume</Button>
                             </a>
                         )}
