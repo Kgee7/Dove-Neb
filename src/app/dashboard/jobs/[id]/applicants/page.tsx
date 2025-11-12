@@ -87,9 +87,11 @@ export default function JobApplicantsPage() {
       const userApplicationSnapshot = await getDocs(userApplicationQuery);
       
       if (!userApplicationSnapshot.empty) {
+        // Assuming one application per user per job
         const userApplicationDocRef = userApplicationSnapshot.docs[0].ref;
-        // The security rule requires the 'jobId' to be present in the update payload to verify ownership.
-        await updateDoc(userApplicationDocRef, { status: newStatus, jobId: id });
+        await updateDoc(userApplicationDocRef, { status: newStatus });
+      } else {
+        console.warn(`Could not find corresponding application for seeker ${applicant.seekerId} and job ${id} to update status.`);
       }
 
       toast({
