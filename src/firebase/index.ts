@@ -47,3 +47,5 @@ export {
 // STORAGE
 export * from 'firebase/storage';
 
+// FUNCTIONS
+export * from 'firebase/functions';

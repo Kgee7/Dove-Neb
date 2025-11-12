@@ -3,8 +3,9 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, collection, query, orderBy, updateDoc, where, getDocs } from 'firebase/firestore';
-import { useDoc, useCollection, useFirestore, useUser } from '@/firebase';
+import { doc, collection, query, orderBy } from 'firebase/firestore';
+import { useDoc, useCollection, useFirestore, useUser, useFunctions } from '@/firebase';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { Job, JobApplicant } from '@/lib/job-data';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -33,6 +34,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 export default function JobApplicantsPage() {
+  const functions = useFunctions();
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const params = useParams();
@@ -64,35 +66,25 @@ export default function JobApplicantsPage() {
   const { data: applicants, isLoading: areApplicantsLoading } = useCollection<JobApplicant>(applicantsQuery);
 
   const handleStatusChange = async (applicantId: string, newStatus: 'reviewed' | 'rejected' | 'hired') => {
-    if (!firestore || !id || !user) return;
+    if (!functions || !id || !user) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not connect to services.' });
+        return;
+    }
 
-    const applicantDocRef = doc(firestore, 'jobs', id, 'applicants', applicantId);
     const applicant = applicants?.find(a => a.id === applicantId);
-
     if (!applicant) {
         toast({ variant: 'destructive', title: 'Error', description: 'Applicant not found.' });
         return;
     }
 
     try {
-      // Step 1: Update the status in the /jobs/{jobId}/applicants subcollection
-      await updateDoc(applicantDocRef, { status: newStatus });
-
-      // Step 2: Find and update the corresponding application in the /users/{userId}/applications subcollection
-      const userApplicationQuery = query(
-        collection(firestore, 'users', applicant.seekerId, 'applications'),
-        where('jobId', '==', id)
-      );
-      
-      const userApplicationSnapshot = await getDocs(userApplicationQuery);
-      
-      if (!userApplicationSnapshot.empty) {
-        // Assuming one application per user per job
-        const userApplicationDocRef = userApplicationSnapshot.docs[0].ref;
-        await updateDoc(userApplicationDocRef, { status: newStatus });
-      } else {
-        console.warn(`Could not find corresponding application for seeker ${applicant.seekerId} and job ${id} to update status.`);
-      }
+      const updateStatusFunction = httpsCallable(functions, 'updateApplicationStatus');
+      await updateStatusFunction({
+        jobId: id,
+        applicantId: applicant.id,
+        seekerId: applicant.seekerId,
+        newStatus: newStatus,
+      });
 
       toast({
         title: 'Status Updated',
@@ -145,9 +137,14 @@ export default function JobApplicantsPage() {
   
   const getResumeFileName = (resumeURL: string | undefined): string => {
     if (!resumeURL) return 'resume.txt';
-    if (resumeURL.startsWith('data:application/pdf')) return 'resume.pdf';
-    if (resumeURL.startsWith('data:application/msword')) return 'resume.doc';
-    if (resumeURL.startsWith('data:application/vnd.openxmlformats-officedocument.wordprocessingml.document')) return 'resume.docx';
+    try {
+      const mimeType = resumeURL.substring(resumeURL.indexOf(':') + 1, resumeURL.indexOf(';'));
+      if (mimeType === 'application/pdf') return 'resume.pdf';
+      if (mimeType === 'application/msword') return 'resume.doc';
+      if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return 'resume.docx';
+    } catch (e) {
+      // Fallback for unexpected formats
+    }
     return 'resume.txt';
   };
 
