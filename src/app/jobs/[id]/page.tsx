@@ -3,7 +3,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, addDoc, collection, serverTimestamp, getDocs, where, query } from 'firebase/firestore';
+import { doc, addDoc, collection, serverTimestamp, getDocs, where, query, getDoc } from 'firebase/firestore';
 import { useDoc, useFirestore, useUser } from '@/firebase';
 import { Job } from '@/lib/job-data';
 import Link from 'next/link';
@@ -33,13 +33,6 @@ export default function JobDetailsPage() {
 
   const { data: job, isLoading } = useDoc<Job>(jobDocRef);
   
-  const userDocRef = useMemo(() => {
-      if (!firestore || !user?.uid) return null;
-      return doc(firestore, 'users', user.uid);
-  }, [firestore, user?.uid]);
-
-  const { data: userProfile } = useDoc(userDocRef);
-
   // Check if user has already applied
   React.useEffect(() => {
     if (!firestore || !user || !id) return;
@@ -56,7 +49,7 @@ export default function JobDetailsPage() {
 
 
   const handleApply = async () => {
-    if (!user || !job) {
+    if (!user || !job || !firestore) {
       toast({
         variant: "destructive",
         title: "Application Failed",
@@ -65,19 +58,25 @@ export default function JobDetailsPage() {
       router.push(`/login?redirect=/jobs/${id}`);
       return;
     }
-
-    if (!userProfile?.resumeURL) {
-      toast({
-        variant: "destructive",
-        title: "Application Failed",
-        description: "Please upload a resume to your profile before applying.",
-      });
-      router.push('/profile');
-      return;
-    }
-
+    
     setApplying(true);
+
     try {
+        const userDocRef = doc(firestore, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        const userProfile = userDoc.data();
+
+        if (!userProfile?.resumeURL) {
+            toast({
+                variant: "destructive",
+                title: "Application Failed",
+                description: "Please upload a resume to your profile before applying.",
+            });
+            router.push('/profile');
+            setApplying(false);
+            return;
+        }
+
       const seekerName = user.displayName || `${userProfile.firstName} ${userProfile.lastName}`.trim();
 
       const applicantsCollectionRef = collection(firestore, 'jobs', job.id, 'applicants');
