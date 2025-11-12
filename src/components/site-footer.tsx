@@ -1,6 +1,6 @@
 
 import Link from "next/link";
-import { Icons } from "./icons";
+import Image from "next/image";
 
 export function SiteFooter() {
   return (
@@ -8,7 +8,7 @@ export function SiteFooter() {
       <div className="container py-8">
         <div className="flex flex-col items-center justify-center gap-4 lg:flex-row lg:justify-between">
           <div className="flex items-center space-x-2">
-            <Icons.logo className="h-6 w-6" />
+            <Image src="/logo.png" alt="Dove Neb Logo" width={24} height={24} />
             <p className="text-center text-sm font-bold leading-loose md:text-left">
               Dove Neb
             </p>
