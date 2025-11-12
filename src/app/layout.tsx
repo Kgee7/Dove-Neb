@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: 'Dove Neb - Where Opportunities Take Flight',
   description: 'Dove Neb is a modern platform connecting dreams with direction, where job seekers and employers meet, communicate, and create meaningful futures.',
   icons: {
-    icon: `/logo.svg`,
+    icon: `/logo.png`,
   },
 };
 

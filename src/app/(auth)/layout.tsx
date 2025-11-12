@@ -20,7 +20,7 @@ export default function AuthLayout({
             href="/"
             className="mb-8 flex items-center justify-center gap-2 text-2xl font-bold text-foreground"
           >
-            <Image src="/logo.svg" alt="Dove Neb Logo" width={28} height={28} className="text-primary" />
+            <Image src="/logo.png" alt="Dove Neb Logo" width={28} height={28} className="text-primary" />
             <span>Dove Neb</span>
           </Link>
           {children}
