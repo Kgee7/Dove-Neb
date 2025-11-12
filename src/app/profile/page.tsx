@@ -216,6 +216,7 @@ export default function ProfilePage() {
   }
 
   const photoURL = user?.photoURL || userProfile?.photoURL;
+  const resumeFileName = userProfile?.resumeURL?.startsWith('data:application/pdf') ? 'resume.pdf' : 'resume.docx';
 
   return (
     <div className="container max-w-2xl py-12">
@@ -325,7 +326,11 @@ export default function ProfilePage() {
                         <CardContent>
                             <div className="flex items-center gap-4">
                                 {userProfile.resumeURL ? (
-                                    <a href={userProfile.resumeURL} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                                    <a 
+                                        href={userProfile.resumeURL} 
+                                        download={resumeFileName}
+                                        className="text-primary underline"
+                                    >
                                         View Current Resume
                                     </a>
                                 ) : (
