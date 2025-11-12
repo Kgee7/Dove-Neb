@@ -146,13 +146,13 @@ export default function DashboardPage() {
   const renderApplicationStatus = (app: JobApplication) => {
     switch (app.status) {
       case 'hired':
-        return <p className="text-sm text-green-600 font-semibold">Congratulations, you have been hired as a {app.jobTitle}.</p>;
+        return <p className="text-sm text-green-600 font-semibold mt-2">Congratulations, you have been hired as a {app.jobTitle}.</p>;
       case 'rejected':
-        return <p className="text-sm text-red-600 font-semibold">Sorry, your application for {app.jobTitle} has been rejected. Please consider applying for a different position.</p>;
+        return <p className="text-sm text-red-600 font-semibold mt-2">Sorry, your application for {app.jobTitle} has been rejected. Please consider applying for a different position.</p>;
       case 'reviewed':
         return <Badge className="mt-2 capitalize" variant="default">Under Review</Badge>;
       default:
-        return <Badge className="mt-2 capitalize" variant="outline">{app.status}</Badge>;
+        return <Badge className="mt-2 capitalize" variant="secondary">{app.status}</Badge>;
     }
   };
 
@@ -414,7 +414,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
-
-    
