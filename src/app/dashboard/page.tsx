@@ -62,8 +62,9 @@ function ApplicationStatus({ jobId, seekerId, jobTitle }: { jobId: string, seeke
     const firestore = useFirestore();
 
     const applicantQuery = useMemo(() => {
-        // Prevent query from running with an invalid jobId
-        if (!firestore || !jobId || !seekerId) return null;
+        if (!firestore || typeof jobId !== 'string' || !jobId || typeof seekerId !== 'string' || !seekerId) {
+            return null;
+        }
         return query(
             collection(firestore, `jobs/${jobId}/applicants`),
             where('seekerId', '==', seekerId),
@@ -73,7 +74,7 @@ function ApplicationStatus({ jobId, seekerId, jobTitle }: { jobId: string, seeke
 
     const { data: applicantData, isLoading } = useCollection(applicantQuery);
 
-    if (isLoading || !applicantData) {
+    if (isLoading || !applicantQuery) {
         return <Badge className="mt-2" variant="secondary">Loading Status...</Badge>;
     }
 
@@ -229,7 +230,9 @@ export default function DashboardPage() {
                         <CardDescription>Track your job applications.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                         {jobApplications && jobApplications.length > 0 ? (
+                         {applicationsLoading ? (
+                            <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                         ) : jobApplications && jobApplications.length > 0 ? (
                             <div className="grid gap-6 md:grid-cols-2">
                                 {jobApplications.map(app => (
                                     <Card key={app.id}>
