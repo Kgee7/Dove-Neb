@@ -49,18 +49,18 @@ export const currencies: Currency[] = [
   { name: 'Ugandan Shilling', code: 'UGX', symbol: 'USh' },
   { name: 'Zambian Kwacha', code: 'ZMW', symbol: 'ZK' },
   { name: 'Zimbabwean Dollar', code: 'ZWL', symbol: '$' },
-  { name: 'Eritrean Nakfa', code: 'ERN', symbol: 'Nfk' },
-  { name: 'Swazi Lilangeni', code: 'SZL', symbol: 'E' },
-  { name: 'Liberian Dollar', code: 'LRD', symbol: '$' },
-  { name: 'Libyan Dinar', code: 'LYD', symbol: 'LD' },
-  { name: 'Mauritanian Ouguiya', code: 'MRO', symbol: 'UM' },
-  { name: 'São Tomé and Príncipe Dobra', code: 'STD', symbol: 'Db' },
-  { name: 'Sierra Leonean Leone', code: 'SLL', symbol: 'Le' },
-  { name: 'Somali Shilling', code: 'SOS', symbol: 'Sh.so.' },
-  { name: 'South Sudanese Pound', code: 'SSP', symbol: '£' },
-  { name: 'Sudanese Pound', code: 'SDG', symbol: '£' },
-  { name: 'Zambian Kwacha', code: 'ZMW', symbol: 'ZK' },
-  { name: 'Zimbabwean Dollar', code: 'ZWL', symbol: '$' },
+  { name: 'Beninese CFA Franc', code: 'XOF', symbol: 'CFA' },
+  { name: 'Burkinabé CFA Franc', code: 'XOF', symbol: 'CFA' },
+  { name: 'Cameroonian CFA Franc', code: 'XAF', symbol: 'FCFA' },
+  { name: 'Chadian CFA Franc', code: 'XAF', symbol: 'FCFA' },
+  { name: 'Ivorian CFA Franc', code: 'XOF', symbol: 'CFA' },
+  { name: 'Equatoguinean CFA Franc', code: 'XAF', symbol: 'FCFA' },
+  { name: 'Gabonese CFA Franc', code: 'XAF', symbol: 'FCFA' },
+  { name: 'Bissau-Guinean CFA Franc', code: 'XOF', symbol: 'CFA' },
+  { name: 'Malian CFA Franc', code: 'XOF', symbol: 'CFA' },
+  { name: 'Nigerien CFA Franc', code: 'XOF', symbol: 'CFA' },
+  { name: 'Senegalese CFA Franc', code: 'XOF', symbol: 'CFA' },
+  { name: 'Togolese CFA Franc', code: 'XOF', symbol: 'CFA' },
 
   // 100 Other World Currencies
   { name: 'United States Dollar', code: 'USD', symbol: '$' },
@@ -175,4 +175,8 @@ export const currencies: Currency[] = [
   { name: 'Venezuelan Bolívar', code: 'VES', symbol: 'Bs.' },
   { name: 'Vietnamese Dong', code: 'VND', symbol: '₫' },
   { name: 'Yemeni Rial', code: 'YER', symbol: '﷼' },
-];
+].filter((currency, index, self) =>
+    index === self.findIndex((c) => (
+      c.code === currency.code
+    ))
+);
