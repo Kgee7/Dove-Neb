@@ -5,17 +5,15 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, collection, query, orderBy } from 'firebase/firestore';
 import { useDoc, useCollection, useFirestore, useUser, useFunctions } from '@/firebase';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions';
 import { Job, JobApplicant } from '@/lib/job-data';
 import Link from 'next/link';
-import Image from 'next/image';
 import { format } from 'date-fns';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Loader2, Mail, Download, User, Check, X, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, Loader2, Download, User, Check, X, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Table,
@@ -185,7 +183,7 @@ export default function JobApplicantsPage() {
                     </TableCell>
                     <TableCell>{format(applicant.appliedAt.toDate(), 'MMM d, yyyy')}</TableCell>
                     <TableCell>
-                      <Badge variant={applicant.status === 'pending' ? 'secondary' : applicant.status === 'rejected' ? 'destructive' : 'default'}>
+                      <Badge variant={applicant.status === 'pending' ? 'secondary' : applicant.status === 'rejected' ? 'destructive' : applicant.status === 'reviewed' ? 'default' : 'default'}>
                         {applicant.status}
                       </Badge>
                     </TableCell>
@@ -235,3 +233,5 @@ export default function JobApplicantsPage() {
     </div>
   );
 }
+
+    
