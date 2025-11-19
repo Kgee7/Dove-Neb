@@ -87,6 +87,10 @@ export default function LoginPage() {
                title = "Incorrect Password";
               description = "The password you entered is incorrect. Please try again.";
               break;
+            case 'auth/user-disabled':
+                title = "Account Disabled";
+                description = "This account has been disabled. Please contact support.";
+                break;
             default:
               description = error.message;
               break;
