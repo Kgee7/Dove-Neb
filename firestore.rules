@@ -35,11 +35,16 @@ service cloud.firestore {
       allow update, delete: if isOwner(resource.data.employerId);
     }
     
-    // JOB APPLICANTS SUBCOLLECTION
-    match /jobs/{jobId}/applicants/{applicantId} {
+    // JOB APPLICANTS COLLECTION
+    // Rule for listing the entire collection of applicants
+    match /jobs/{jobId}/applicants {
         // The job owner can list all applicants.
         allow list: if get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid;
-        
+    }
+
+    // JOB APPLICANTS INDIVIDUAL DOCUMENT
+    // Rules for individual applicant documents
+    match /jobs/{jobId}/applicants/{applicantId} {
         // The job owner can read individual applicant docs.
         // A seeker can read their OWN application record to check the status.
         allow get: if get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid ||
@@ -63,5 +68,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
