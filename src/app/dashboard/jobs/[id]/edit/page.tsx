@@ -27,7 +27,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, ArrowLeft } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Link from 'next/link';
 
 const formSchema = z.object({
@@ -39,16 +38,7 @@ const formSchema = z.object({
   salaryMin: z.coerce.number().min(0).optional(),
   salaryMax: z.coerce.number().min(0).optional(),
   currencyInfo: z.string().optional(),
-  applicationMethod: z.enum(['in-app', 'email'], { required_error: 'Please select an application method.'}),
-  applicationEmail: z.string().email('Please enter a valid email.').optional(),
-}).refine(data => {
-    if (data.applicationMethod === 'email' && !data.applicationEmail) {
-        return false;
-    }
-    return true;
-}, {
-    message: 'Application email is required when application method is "Email".',
-    path: ['applicationEmail'],
+  applicationEmail: z.string().email('Please enter a valid email.'),
 });
 
 type EditJobFormValues = z.infer<typeof formSchema>;
@@ -79,7 +69,6 @@ export default function EditJobPage() {
         salaryMin: undefined,
         salaryMax: undefined,
         currencyInfo: 'US',
-        applicationMethod: 'in-app',
         applicationEmail: '',
     },
   });
@@ -94,6 +83,8 @@ export default function EditJobPage() {
       const countryCode = countries.find(c => c.currency === job.salaryCurrency)?.code || 'US';
       form.reset({
         ...job,
+        applicationMethod: 'email', // Set default for existing jobs
+        applicationEmail: job.applicationEmail || '',
         currencyInfo: countryCode,
       });
     }
@@ -111,6 +102,7 @@ export default function EditJobPage() {
     try {
       await updateDoc(jobDocRef, { 
           ...data,
+          applicationMethod: 'email',
           salaryCurrency,
           salaryCurrencySymbol,
       });
@@ -149,8 +141,6 @@ export default function EditJobPage() {
         </div>
     )
   }
-
-  const applicationMethod = form.watch('applicationMethod');
 
   return (
     <div className="container max-w-3xl py-12">
@@ -308,56 +298,20 @@ export default function EditJobPage() {
               />
               <FormField
                 control={form.control}
-                name="applicationMethod"
+                name="applicationEmail"
                 render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel>Application Method</FormLabel>
+                  <FormItem>
+                    <FormLabel>Application Email</FormLabel>
                     <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex flex-col space-y-1"
-                      >
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="in-app" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Receive applications within the app
-                          </FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="email" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Receive applications via email
-                          </FormLabel>
-                        </FormItem>
-                      </RadioGroup>
+                      <Input placeholder="recruiting@example.com" {...field} value={field.value ?? ''} />
                     </FormControl>
+                    <FormDescription>
+                      Job seekers will send their applications to this email address.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              {applicationMethod === 'email' && (
-                <FormField
-                  control={form.control}
-                  name="applicationEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Application Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="recruiting@example.com" {...field} value={field.value ?? ''} />
-                      </FormControl>
-                      <FormDescription>
-                        Job seekers will send their applications to this email address.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Changes'}
               </Button>

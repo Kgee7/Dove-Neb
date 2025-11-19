@@ -64,7 +64,7 @@ function ApplicationStatus({ jobId, applicantDocId, jobTitle }: { jobId: string;
 
     // Strict guard clause to prevent invalid queries. This is the definitive fix.
     if (!firestore || typeof jobId !== 'string' || !jobId || typeof applicantDocId !== 'string' || !applicantDocId) {
-        return <Badge className="mt-2" variant="secondary">Loading Status...</Badge>;
+        return <Badge className="mt-2" variant="secondary">Applied</Badge>;
     }
 
     const applicantDocRef = useMemo(() => {

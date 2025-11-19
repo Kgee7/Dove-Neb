@@ -34,11 +34,11 @@
         "salaryMax": { "type": "number", "description": "Maximum salary for the position." },
         "salaryCurrency": { "type": "string", "description": "The currency for the salary." },
         "salaryCurrencySymbol": { "type": "string", "description": "The symbol for the salary currency." },
-        "applicationMethod": { "type": "string", "enum": ["in-app", "email"], "description": "How job seekers should apply."},
-        "applicationEmail": { "type": "string", "format": "email", "description": "Email for applications if method is 'email'."},
+        "applicationMethod": { "type": "string", "description": "How job seekers should apply. Always 'email'."},
+        "applicationEmail": { "type": "string", "format": "email", "description": "Email for applications."},
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "employerId", "companyName", "title", "description", "location", "type", "applicationMethod"]
+      "required": ["id", "employerId", "companyName", "title", "description", "location", "type", "applicationEmail"]
     },
     "JobApplication": {
         "title": "Job Application",
