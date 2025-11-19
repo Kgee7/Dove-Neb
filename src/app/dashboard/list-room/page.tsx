@@ -57,11 +57,11 @@ const formSchema = z.object({
   listingType: z.enum(['rent', 'sale'], { required_error: 'Please select a listing type.' }),
   title: z.string().min(5, 'Title must be at least 5 characters long.'),
   description: z.string().min(20, 'Description must be at least 20 characters long.'),
-  location: z.string().min(2, 'Location is required.'),
+  country: z.string().min(1, 'Country is required.'),
+  location: z.string().min(2, 'City/State is required.'),
   priceNight: z.coerce.number().min(0).optional(),
   priceMonth: z.coerce.number().min(0).optional(),
   salePrice: z.coerce.number().min(0).optional(),
-  currencyInfo: z.string().min(1, 'Currency is required.'),
   contactPhone: z.string().optional(),
   contactWhatsapp: z.string().optional(),
   images: fileArraySchema,
@@ -108,11 +108,11 @@ export default function ListRoomPage() {
       listingType: 'rent',
       title: '',
       description: '',
+      country: 'US',
       location: '',
       priceNight: undefined,
       priceMonth: undefined,
       salePrice: undefined,
-      currencyInfo: 'US',
       images: [],
       amenities: [],
     },
@@ -141,7 +141,7 @@ export default function ListRoomPage() {
         const imageUrls = await Promise.all(data.images.map(image => toBase64(image)));
         
         const ownerName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
-        const selectedCountry = countries.find(c => c.code === data.currencyInfo);
+        const selectedCountry = countries.find(c => c.code === data.country);
         const currency = selectedCountry?.currency || 'USD';
         const currencySymbol = selectedCountry?.currencySymbol || '$';
 
@@ -151,6 +151,7 @@ export default function ListRoomPage() {
           listingType: data.listingType,
           title: data.title,
           description: data.description,
+          country: data.country,
           location: data.location,
           priceNight: data.priceNight || null,
           priceMonth: data.priceMonth || null,
@@ -275,34 +276,21 @@ export default function ListRoomPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Paris, France" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
                     control={form.control}
-                    name="currencyInfo"
+                    name="country"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Currency</FormLabel>
+                        <FormLabel>Country</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a currency" />
+                              <SelectValue placeholder="Select a country" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {countries.map(country => (
                               <SelectItem key={country.code} value={country.code}>
-                                {country.name} ({country.currency})
+                                {country.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -311,6 +299,19 @@ export default function ListRoomPage() {
                       </FormItem>
                     )}
                   />
+                 <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>City / State</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Paris" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
             {listingType === 'rent' && (

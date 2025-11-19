@@ -1,0 +1,151 @@
+
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the platform.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the User." },
+        "userType": { "type": "string", "description": "Type of user (e.g., seeker, employer)." },
+        "firstName": { "type": "string", "description": "The first name of the user." },
+        "lastName": { "type": "string", "description": "The last name of the user." },
+        "preferredName": { "type": "string", "description": "The user's preferred name for display." },
+        "email": { "type": "string", "format": "email", "description": "The email address of the user." },
+        "photoURL": { "type": "string", "description": "URL of the user's profile picture." },
+        "resumeURL": { "type": "string", "description": "URL of the user's resume." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of account creation." }
+      },
+      "required": ["id", "userType", "firstName", "lastName", "email"]
+    },
+    "Job": {
+      "title": "Job",
+      "type": "object",
+      "description": "Represents a job listing on the platform.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the Job." },
+        "employerId": { "type": "string", "description": "Reference to the User (Employer) who posted the job." },
+        "companyName": { "type": "string", "description": "Name of the company hiring." },
+        "title": { "type": "string", "description": "The title of the job." },
+        "description": { "type": "string", "description": "A detailed description of the job." },
+        "country": { "type": "string", "description": "Country where the job is located." },
+        "location": { "type": "string", "description": "Location of the job (e.g., City, State)." },
+        "type": { "type": "string", "enum": ["Full-time", "Part-time", "Contract", "Internship", "Remote", "Hybrid"], "description": "Type of employment." },
+        "salaryMin": { "type": "number", "description": "Minimum salary for the position." },
+        "salaryMax": { "type": "number", "description": "Maximum salary for the position." },
+        "salaryCurrency": { "type": "string", "description": "The currency for the salary." },
+        "salaryCurrencySymbol": { "type": "string", "description": "The symbol for the salary currency." },
+        "applicationMethod": { "type": "string", "description": "How job seekers should apply. Always 'email'."},
+        "applicationEmail": { "type": "string", "format": "email", "description": "Email for applications."},
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "employerId", "companyName", "title", "description", "country", "location", "type", "applicationEmail"]
+    },
+    "JobApplication": {
+        "title": "Job Application",
+        "type": "object",
+        "description": "Represents an application submitted by a user for a job.",
+        "properties": {
+            "id": { "type": "string" },
+            "jobId": { "type": "string" },
+            "jobTitle": { "type": "string" },
+            "companyName": { "type": "string" },
+            "seekerId": { "type": "string" },
+            "status": { "type": "string", "enum": ["pending", "reviewed", "rejected", "hired"] },
+            "appliedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "jobId", "jobTitle", "companyName", "seekerId", "status", "appliedAt"]
+    },
+    "JobApplicant": {
+      "title": "Job Applicant",
+      "type": "object",
+      "description": "Represents a seeker's application to a specific job, stored under the job.",
+      "properties": {
+        "id": { "type": "string" },
+        "seekerId": { "type": "string" },
+        "seekerName": { "type": "string" },
+        "seekerEmail": { "type": "string", "format": "email" },
+        "resumeURL": { "type": "string", "format": "uri" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "status": { "type": "string", "enum": ["pending", "reviewed", "rejected", "hired"] },
+        "appliedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "seekerId", "seekerName", "seekerEmail", "status", "appliedAt"]
+    },
+    "Room": {
+      "title": "Room",
+      "type": "object",
+      "description": "Represents a room listing on the platform.",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "ownerName": { "type": "string" },
+        "listingType": { "type": "string", "enum": ["rent", "sale"] },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "country": { "type": "string", "description": "Country where the room is located." },
+        "location": { "type": "string", "description": "Location of the room (e.g., City, State)." },
+        "priceNight": { "type": "number", "description": "Price per night if for rent." },
+        "priceMonth": { "type": "number", "description": "Price per month if for rent." },
+        "salePrice": { "type": "number", "description": "Total price if for sale." },
+        "currency": { "type": "string" },
+        "currencySymbol": { "type": "string" },
+        "contactPhone": { "type": "string" },
+        "contactWhatsapp": { "type": "string" },
+        "images": { "type": "array", "items": { "type": "string", "format": "uri" } },
+        "amenities": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["id", "ownerId", "ownerName", "listingType", "title", "description", "country", "location", "images"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "type": "object",
+      "description": "Represents a booking made by a user for a room.",
+      "properties": {
+        "id": { "type": "string" },
+        "roomId": { "type": "string" },
+        "renterId": { "type": "string" },
+        "checkInDate": { "type": "string", "format": "date" },
+        "checkOutDate": { "type": "string", "format": "date" },
+        "totalPrice": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"] }
+      },
+      "required": ["id", "roomId", "renterId", "checkInDate", "checkOutDate", "totalPrice", "status"]
+    }
+  },
+  "auth": {
+    "providers": ["password", "anonymous", "google.com"]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": { "schema": { "$ref": "#/entities/User" }, "description": "Stores user profiles." }
+      },
+      {
+        "path": "/jobs/{jobId}",
+        "definition": { "schema": { "$ref": "#/entities/Job" }, "description": "Top-level collection for all job listings.", "publicRead": true }
+      },
+      {
+        "path": "/jobs/{jobId}/applicants/{applicantId}",
+        "definition": { "schema": { "$ref": "#/entities/JobApplicant" }, "description": "Subcollection for applicants to a specific job." }
+      },
+      {
+        "path": "/users/{userId}/applications/{applicationId}",
+        "definition": { "schema": { "$ref": "#/entities/JobApplication" }, "description": "Subcollection for a user's job applications." }
+      },
+      {
+        "path": "/rooms/{roomId}",
+        "definition": { "schema": { "$ref": "#/entities/Room" }, "description": "Top-level collection for all room listings.", "publicRead": true }
+      },
+      {
+        "path": "/rooms/{roomId}/bookings/{bookingId}",
+        "definition": { "schema": { "$ref": "#/entities/Booking" }, "description": "Subcollection for a room's bookings." }
+      },
+      {
+        "path": "/users/{userId}/bookings/{bookingId}",
+        "definition": { "schema": { "$ref": "#/entities/Booking" }, "description": "Subcollection for a user's room bookings." }
+      }
+    ]
+  }
+}

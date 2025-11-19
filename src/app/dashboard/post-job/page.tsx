@@ -30,12 +30,12 @@ import { Loader2 } from 'lucide-react';
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters long.'),
   companyName: z.string().min(2, 'Company name is required.'),
-  location: z.string().min(2, 'Location is required.'),
+  country: z.string().min(1, 'Country is required.'),
+  location: z.string().min(2, 'City/State is required.'),
   type: z.enum(["Full-time", "Part-time", "Contract", "Internship", "Remote", "Hybrid"]),
   description: z.string().min(20, 'Description must be at least 20 characters long.'),
   salaryMin: z.coerce.number().min(0).optional(),
   salaryMax: z.coerce.number().min(0).optional(),
-  currencyInfo: z.string().optional(),
   applicationEmail: z.string().email('Please enter a valid email.'),
 });
 
@@ -54,11 +54,11 @@ export default function PostJobPage() {
     defaultValues: {
       title: '',
       companyName: '',
+      country: 'US',
       location: '',
       description: '',
       salaryMin: undefined,
       salaryMax: undefined,
-      currencyInfo: 'US',
       applicationEmail: '',
     },
   });
@@ -80,7 +80,7 @@ export default function PostJobPage() {
     }
     setIsLoading(true);
 
-    const selectedCountry = countries.find(c => c.code === data.currencyInfo);
+    const selectedCountry = countries.find(c => c.code === data.country);
     const salaryCurrency = selectedCountry?.currency || 'USD';
     const salaryCurrencySymbol = selectedCountry?.currencySymbol || '$';
 
@@ -158,10 +158,34 @@ export default function PostJobPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Country</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a country" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {countries.map(country => (
+                            <SelectItem key={country.code} value={country.code}>
+                              {country.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="location"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Location</FormLabel>
+                      <FormLabel>City / State</FormLabel>
                       <FormControl>
                         <Input placeholder="e.g., San Francisco, CA" {...field} />
                       </FormControl>
@@ -169,6 +193,8 @@ export default function PostJobPage() {
                     </FormItem>
                   )}
                 />
+              </div>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <FormField
                   control={form.control}
                   name="type"
@@ -195,37 +221,13 @@ export default function PostJobPage() {
                   )}
                 />
               </div>
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                 <FormField
-                  control={form.control}
-                  name="currencyInfo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Currency</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a currency" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {countries.map(country => (
-                            <SelectItem key={country.code} value={country.code}>
-                              {country.name} ({country.currency})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="salaryMin"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Minimum Salary</FormLabel>
+                      <FormLabel>Minimum Salary (Optional)</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="70000" {...field} value={field.value ?? ''} />
                       </FormControl>
@@ -238,7 +240,7 @@ export default function PostJobPage() {
                   name="salaryMax"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Maximum Salary</FormLabel>
+                      <FormLabel>Maximum Salary (Optional)</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="120000" {...field} value={field.value ?? ''} />
                       </FormControl>
