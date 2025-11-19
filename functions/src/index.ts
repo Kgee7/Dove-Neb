@@ -59,17 +59,19 @@ export const updateApplicationStatus = onCall(async (request) => {
 
       const userApplicationsSnapshot = await transaction.get(userApplicationsQuery);
 
+      if (userApplicationsSnapshot.empty) {
+        // This is not a fatal error for the employer's side, but worth logging.
+        // It could happen if the user deletes their application record.
+        logger.warn(`Could not find application for seeker ${seekerId} on job ${jobId}. Only employer record will be updated.`);
+      }
+
       // Now perform the WRITE operations
       // 3. Update the applicant document in the employer's subcollection.
       const applicantDocRef = jobDocRef.collection("applicants").doc(applicantId);
       transaction.update(applicantDocRef, {status: newStatus});
 
       // 4. Update the corresponding application in the seeker's subcollection.
-      if (userApplicationsSnapshot.empty) {
-        // This is not a fatal error, but worth logging.
-        // It could happen if the user deletes their application record.
-        logger.warn(`Could not find application for seeker ${seekerId} on job ${jobId}. Only employer record updated.`);
-      } else {
+      if (!userApplicationsSnapshot.empty) {
         // Assuming one application per user per job.
         const userApplicationDocRef = userApplicationsSnapshot.docs[0].ref;
         transaction.update(userApplicationDocRef, {status: newStatus});
