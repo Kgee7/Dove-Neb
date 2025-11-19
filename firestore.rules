@@ -37,13 +37,16 @@ service cloud.firestore {
     
     // JOB APPLICANTS SUBCOLLECTION
     match /jobs/{jobId}/applicants/{applicantId} {
+        // The job owner can list all applicants.
+        allow list: if isOwner(get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId);
+        
+        // The job owner can read individual applicant docs.
+        // A seeker can read their OWN application record to check the status.
+        allow get: if isOwner(get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId) ||
+                       (request.auth != null && resource.data.seekerId == request.auth.uid);
+        
         // An authenticated user (seeker) can create an application for a job.
         allow create: if request.auth != null && request.resource.data.seekerId == request.auth.uid;
-        
-        // The job owner can read and manage all applicants.
-        // A seeker can read their OWN application record to check the status.
-        allow read: if isOwner(get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId) ||
-                       (request.auth != null && resource.data.seekerId == request.auth.uid);
         
         // Only the employer who owns the job can update or delete applications.
         allow update, delete: if isOwner(get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId);
