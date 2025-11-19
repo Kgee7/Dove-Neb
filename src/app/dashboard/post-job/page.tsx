@@ -9,7 +9,7 @@ import { useFirestore, useUser } from '@/firebase';
 import { addDoc, collection } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { countries } from '@/lib/countries';
+import { currencies, Currency } from '@/lib/currencies';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -30,10 +30,11 @@ import { Loader2 } from 'lucide-react';
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters long.'),
   companyName: z.string().min(2, 'Company name is required.'),
-  country: z.string().min(1, 'Country is required.'),
+  country: z.string().min(2, 'Country is required.'),
   location: z.string().min(2, 'City/State is required.'),
   type: z.enum(["Full-time", "Part-time", "Contract", "Internship", "Remote", "Hybrid"]),
   description: z.string().min(20, 'Description must be at least 20 characters long.'),
+  currency: z.string().min(1, 'Currency is required.'),
   salaryMin: z.coerce.number().min(0).optional(),
   salaryMax: z.coerce.number().min(0).optional(),
   applicationEmail: z.string().email('Please enter a valid email.'),
@@ -54,9 +55,10 @@ export default function PostJobPage() {
     defaultValues: {
       title: '',
       companyName: '',
-      country: 'US',
+      country: '',
       location: '',
       description: '',
+      currency: 'USD',
       salaryMin: undefined,
       salaryMax: undefined,
       applicationEmail: '',
@@ -80,9 +82,9 @@ export default function PostJobPage() {
     }
     setIsLoading(true);
 
-    const selectedCountry = countries.find(c => c.code === data.country);
-    const salaryCurrency = selectedCountry?.currency || 'USD';
-    const salaryCurrencySymbol = selectedCountry?.currencySymbol || '$';
+    const selectedCurrency = currencies.find(c => c.code === data.currency);
+    const salaryCurrency = selectedCurrency?.code || 'USD';
+    const salaryCurrencySymbol = selectedCurrency?.symbol || '$';
 
     try {
       await addDoc(collection(firestore, 'jobs'), {
@@ -162,20 +164,9 @@ export default function PostJobPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Country</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a country" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {countries.map(country => (
-                            <SelectItem key={country.code} value={country.code}>
-                              {country.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <Input placeholder="e.g., United States" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -214,6 +205,30 @@ export default function PostJobPage() {
                            <SelectItem value="Internship">Internship</SelectItem>
                            <SelectItem value="Remote">Remote</SelectItem>
                            <SelectItem value="Hybrid">Hybrid</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="currency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Currency</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a currency" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {currencies.map(currency => (
+                            <SelectItem key={currency.code} value={currency.code}>
+                              {currency.code} - {currency.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />

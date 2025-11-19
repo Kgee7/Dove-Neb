@@ -9,7 +9,7 @@ import { useFirestore, useUser, useDoc } from '@/firebase';
 import { collection, addDoc, doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { countries } from '@/lib/countries';
+import { currencies, Currency } from '@/lib/currencies';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -57,8 +57,9 @@ const formSchema = z.object({
   listingType: z.enum(['rent', 'sale'], { required_error: 'Please select a listing type.' }),
   title: z.string().min(5, 'Title must be at least 5 characters long.'),
   description: z.string().min(20, 'Description must be at least 20 characters long.'),
-  country: z.string().min(1, 'Country is required.'),
+  country: z.string().min(2, 'Country is required.'),
   location: z.string().min(2, 'City/State is required.'),
+  currency: z.string().min(1, 'Currency is required.'),
   priceNight: z.coerce.number().min(0).optional(),
   priceMonth: z.coerce.number().min(0).optional(),
   salePrice: z.coerce.number().min(0).optional(),
@@ -108,8 +109,9 @@ export default function ListRoomPage() {
       listingType: 'rent',
       title: '',
       description: '',
-      country: 'US',
+      country: '',
       location: '',
+      currency: 'USD',
       priceNight: undefined,
       priceMonth: undefined,
       salePrice: undefined,
@@ -141,9 +143,9 @@ export default function ListRoomPage() {
         const imageUrls = await Promise.all(data.images.map(image => toBase64(image)));
         
         const ownerName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
-        const selectedCountry = countries.find(c => c.code === data.country);
-        const currency = selectedCountry?.currency || 'USD';
-        const currencySymbol = selectedCountry?.currencySymbol || '$';
+        const selectedCurrency = currencies.find(c => c.code === data.currency);
+        const currency = selectedCurrency?.code || 'USD';
+        const currencySymbol = selectedCurrency?.symbol || '$';
 
         const roomData = {
           ownerId: user.uid,
@@ -275,30 +277,19 @@ export default function ListRoomPage() {
               />
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <FormField
-                    control={form.control}
-                    name="country"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Country</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a country" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {countries.map(country => (
-                              <SelectItem key={country.code} value={country.code}>
-                                {country.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <FormField
+                  control={form.control}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Country</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., France" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                  <FormField
                   control={form.control}
                   name="location"
@@ -313,6 +304,31 @@ export default function ListRoomPage() {
                   )}
                 />
               </div>
+
+             <FormField
+                control={form.control}
+                name="currency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Currency</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a currency" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {currencies.map(currency => (
+                          <SelectItem key={currency.code} value={currency.code}>
+                            {currency.code} - {currency.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
             {listingType === 'rent' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
