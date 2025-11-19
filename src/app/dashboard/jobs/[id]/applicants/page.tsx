@@ -65,15 +65,9 @@ export default function JobApplicantsPage() {
 
   const { data: applicants, isLoading: areApplicantsLoading } = useCollection<JobApplicant>(applicantsQuery);
 
-  const handleStatusChange = async (applicantId: string, newStatus: 'reviewed' | 'rejected' | 'hired') => {
+  const handleStatusChange = async (applicantId: string, seekerId: string, newStatus: 'reviewed' | 'rejected' | 'hired') => {
     if (!functions || !id || !user) {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not connect to services.' });
-        return;
-    }
-
-    const applicant = applicants?.find(a => a.id === applicantId);
-    if (!applicant) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Applicant not found.' });
         return;
     }
 
@@ -81,8 +75,8 @@ export default function JobApplicantsPage() {
       const updateStatusFunction = httpsCallable(functions, 'updateApplicationStatus');
       await updateStatusFunction({
         jobId: id,
-        applicantId: applicant.id,
-        seekerId: applicant.seekerId,
+        applicantId: applicantId,
+        seekerId: seekerId,
         newStatus: newStatus,
       });
 
@@ -212,13 +206,13 @@ export default function JobApplicantsPage() {
                             </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, 'reviewed')}>
+                                <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, applicant.seekerId, 'reviewed')}>
                                     <Check className="mr-2 h-4 w-4" /> Mark as Reviewed
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, 'hired')}>
+                                <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, applicant.seekerId, 'hired')}>
                                     <Check className="mr-2 h-4 w-4" /> Mark as Hired
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, 'rejected')} className="text-red-600">
+                                <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, applicant.seekerId, 'rejected')} className="text-red-600">
                                     <X className="mr-2 h-4 w-4" /> Reject
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
