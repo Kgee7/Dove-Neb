@@ -84,7 +84,7 @@ export default function JobDetailsPage() {
             <Separator className="my-6" />
             <div className="flex justify-center">
               {job.applicationEmail ? (
-                <Card className="bg-secondary p-6 w-full max-w-md">
+                <Card className="bg-secondary p-6 w-full max-w-md text-white">
                     <CardHeader className="p-0">
                         <CardTitle className="text-xl flex items-center gap-2">
                             <Mail className="h-5 w-5"/>
@@ -92,8 +92,8 @@ export default function JobDetailsPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0 mt-4">
-                        <p className="text-muted-foreground">To apply for this position, please send your resume and cover letter to:</p>
-                        <a href={`mailto:${job.applicationEmail}`} className="font-semibold text-primary text-lg break-all">{job.applicationEmail}</a>
+                        <p className="text-white/80">To apply for this position, please send your resume and cover letter to:</p>
+                        <a href={`mailto:${job.applicationEmail}`} className="font-semibold text-white text-lg break-all underline">{job.applicationEmail}</a>
                     </CardContent>
                 </Card>
               ) : (
