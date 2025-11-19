@@ -67,13 +67,13 @@ function ApplicationStatus({ jobId, applicantDocId, jobTitle }: { jobId: string;
         return doc(firestore, 'jobs', jobId, 'applicants', applicantDocId);
     }, [firestore, jobId, applicantDocId]);
 
-    const { data: applicantData, isLoading: isDocLoading } = useDoc(applicantDocRef);
+    const { data: applicantData, isLoading: isDocLoading } = useDoc<{status: ApplicantStatus}>(applicantDocRef);
 
     if (isDocLoading) {
         return <Badge className="mt-2" variant="secondary">Loading Status...</Badge>;
     }
 
-    const status = applicantData?.status as ApplicantStatus | undefined;
+    const status = applicantData?.status;
 
     switch (status) {
         case 'hired':
@@ -84,7 +84,7 @@ function ApplicationStatus({ jobId, applicantDocId, jobTitle }: { jobId: string;
             return <Badge className="mt-2 capitalize" variant="default">Under Review</Badge>;
         case 'pending':
         default:
-            return <Badge className="mt-2 capitalize" variant="secondary">{status || 'pending'}</Badge>;
+            return <Badge className="mt-2 capitalize" variant="secondary">{status || 'Applied'}</Badge>;
     }
 }
 
