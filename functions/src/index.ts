@@ -38,17 +38,17 @@ export const updateApplicationStatus = onCall(async (request) => {
   logger.info(`Attempting to update status for applicant ${applicantId} on job ${jobId} to ${newStatus} by employer ${employerId}`);
 
   const jobDocRef = db.collection("jobs").doc(jobId);
-  const jobDoc = await jobDocRef.get();
-
-  // 2. Authorization Check: Ensure the caller owns the job.
-  if (!jobDoc.exists || jobDoc.data()?.employerId !== employerId) {
-    throw new HttpsError(
-        "permission-denied",
-        "You are not authorized to update applicants for this job.",
-    );
-  }
-
+  
   try {
+    const jobDoc = await jobDocRef.get();
+    // 2. Authorization Check: Ensure the caller owns the job.
+    if (!jobDoc.exists || jobDoc.data()?.employerId !== employerId) {
+      throw new HttpsError(
+          "permission-denied",
+          "You are not authorized to update applicants for this job.",
+      );
+    }
+
     // 3. Update the applicant document in the employer's subcollection.
     const applicantDocRef = jobDocRef.collection("applicants").doc(applicantId);
     await applicantDocRef.update({status: newStatus});
@@ -79,8 +79,10 @@ export const updateApplicationStatus = onCall(async (request) => {
     return {success: true, newStatus};
   } catch (error) {
     logger.error("Error during sequential write for application status:", error);
-    // For v2 onCall functions, throwing a generic error results in an "internal" error on the client.
-    // This is better than letting the function timeout or crash silently.
+    // If it's already an HttpsError, rethrow it. Otherwise, wrap it.
+    if (error instanceof HttpsError) {
+        throw error;
+    }
     throw new HttpsError(
         "internal",
         "An unexpected error occurred while updating the status.",

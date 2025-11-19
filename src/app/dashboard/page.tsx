@@ -152,6 +152,8 @@ export default function DashboardPage() {
         return <p className="text-sm text-red-600 font-semibold mt-2">Sorry, your application for {app.jobTitle} has been rejected. Please consider applying for a different position.</p>;
       case 'reviewed':
         return <Badge className="mt-2 capitalize" variant="default">Under Review</Badge>;
+      case 'pending':
+        return <Badge className="mt-2 capitalize" variant="secondary">{app.status}</Badge>;
       default:
         return <Badge className="mt-2 capitalize" variant="secondary">{app.status}</Badge>;
     }
@@ -415,5 +417,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
