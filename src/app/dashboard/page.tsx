@@ -62,13 +62,12 @@ type ApplicantStatus = 'pending' | 'reviewed' | 'rejected' | 'hired';
 function ApplicationStatus({ jobId, applicantDocId, jobTitle }: { jobId: string; applicantDocId: string; jobTitle: string; }) {
     const firestore = useFirestore();
 
-    // Strict guard clause to prevent invalid queries
-    if (!jobId || !applicantDocId) {
+    // Strict guard clause to prevent invalid queries. This is the definitive fix.
+    if (!firestore || typeof jobId !== 'string' || !jobId || typeof applicantDocId !== 'string' || !applicantDocId) {
         return <Badge className="mt-2" variant="secondary">Loading Status...</Badge>;
     }
 
     const applicantDocRef = useMemo(() => {
-        if (!firestore) return null;
         return doc(firestore, 'jobs', jobId, 'applicants', applicantDocId);
     }, [firestore, jobId, applicantDocId]);
 
@@ -445,3 +444,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
