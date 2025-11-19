@@ -3,7 +3,7 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, collection, query, orderBy, updateDoc } from 'firebase/firestore';
+import { doc, collection, query, orderBy, updateDoc, getDoc } from 'firebase/firestore';
 import { useDoc, useCollection, useFirestore, useUser } from '@/firebase';
 import { Job, JobApplicant } from '@/lib/job-data';
 import Link from 'next/link';
@@ -37,27 +37,40 @@ export default function JobApplicantsPage() {
   const router = useRouter();
   const id = params.id as string;
   const { toast } = useToast();
-
-  useEffect(() => {
-    // Redirect if user is not loaded and not present
-    if (!isUserLoading && !user) {
-      router.push('/login');
-    }
-  }, [isUserLoading, user, router]);
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   const jobDocRef = useMemo(() => {
-    // Wait until user is loaded and exists before creating the ref
-    if (!firestore || !id || isUserLoading || !user) return null;
+    if (!firestore || !id) return null;
     return doc(firestore, 'jobs', id);
-  }, [firestore, id, isUserLoading, user]);
+  }, [firestore, id]);
 
   const { data: job, isLoading: isJobLoading } = useDoc<Job>(jobDocRef);
 
+  useEffect(() => {
+    if (isUserLoading || isJobLoading) return;
+
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    if (job) {
+      if (job.employerId === user.uid) {
+        setIsAuthorized(true);
+      } else {
+        setIsAuthorized(false);
+      }
+    } else {
+      // Job doesn't exist, so user is not authorized
+      setIsAuthorized(false);
+    }
+  }, [isUserLoading, user, isJobLoading, job, router]);
+
+
   const applicantsQuery = useMemo(() => {
-    // Wait until user is loaded and exists before creating the query
-    if (!firestore || !id || isUserLoading || !user) return null;
+    if (!firestore || !id || !isAuthorized) return null; // Only query if authorized
     return query(collection(firestore, `jobs/${id}/applicants`), orderBy('appliedAt', 'desc'));
-  }, [firestore, id, isUserLoading, user]);
+  }, [firestore, id, isAuthorized]);
 
   const { data: applicants, isLoading: areApplicantsLoading } = useCollection<JobApplicant>(applicantsQuery);
 
@@ -84,33 +97,32 @@ export default function JobApplicantsPage() {
     }
   };
 
+  const isLoading = isUserLoading || isJobLoading || isAuthorized === null || (isAuthorized && areApplicantsLoading);
 
-  const isLoading = isUserLoading || isJobLoading || areApplicantsLoading;
-
-  if (isLoading || !user) {
+  if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
+
+  if (!isAuthorized) {
+    return (
+     <div className="container py-12 text-center">
+       <h1 className="text-3xl font-bold">Access Denied</h1>
+       <p className="text-muted-foreground">You are not authorized to view this page.</p>
+       <Link href="/dashboard">
+         <Button variant="link" className="mt-4">Back to Dashboard</Button>
+       </Link>
+     </div>
+   );
+ }
   
   if (!job) {
     return (
       <div className="container py-12 text-center">
         <h1 className="text-3xl font-bold">Job not found</h1>
-        <Link href="/dashboard">
-          <Button variant="link" className="mt-4">Back to Dashboard</Button>
-        </Link>
-      </div>
-    );
-  }
-  
-  if (job.employerId !== user?.uid) {
-     return (
-      <div className="container py-12 text-center">
-        <h1 className="text-3xl font-bold">Access Denied</h1>
-        <p className="text-muted-foreground">You are not authorized to view this page.</p>
         <Link href="/dashboard">
           <Button variant="link" className="mt-4">Back to Dashboard</Button>
         </Link>

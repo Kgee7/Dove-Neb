@@ -45,8 +45,7 @@ service cloud.firestore {
     // JOB APPLICANTS INDIVIDUAL DOCUMENT
     // Rules for individual applicant documents
     match /jobs/{jobId}/applicants/{applicantId} {
-        // The job owner can read individual applicant docs.
-        // A seeker can read their OWN application record to check the status.
+        // The job owner OR the applicant can read the document.
         allow get: if get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid ||
                        (request.auth != null && resource.data.seekerId == request.auth.uid);
         
