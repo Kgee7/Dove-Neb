@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import React, { useMemo, useState, useEffect } from 'react';
 import { useUser, useFirestore, useDoc, useCollection, where, deleteDoc } from '@/firebase';
-import { doc, collection, query, orderBy, limit, updateDoc } from 'firebase/firestore';
+import { doc, collection, query, orderBy, limit, updateDoc, getDocs } from 'firebase/firestore';
 import { Loader2, PlusCircle, Home, BedDouble, Briefcase, Building2, Users, Edit, Trash2 } from "lucide-react";
 import {
   Card,
@@ -60,25 +60,57 @@ type ApplicantStatus = 'pending' | 'reviewed' | 'rejected' | 'hired';
 
 function ApplicationStatus({ jobId, seekerId, jobTitle }: { jobId: string, seekerId: string, jobTitle: string }) {
     const firestore = useFirestore();
+    const [applicantDocId, setApplicantDocId] = useState<string | null>(null);
+    const [status, setStatus] = useState<ApplicantStatus>('pending');
+    const [isLoading, setIsLoading] = useState(true);
 
-    const applicantQuery = useMemo(() => {
-        if (!firestore || typeof jobId !== 'string' || !jobId || typeof seekerId !== 'string' || !seekerId) {
-            return null;
+    useEffect(() => {
+        if (!firestore || !jobId || !seekerId) {
+            setIsLoading(false);
+            return;
         }
-        return query(
-            collection(firestore, `jobs/${jobId}/applicants`),
-            where('seekerId', '==', seekerId),
-            limit(1)
-        );
+
+        const findApplicantDoc = async () => {
+            setIsLoading(true);
+            const applicantQuery = query(
+                collection(firestore, `jobs/${jobId}/applicants`),
+                where('seekerId', '==', seekerId),
+                limit(1)
+            );
+            try {
+                const snapshot = await getDocs(applicantQuery);
+                if (!snapshot.empty) {
+                    const doc = snapshot.docs[0];
+                    setApplicantDocId(doc.id);
+                    setStatus(doc.data().status as ApplicantStatus);
+                }
+            } catch (error) {
+                console.error("Error fetching applicant status:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        findApplicantDoc();
+
     }, [firestore, jobId, seekerId]);
 
-    const { data: applicantData, isLoading } = useCollection(applicantQuery);
+    const applicantDocRef = useMemo(() => {
+        if (!firestore || !jobId || !applicantDocId) return null;
+        return doc(firestore, `jobs/${jobId}/applicants`, applicantDocId);
+    }, [firestore, jobId, applicantDocId]);
 
-    if (isLoading || !applicantQuery) {
+    const { data: applicantData, isLoading: isDocLoading } = useDoc(applicantDocRef);
+
+    useEffect(() => {
+        if (applicantData) {
+            setStatus(applicantData.status as ApplicantStatus);
+        }
+    }, [applicantData]);
+
+    if (isLoading || isDocLoading) {
         return <Badge className="mt-2" variant="secondary">Loading Status...</Badge>;
     }
-
-    const status = applicantData?.[0]?.status as ApplicantStatus || 'pending';
     
     switch (status) {
         case 'hired':
@@ -441,3 +473,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
