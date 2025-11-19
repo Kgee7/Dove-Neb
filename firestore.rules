@@ -38,18 +38,18 @@ service cloud.firestore {
     // JOB APPLICANTS SUBCOLLECTION
     match /jobs/{jobId}/applicants/{applicantId} {
         // The job owner can list all applicants.
-        allow list: if request.auth != null && request.auth.uid == get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId;
+        allow list: if get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid;
         
         // The job owner can read individual applicant docs.
         // A seeker can read their OWN application record to check the status.
-        allow get: if isOwner(get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId) ||
+        allow get: if get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid ||
                        (request.auth != null && resource.data.seekerId == request.auth.uid);
         
         // An authenticated user (seeker) can create an application for a job.
         allow create: if request.auth != null && request.resource.data.seekerId == request.auth.uid;
         
         // Only the employer who owns the job can update or delete applications.
-        allow update, delete: if isOwner(get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId);
+        allow update, delete: if get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid;
     }
 
     // PUBLIC ROOM LISTINGS
