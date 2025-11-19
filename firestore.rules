@@ -38,7 +38,7 @@ service cloud.firestore {
     // JOB APPLICANTS SUBCOLLECTION
     match /jobs/{jobId}/applicants/{applicantId} {
         // The job owner can list all applicants.
-        allow list: if isOwner(get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId);
+        allow list: if request.auth != null && request.auth.uid == get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId;
         
         // The job owner can read individual applicant docs.
         // A seeker can read their OWN application record to check the status.
