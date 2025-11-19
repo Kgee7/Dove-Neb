@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import React, { useMemo, useState, useEffect } from 'react';
 import { useUser, useFirestore, useDoc, useCollection, where, deleteDoc } from '@/firebase';
-import { doc, collection, query, orderBy, limit } from 'firebase/firestore';
+import { doc, collection, query, orderBy, limit, updateDoc } from 'firebase/firestore';
 import { Loader2, PlusCircle, Home, BedDouble, Briefcase, Building2, Users, Edit, Trash2 } from "lucide-react";
 import {
   Card,
@@ -60,7 +60,9 @@ type ApplicantStatus = 'pending' | 'reviewed' | 'rejected' | 'hired';
 
 function ApplicationStatus({ jobId, seekerId, jobTitle }: { jobId: string, seekerId: string, jobTitle: string }) {
     const firestore = useFirestore();
+
     const applicantQuery = useMemo(() => {
+        // Prevent query from running with an invalid jobId
         if (!firestore || !jobId || !seekerId) return null;
         return query(
             collection(firestore, `jobs/${jobId}/applicants`),
@@ -71,7 +73,7 @@ function ApplicationStatus({ jobId, seekerId, jobTitle }: { jobId: string, seeke
 
     const { data: applicantData, isLoading } = useCollection(applicantQuery);
 
-    if (isLoading) {
+    if (isLoading || !applicantData) {
         return <Badge className="mt-2" variant="secondary">Loading Status...</Badge>;
     }
 
@@ -237,7 +239,7 @@ export default function DashboardPage() {
                                       </CardHeader>
                                       <CardContent>
                                         <p className="text-sm text-muted-foreground">Applied: {format(app.appliedAt.toDate(), 'MMM d, yyyy')}</p>
-                                        <ApplicationStatus jobId={app.jobId} seekerId={user.uid} jobTitle={app.jobTitle} />
+                                        {app.jobId && user.uid && <ApplicationStatus jobId={app.jobId} seekerId={user.uid} jobTitle={app.jobTitle} />}
                                       </CardContent>
                                     </Card>
                                 ))}
@@ -436,5 +438,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
