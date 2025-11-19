@@ -3,9 +3,8 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, collection, query, orderBy } from 'firebase/firestore';
-import { useDoc, useCollection, useFirestore, useUser, useFunctions } from '@/firebase';
-import { httpsCallable } from 'firebase/functions';
+import { doc, collection, query, orderBy, updateDoc } from 'firebase/firestore';
+import { useDoc, useCollection, useFirestore, useUser } from '@/firebase';
 import { Job, JobApplicant } from '@/lib/job-data';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -32,7 +31,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 export default function JobApplicantsPage() {
-  const functions = useFunctions();
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const params = useParams();
@@ -63,33 +61,26 @@ export default function JobApplicantsPage() {
 
   const { data: applicants, isLoading: areApplicantsLoading } = useCollection<JobApplicant>(applicantsQuery);
 
-  const handleStatusChange = async (applicantId: string, seekerId: string, newStatus: 'reviewed' | 'rejected' | 'hired') => {
-    if (!functions || !id || !user) {
+  const handleStatusChange = async (applicantId: string, newStatus: 'reviewed' | 'rejected' | 'hired') => {
+    if (!firestore || !id || !user) {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not connect to services.' });
         return;
     }
-
+    
     try {
-      const updateStatusFunction = httpsCallable(functions, 'updateApplicationStatus');
-      await updateStatusFunction({
-        jobId: id,
-        applicantId: applicantId,
-        seekerId: seekerId,
-        newStatus: newStatus,
-      });
-
-      toast({
-        title: 'Status Updated',
-        description: `Applicant status changed to ${newStatus}.`,
-      });
-
+        const applicantDocRef = doc(firestore, 'jobs', id, 'applicants', applicantId);
+        await updateDoc(applicantDocRef, { status: newStatus });
+        toast({
+            title: 'Status Updated',
+            description: `Applicant status changed to ${newStatus}.`,
+        });
     } catch (error: any) {
-      console.error("Error updating application status:", error);
-      toast({
-          variant: 'destructive',
-          title: 'Update Failed',
-          description: error.message || 'Could not update the application status.',
-      });
+        console.error("Error updating application status:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Update Failed',
+            description: error.message || 'Could not update the application status.',
+        });
     }
   };
 
@@ -204,13 +195,13 @@ export default function JobApplicantsPage() {
                             </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, applicant.seekerId, 'reviewed')}>
+                                <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, 'reviewed')}>
                                     <Check className="mr-2 h-4 w-4" /> Mark as Reviewed
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, applicant.seekerId, 'hired')}>
+                                <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, 'hired')}>
                                     <Check className="mr-2 h-4 w-4" /> Mark as Hired
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, applicant.seekerId, 'rejected')} className="text-red-600">
+                                <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, 'rejected')} className="text-red-600">
                                     <X className="mr-2 h-4 w-4" /> Reject
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -233,3 +224,5 @@ export default function JobApplicantsPage() {
     </div>
   );
 }
+
+    

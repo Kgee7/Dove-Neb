@@ -1,9 +1,9 @@
 
 'use client';
 import { useRouter } from 'next/navigation';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useUser, useFirestore, useDoc, useCollection, where, deleteDoc } from '@/firebase';
-import { doc, collection, query, orderBy } from 'firebase/firestore';
+import { doc, collection, query, orderBy, limit } from 'firebase/firestore';
 import { Loader2, PlusCircle, Home, BedDouble, Briefcase, Building2, Users, Edit, Trash2 } from "lucide-react";
 import {
   Card,
@@ -55,6 +55,41 @@ type JobApplication = {
     status: 'pending' | 'reviewed' | 'rejected' | 'hired';
     appliedAt: { toDate: () => Date };
 }
+
+type ApplicantStatus = 'pending' | 'reviewed' | 'rejected' | 'hired';
+
+function ApplicationStatus({ jobId, seekerId, jobTitle }: { jobId: string, seekerId: string, jobTitle: string }) {
+    const firestore = useFirestore();
+    const applicantQuery = useMemo(() => {
+        if (!firestore || !jobId || !seekerId) return null;
+        return query(
+            collection(firestore, `jobs/${jobId}/applicants`),
+            where('seekerId', '==', seekerId),
+            limit(1)
+        );
+    }, [firestore, jobId, seekerId]);
+
+    const { data: applicantData, isLoading } = useCollection(applicantQuery);
+
+    if (isLoading) {
+        return <Badge className="mt-2" variant="secondary">Loading Status...</Badge>;
+    }
+
+    const status = applicantData?.[0]?.status as ApplicantStatus || 'pending';
+    
+    switch (status) {
+        case 'hired':
+            return <p className="text-sm text-green-600 font-semibold mt-2">Congratulations, you have been hired as a {jobTitle}.</p>;
+        case 'rejected':
+            return <p className="text-sm text-red-600 font-semibold mt-2">Sorry, your application for {jobTitle} has been rejected. Please consider applying for a different position.</p>;
+        case 'reviewed':
+            return <Badge className="mt-2 capitalize" variant="default">Under Review</Badge>;
+        case 'pending':
+        default:
+            return <Badge className="mt-2 capitalize" variant="secondary">{status}</Badge>;
+    }
+}
+
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -144,22 +179,6 @@ export default function DashboardPage() {
     }
   };
 
-  const renderApplicationStatus = (app: JobApplication) => {
-    switch (app.status) {
-      case 'hired':
-        return <p className="text-sm text-green-600 font-semibold mt-2">Congratulations, you have been hired as a {app.jobTitle}.</p>;
-      case 'rejected':
-        return <p className="text-sm text-red-600 font-semibold mt-2">Sorry, your application for {app.jobTitle} has been rejected. Please consider applying for a different position.</p>;
-      case 'reviewed':
-        return <Badge className="mt-2 capitalize" variant="default">Under Review</Badge>;
-      case 'pending':
-        return <Badge className="mt-2 capitalize" variant="secondary">{app.status}</Badge>;
-      default:
-        return <Badge className="mt-2 capitalize" variant="secondary">{app.status}</Badge>;
-    }
-  };
-
-
   const isLoading = isUserLoading || isProfileLoading || bookingsLoading || roomListingsLoading || applicationsLoading || jobListingsLoading;
 
   if (isLoading || !user) {
@@ -218,7 +237,7 @@ export default function DashboardPage() {
                                       </CardHeader>
                                       <CardContent>
                                         <p className="text-sm text-muted-foreground">Applied: {format(app.appliedAt.toDate(), 'MMM d, yyyy')}</p>
-                                        {renderApplicationStatus(app)}
+                                        <ApplicationStatus jobId={app.jobId} seekerId={user.uid} jobTitle={app.jobTitle} />
                                       </CardContent>
                                     </Card>
                                 ))}
@@ -417,3 +436,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    

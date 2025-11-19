@@ -21,15 +21,8 @@ service cloud.firestore {
     }
 
     match /users/{userId}/applications/{applicationId} {
-      // A user can read their own applications.
-      allow read: if isOwner(userId);
-      // An employer can update the status of an application for a job they posted.
-      // This rule is more secure: it checks that only the status can be changed,
-      // and verifies the request is coming from the actual job owner by checking the jobId on the document.
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
-                    && isOwner(get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.employerId);
-      // Only the user can create or delete their own application records.
-      allow create, delete: if isOwner(userId);
+      // A user can read, create, and delete their own applications.
+      allow read, create, delete: if isOwner(userId);
     }
 
     // PUBLIC JOB LISTINGS
@@ -43,11 +36,17 @@ service cloud.firestore {
     }
     
     // JOB APPLICANTS SUBCOLLECTION
-    // An authenticated user (seeker) can create an application for a job.
-    // The employer who owns the job can read, update, and delete applications for their jobs.
     match /jobs/{jobId}/applicants/{applicantId} {
+        // An authenticated user (seeker) can create an application for a job.
         allow create: if request.auth != null && request.resource.data.seekerId == request.auth.uid;
-        allow read, update, delete: if isOwner(get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId);
+        
+        // The job owner can read and manage all applicants.
+        // A seeker can read their OWN application record to check the status.
+        allow read: if isOwner(get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId) ||
+                       (request.auth != null && resource.data.seekerId == request.auth.uid);
+        
+        // Only the employer who owns the job can update or delete applications.
+        allow update, delete: if isOwner(get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId);
     }
 
     // PUBLIC ROOM LISTINGS
@@ -61,3 +60,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
