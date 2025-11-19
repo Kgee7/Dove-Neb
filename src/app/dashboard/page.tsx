@@ -64,7 +64,6 @@ function ApplicationStatus({ jobId, applicantDocId, jobTitle }: { jobId: string,
     
     const applicantDocRef = useMemo(() => {
         if (!firestore || !jobId || !applicantDocId) return null;
-        // Construct a direct reference to the document.
         return doc(firestore, 'jobs', jobId, 'applicants', applicantDocId);
     }, [firestore, jobId, applicantDocId]);
 
@@ -238,7 +237,11 @@ export default function DashboardPage() {
                                       </CardHeader>
                                       <CardContent>
                                         <p className="text-sm text-muted-foreground">Applied: {format(app.appliedAt.toDate(), 'MMM d, yyyy')}</p>
-                                        {app.jobId && app.applicantDocId && <ApplicationStatus jobId={app.jobId} applicantDocId={app.applicantDocId} jobTitle={app.jobTitle} />}
+                                        {app.jobId && app.applicantDocId ? (
+                                            <ApplicationStatus jobId={app.jobId} applicantDocId={app.applicantDocId} jobTitle={app.jobTitle} />
+                                        ) : (
+                                            <Badge className="mt-2 capitalize" variant="secondary">Applied</Badge>
+                                        )}
                                       </CardContent>
                                     </Card>
                                 ))}
@@ -437,5 +440,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
