@@ -54,63 +54,27 @@ type JobApplication = {
     companyName: string;
     status: 'pending' | 'reviewed' | 'rejected' | 'hired';
     appliedAt: { toDate: () => Date };
+    applicantDocId: string; // The ID of the document in the employer's `applicants` subcollection
 }
 
 type ApplicantStatus = 'pending' | 'reviewed' | 'rejected' | 'hired';
 
-function ApplicationStatus({ jobId, seekerId, jobTitle }: { jobId: string, seekerId: string, jobTitle: string }) {
+function ApplicationStatus({ jobId, applicantDocId, jobTitle }: { jobId: string, applicantDocId: string, jobTitle: string }) {
     const firestore = useFirestore();
-    const [applicantDocId, setApplicantDocId] = useState<string | null>(null);
-    const [status, setStatus] = useState<ApplicantStatus>('pending');
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        if (!firestore || !jobId || !seekerId) {
-            setIsLoading(false);
-            return;
-        }
-
-        const findApplicantDoc = async () => {
-            setIsLoading(true);
-            const applicantQuery = query(
-                collection(firestore, `jobs/${jobId}/applicants`),
-                where('seekerId', '==', seekerId),
-                limit(1)
-            );
-            try {
-                const snapshot = await getDocs(applicantQuery);
-                if (!snapshot.empty) {
-                    const doc = snapshot.docs[0];
-                    setApplicantDocId(doc.id);
-                    setStatus(doc.data().status as ApplicantStatus);
-                }
-            } catch (error) {
-                console.error("Error fetching applicant status:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        findApplicantDoc();
-
-    }, [firestore, jobId, seekerId]);
-
+    
     const applicantDocRef = useMemo(() => {
         if (!firestore || !jobId || !applicantDocId) return null;
-        return doc(firestore, `jobs/${jobId}/applicants`, applicantDocId);
+        // Construct a direct reference to the document.
+        return doc(firestore, 'jobs', jobId, 'applicants', applicantDocId);
     }, [firestore, jobId, applicantDocId]);
 
     const { data: applicantData, isLoading: isDocLoading } = useDoc(applicantDocRef);
 
-    useEffect(() => {
-        if (applicantData) {
-            setStatus(applicantData.status as ApplicantStatus);
-        }
-    }, [applicantData]);
-
-    if (isLoading || isDocLoading) {
+    if (isDocLoading) {
         return <Badge className="mt-2" variant="secondary">Loading Status...</Badge>;
     }
+
+    const status = applicantData?.status as ApplicantStatus | undefined;
     
     switch (status) {
         case 'hired':
@@ -121,7 +85,7 @@ function ApplicationStatus({ jobId, seekerId, jobTitle }: { jobId: string, seeke
             return <Badge className="mt-2 capitalize" variant="default">Under Review</Badge>;
         case 'pending':
         default:
-            return <Badge className="mt-2 capitalize" variant="secondary">{status}</Badge>;
+            return <Badge className="mt-2 capitalize" variant="secondary">{status || 'pending'}</Badge>;
     }
 }
 
@@ -274,7 +238,7 @@ export default function DashboardPage() {
                                       </CardHeader>
                                       <CardContent>
                                         <p className="text-sm text-muted-foreground">Applied: {format(app.appliedAt.toDate(), 'MMM d, yyyy')}</p>
-                                        {app.jobId && user.uid && <ApplicationStatus jobId={app.jobId} seekerId={user.uid} jobTitle={app.jobTitle} />}
+                                        {app.jobId && app.applicantDocId && <ApplicationStatus jobId={app.jobId} applicantDocId={app.applicantDocId} jobTitle={app.jobTitle} />}
                                       </CardContent>
                                     </Card>
                                 ))}
@@ -473,5 +437,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    

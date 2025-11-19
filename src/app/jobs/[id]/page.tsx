@@ -3,7 +3,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, addDoc, collection, serverTimestamp, getDocs, where, query, getDoc } from 'firebase/firestore';
+import { doc, addDoc, collection, serverTimestamp, getDocs, where, query, getDoc, updateDoc } from 'firebase/firestore';
 import { useDoc, useFirestore, useUser } from '@/firebase';
 import { Job } from '@/lib/job-data';
 import Link from 'next/link';
@@ -79,8 +79,9 @@ export default function JobDetailsPage() {
 
       const seekerName = user.displayName || `${userProfile.firstName} ${userProfile.lastName}`.trim();
 
+      // 1. Create the application in the employer's subcollection
       const applicantsCollectionRef = collection(firestore, 'jobs', job.id, 'applicants');
-      await addDoc(applicantsCollectionRef, {
+      const applicantDocRef = await addDoc(applicantsCollectionRef, {
         seekerId: user.uid,
         status: 'pending',
         appliedAt: serverTimestamp(),
@@ -90,16 +91,17 @@ export default function JobDetailsPage() {
         photoURL: user.photoURL || userProfile.photoURL || null,
       });
 
+      // 2. Create the application record in the seeker's subcollection
       const userApplicationsCollectionRef = collection(firestore, 'users', user.uid, 'applications');
-       await addDoc(userApplicationsCollectionRef, {
+      const userApplicationDocRef = await addDoc(userApplicationsCollectionRef, {
         jobId: job.id,
         seekerId: user.uid,
         status: 'pending',
         appliedAt: serverTimestamp(),
         jobTitle: job.title,
         companyName: job.companyName,
+        applicantDocId: applicantDocRef.id, // Store the direct reference ID
       });
-
 
       toast({
         title: "Application Successful!",
