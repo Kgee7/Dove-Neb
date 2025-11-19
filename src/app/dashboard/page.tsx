@@ -62,8 +62,13 @@ type ApplicantStatus = 'pending' | 'reviewed' | 'rejected' | 'hired';
 function ApplicationStatus({ jobId, applicantDocId, jobTitle }: { jobId: string; applicantDocId: string; jobTitle: string; }) {
     const firestore = useFirestore();
 
+    // Strict guard clause to prevent invalid queries
+    if (!jobId || !applicantDocId) {
+        return <Badge className="mt-2" variant="secondary">Loading Status...</Badge>;
+    }
+
     const applicantDocRef = useMemo(() => {
-        if (!firestore || !jobId || !applicantDocId) return null;
+        if (!firestore) return null;
         return doc(firestore, 'jobs', jobId, 'applicants', applicantDocId);
     }, [firestore, jobId, applicantDocId]);
 
