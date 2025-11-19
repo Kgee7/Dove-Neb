@@ -48,37 +48,35 @@ export const updateApplicationStatus = onCall(async (request) => {
       );
     }
 
-    // Start a transaction to update both documents atomically.
-    await db.runTransaction(async (transaction) => {
-      // Find the seeker's application first (READ operation)
-      const userApplicationsQuery = db
-          .collection("users")
-          .doc(seekerId)
-          .collection("applications")
-          .where("jobId", "==", jobId);
+    // --- Sequential Write Method ---
 
-      const userApplicationsSnapshot = await transaction.get(userApplicationsQuery);
+    // 3. Update the applicant document in the employer's subcollection.
+    const applicantDocRef = jobDocRef.collection("applicants").doc(applicantId);
+    await applicantDocRef.update({status: newStatus});
+    logger.info(`Successfully updated employer-side applicant document: /jobs/${jobId}/applicants/${applicantId}`);
 
-      if (userApplicationsSnapshot.empty) {
-        // This is not a fatal error for the employer's side, but worth logging.
-        // It could happen if the user deletes their application record.
-        logger.warn(`Could not find application for seeker ${seekerId} on job ${jobId}. Only employer record will be updated.`);
-      }
 
-      // Now perform the WRITE operations
-      // 3. Update the applicant document in the employer's subcollection.
-      const applicantDocRef = jobDocRef.collection("applicants").doc(applicantId);
-      transaction.update(applicantDocRef, {status: newStatus});
+    // 4. Find and update the corresponding application in the seeker's subcollection.
+    const userApplicationsQuery = db
+        .collection("users")
+        .doc(seekerId)
+        .collection("applications")
+        .where("jobId", "==", jobId)
+        .limit(1);
 
-      // 4. Update the corresponding application in the seeker's subcollection.
-      if (!userApplicationsSnapshot.empty) {
-        // Assuming one application per user per job.
-        const userApplicationDocRef = userApplicationsSnapshot.docs[0].ref;
-        transaction.update(userApplicationDocRef, {status: newStatus});
-      }
-    });
+    const userApplicationsSnapshot = await userApplicationsQuery.get();
 
-    logger.info("Successfully updated application status in transaction.");
+    if (userApplicationsSnapshot.empty) {
+      // This is not a fatal error for the employer's side, but worth logging.
+      // It could happen if the user deletes their application record.
+      logger.warn(`Could not find application for seeker ${seekerId} on job ${jobId}. Only employer record was updated.`);
+    } else {
+      const userApplicationDocRef = userApplicationsSnapshot.docs[0].ref;
+      await userApplicationDocRef.update({status: newStatus});
+      logger.info(`Successfully updated seeker-side application document: ${userApplicationDocRef.path}`);
+    }
+
+    logger.info("Successfully updated application status using sequential writes.");
     return {success: true, newStatus};
   } catch (error) {
     logger.error("Error updating application status:", error);
