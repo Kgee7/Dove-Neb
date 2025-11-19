@@ -233,5 +233,3 @@ export default function JobApplicantsPage() {
     </div>
   );
 }
-
-    

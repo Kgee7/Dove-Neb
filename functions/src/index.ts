@@ -48,7 +48,6 @@ export const updateApplicationStatus = onCall(async (request) => {
     );
   }
 
-  // --- Sequential Write Method ---
   try {
     // 3. Update the applicant document in the employer's subcollection.
     const applicantDocRef = jobDocRef.collection("applicants").doc(applicantId);
@@ -88,5 +87,3 @@ export const updateApplicationStatus = onCall(async (request) => {
     );
   }
 });
-
-    
