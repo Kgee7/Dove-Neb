@@ -54,14 +54,14 @@ type JobApplication = {
     companyName: string;
     status: 'pending' | 'reviewed' | 'rejected' | 'hired';
     appliedAt: { toDate: () => Date };
-    applicantDocId: string; // The ID of the document in the employer's `applicants` subcollection
+    applicantDocId?: string; // The ID of the document in the employer's `applicants` subcollection
 }
 
 type ApplicantStatus = 'pending' | 'reviewed' | 'rejected' | 'hired';
 
-function ApplicationStatus({ jobId, applicantDocId, jobTitle }: { jobId: string, applicantDocId: string, jobTitle: string }) {
+function ApplicationStatus({ jobId, applicantDocId, jobTitle }: { jobId: string; applicantDocId: string; jobTitle: string; }) {
     const firestore = useFirestore();
-    
+
     const applicantDocRef = useMemo(() => {
         if (!firestore || !jobId || !applicantDocId) return null;
         return doc(firestore, 'jobs', jobId, 'applicants', applicantDocId);
@@ -74,12 +74,12 @@ function ApplicationStatus({ jobId, applicantDocId, jobTitle }: { jobId: string,
     }
 
     const status = applicantData?.status as ApplicantStatus | undefined;
-    
+
     switch (status) {
         case 'hired':
             return <p className="text-sm text-green-600 font-semibold mt-2">Congratulations, you have been hired as a {jobTitle}.</p>;
         case 'rejected':
-            return <p className="text-sm text-red-600 font-semibold mt-2">Sorry, your application for {jobTitle} has been rejected. Please consider applying for a different position.</p>;
+            return <p className="text-sm text-red-600 font-semibold mt-2">Sorry, your application for {jobTitle} has been rejected.</p>;
         case 'reviewed':
             return <Badge className="mt-2 capitalize" variant="default">Under Review</Badge>;
         case 'pending':

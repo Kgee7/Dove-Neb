@@ -93,7 +93,7 @@ export default function JobDetailsPage() {
 
       // 2. Create the application record in the seeker's subcollection
       const userApplicationsCollectionRef = collection(firestore, 'users', user.uid, 'applications');
-      const userApplicationDocRef = await addDoc(userApplicationsCollectionRef, {
+      await addDoc(userApplicationsCollectionRef, {
         jobId: job.id,
         seekerId: user.uid,
         status: 'pending',
