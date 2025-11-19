@@ -87,7 +87,7 @@ export default function JobDetailsPage() {
         seekerName: seekerName,
         seekerEmail: user.email,
         resumeURL: userProfile.resumeURL,
-        photoURL: user.photoURL || userProfile.photoURL,
+        photoURL: user.photoURL || userProfile.photoURL || null,
       });
 
       const userApplicationsCollectionRef = collection(firestore, 'users', user.uid, 'applications');
