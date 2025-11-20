@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { collection, query, where, limit } from 'firebase/firestore';
@@ -26,6 +26,11 @@ export default function JobsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
   
   const { user } = useUser();
   const firestore = useFirestore();
@@ -63,8 +68,8 @@ export default function JobsPage() {
       const term = searchTerm.toLowerCase();
       const titleMatch = job.title && job.title.toLowerCase().includes(term);
       const companyMatch = job.companyName && job.companyName.toLowerCase().includes(term);
-      const locationMatch = locationFilter === 'all' || job.location === locationFilter;
-      const typeMatch = typeFilter === 'all' || job.type === typeFilter;
+      const locationMatch = locationFilter === 'all' || (job.location && job.location === locationFilter);
+      const typeMatch = typeFilter === 'all' || (job.type && job.type === typeFilter);
       return (titleMatch || companyMatch) && locationMatch && typeMatch;
     });
   }, [allJobs, searchTerm, locationFilter, typeFilter]);
@@ -79,6 +84,7 @@ export default function JobsPage() {
       </header>
 
       <Card className="p-6 md:p-8 mb-12 shadow-lg">
+        {isClient && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
           <div className="md:col-span-2 relative">
              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -114,6 +120,7 @@ export default function JobsPage() {
             </SelectContent>
           </Select>
         </div>
+        )}
       </Card>
 
       {user && suggestedJobs && suggestedJobs.length > 0 && (
@@ -201,5 +208,3 @@ function JobCard({ job }: { job: Job }) {
     </Card>
   );
 }
-
-    
