@@ -60,8 +60,8 @@ export default function JobsPage() {
     if (!jobs) return [];
     return allJobs.filter(job => {
       const term = searchTerm.toLowerCase();
-      const titleMatch = job.title.toLowerCase().includes(term);
-      const companyMatch = job.companyName.toLowerCase().includes(term);
+      const titleMatch = job.title && job.title.toLowerCase().includes(term);
+      const companyMatch = job.companyName && job.companyName.toLowerCase().includes(term);
       const locationMatch = locationFilter === 'all' || job.location === locationFilter;
       const typeMatch = typeFilter === 'all' || job.type === typeFilter;
       return (titleMatch || companyMatch) && locationMatch && typeMatch;

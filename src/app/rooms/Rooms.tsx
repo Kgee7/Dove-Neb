@@ -43,12 +43,12 @@ export default function Rooms() {
       const locationLower = locationQuery.toLowerCase();
       
       const matchesSearch = searchQuery === '' || 
-        room.title.toLowerCase().includes(searchLower) ||
-        room.description.toLowerCase().includes(searchLower);
+        (room.title && room.title.toLowerCase().includes(searchLower)) ||
+        (room.description && room.description.toLowerCase().includes(searchLower));
 
       const matchesLocation = locationQuery === '' ||
-        room.location.toLowerCase().includes(locationLower) ||
-        room.country.toLowerCase().includes(locationLower);
+        (room.location && room.location.toLowerCase().includes(locationLower)) ||
+        (room.country && room.country.toLowerCase().includes(locationLower));
 
       return matchesSearch && matchesLocation;
     });
