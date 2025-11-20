@@ -2,9 +2,9 @@
   "placeholderImages": [
     {
       "id": "hero-background",
-      "description": "A modern office space with a city view, representing opportunity.",
-      "imageUrl": "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxvZmZpY2V8ZW58MHx8fHwxNzYxMTMwMjIyfDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "modern office"
+      "description": "A stunning modern architectural structure with flowing lines, representing opportunity and innovation.",
+      "imageUrl": "https://images.unsplash.com/photo-1520242133-948855913222?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBhcmNoaXRlY3R1cmV8ZW58MHx8fHwxNzYxMzk5MDAyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "modern architecture"
     },
     {
       "id": "room-1",
