@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Briefcase, Loader2, MapPin, Search } from 'lucide-react';
 import { suggestJobs, type SuggestJobsInput } from '@/ai/flows/ai-suggested-jobs';
+import FavoriteButton from '@/components/favorite-button';
 
 
 // Mock data - replace with Firestore data
@@ -42,8 +43,8 @@ export default function JobsPage() {
   const { data: jobs, isLoading: jobsLoading } = useCollection<Job>(jobsQuery);
   
   const allJobs = jobs || [];
-  const locations = useMemo(() => [...new Set(allJobs.map(j => j.location))], [allJobs]);
-  const jobTypes = useMemo(() => [...new Set(allJobs.map(j => j.type))], [allJobs]);
+  const locations = useMemo(() => [...new Set(allJobs.map(j => j.location).filter(Boolean))], [allJobs]);
+  const jobTypes = useMemo(() => [...new Set(allJobs.map(j => j.type).filter(Boolean))], [allJobs]);
 
 
   const suggestedJobsQuery = useMemo(() => {
@@ -159,7 +160,8 @@ export default function JobsPage() {
 function JobCard({ job }: { job: Job }) {
   const salarySymbol = job.salaryCurrencySymbol || '$';
   return (
-    <Card className="hover:shadow-xl transition-shadow duration-300 h-full flex flex-col">
+    <Card className="hover:shadow-xl transition-shadow duration-300 h-full flex flex-col relative">
+      <FavoriteButton item={job} itemType="job" />
       <CardHeader>
         <div className="flex items-start justify-between">
             <div>
@@ -199,3 +201,5 @@ function JobCard({ job }: { job: Job }) {
     </Card>
   );
 }
+
+    

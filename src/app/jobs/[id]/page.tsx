@@ -7,6 +7,7 @@ import { doc } from 'firebase/firestore';
 import { useDoc, useFirestore } from '@/firebase';
 import { Job } from '@/lib/job-data';
 import Link from 'next/link';
+import FavoriteButton from '@/components/favorite-button';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase, Mail } from 'lucide-react';
@@ -57,7 +58,8 @@ export default function JobDetailsPage() {
           </Link>
         </div>
 
-        <Card>
+        <Card className="relative">
+           {job && <FavoriteButton item={job} itemType="job" />}
           <CardHeader>
             <CardTitle className="text-3xl font-bold font-headline">{job.title}</CardTitle>
             <CardDescription className="text-lg">{job.companyName}</CardDescription>
@@ -106,3 +108,5 @@ export default function JobDetailsPage() {
     </div>
   );
 }
+
+    

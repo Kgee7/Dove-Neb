@@ -10,6 +10,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { DateRange } from "react-day-picker";
 import { addDays, format, differenceInDays } from "date-fns";
+import FavoriteButton from '@/components/favorite-button';
 
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
@@ -161,7 +162,8 @@ export default function RoomDetailsPage() {
                 </div>
             </div>
 
-            <Carousel className="w-full mt-6">
+            <Carousel className="w-full mt-6 relative">
+                 {room && <FavoriteButton item={room} itemType="room" />}
                 <CarouselContent>
                     {room.images.map((img, index) => (
                     <CarouselItem key={index}>
@@ -312,3 +314,5 @@ export default function RoomDetailsPage() {
     </div>
   );
 }
+
+    

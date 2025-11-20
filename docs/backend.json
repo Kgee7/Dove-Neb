@@ -28,7 +28,8 @@
         "companyName": { "type": "string", "description": "Name of the company hiring." },
         "title": { "type": "string", "description": "The title of the job." },
         "description": { "type": "string", "description": "A detailed description of the job." },
-        "location": { "type": "string", "description": "Location of the job." },
+        "country": { "type": "string", "description": "Country where the job is located." },
+        "location": { "type": "string", "description": "Location of the job (e.g., City, State)." },
         "type": { "type": "string", "enum": ["Full-time", "Part-time", "Contract", "Internship", "Remote", "Hybrid"], "description": "Type of employment." },
         "salaryMin": { "type": "number", "description": "Minimum salary for the position." },
         "salaryMax": { "type": "number", "description": "Maximum salary for the position." },
@@ -38,7 +39,7 @@
         "applicationEmail": { "type": "string", "format": "email", "description": "Email for applications."},
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "employerId", "companyName", "title", "description", "location", "type", "applicationEmail"]
+      "required": ["id", "employerId", "companyName", "title", "description", "country", "location", "type", "applicationEmail"]
     },
     "JobApplication": {
         "title": "Job Application",
@@ -82,7 +83,8 @@
         "listingType": { "type": "string", "enum": ["rent", "sale"] },
         "title": { "type": "string" },
         "description": { "type": "string" },
-        "location": { "type": "string" },
+        "country": { "type": "string", "description": "Country where the room is located." },
+        "location": { "type": "string", "description": "Location of the room (e.g., City, State)." },
         "priceNight": { "type": "number", "description": "Price per night if for rent." },
         "priceMonth": { "type": "number", "description": "Price per month if for rent." },
         "salePrice": { "type": "number", "description": "Total price if for sale." },
@@ -93,7 +95,7 @@
         "images": { "type": "array", "items": { "type": "string", "format": "uri" } },
         "amenities": { "type": "array", "items": { "type": "string" } }
       },
-      "required": ["id", "ownerId", "ownerName", "listingType", "title", "description", "location", "images"]
+      "required": ["id", "ownerId", "ownerName", "listingType", "title", "description", "country", "location", "images"]
     },
     "Booking": {
       "title": "Booking",
@@ -109,6 +111,36 @@
         "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"] }
       },
       "required": ["id", "roomId", "renterId", "checkInDate", "checkOutDate", "totalPrice", "status"]
+    },
+    "FavoriteJob": {
+      "title": "Favorite Job",
+      "type": "object",
+      "description": "Represents a job a user has favorited.",
+      "properties": {
+        "id": { "type": "string" },
+        "jobId": { "type": "string" },
+        "title": { "type": "string" },
+        "companyName": { "type": "string" },
+        "location": { "type": "string" },
+        "country": { "type": "string" },
+        "addedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "jobId", "title", "companyName", "location", "country", "addedAt"]
+    },
+    "FavoriteRoom": {
+      "title": "Favorite Room",
+      "type": "object",
+      "description": "Represents a room a user has favorited.",
+      "properties": {
+        "id": { "type": "string" },
+        "roomId": { "type": "string" },
+        "title": { "type": "string" },
+        "location": { "type": "string" },
+        "country": { "type": "string" },
+        "image": { "type": "string" },
+        "addedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "roomId", "title", "location", "country", "image", "addedAt"]
     }
   },
   "auth": {
@@ -119,6 +151,14 @@
       {
         "path": "/users/{userId}",
         "definition": { "schema": { "$ref": "#/entities/User" }, "description": "Stores user profiles." }
+      },
+      {
+        "path": "/users/{userId}/favoriteJobs/{favoriteId}",
+        "definition": { "schema": { "$ref": "#/entities/FavoriteJob" }, "description": "Subcollection for a user's favorite jobs." }
+      },
+      {
+        "path": "/users/{userId}/favoriteRooms/{favoriteId}",
+        "definition": { "schema": { "$ref": "#/entities/FavoriteRoom" }, "description": "Subcollection for a user's favorite rooms." }
       },
       {
         "path": "/jobs/{jobId}",
@@ -147,3 +187,5 @@
     ]
   }
 }
+
+    

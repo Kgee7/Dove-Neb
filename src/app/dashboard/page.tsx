@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import React, { useMemo, useState, useEffect } from 'react';
 import { useUser, useFirestore, useDoc, useCollection, where, deleteDoc } from '@/firebase';
 import { doc, collection, query, orderBy, limit, updateDoc, getDocs } from 'firebase/firestore';
-import { Loader2, PlusCircle, Home, BedDouble, Briefcase, Building2, Users, Edit, Trash2 } from "lucide-react";
+import { Loader2, PlusCircle, Home, BedDouble, Briefcase, Building2, Users, Edit, Trash2, Heart } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -55,6 +55,24 @@ type JobApplication = {
     status: 'pending' | 'reviewed' | 'rejected' | 'hired';
     appliedAt: { toDate: () => Date };
     applicantDocId?: string; // The ID of the document in the employer's `applicants` subcollection
+}
+
+type FavoriteJob = {
+    id: string;
+    jobId: string;
+    title: string;
+    companyName: string;
+    location: string;
+    country: string;
+}
+
+type FavoriteRoom = {
+    id: string;
+    roomId: string;
+    title: string;
+    location: string;
+    country: string;
+    image: string;
 }
 
 type ApplicantStatus = 'pending' | 'reviewed' | 'rejected' | 'hired';
@@ -135,6 +153,19 @@ export default function DashboardPage() {
   }, [firestore, user?.uid]);
   const { data: jobListings, isLoading: jobListingsLoading } = useCollection<Job>(jobListingsQuery);
 
+  // Queries for Favorites
+  const favoriteJobsQuery = useMemo(() => {
+      if (!firestore || !user?.uid) return null;
+      return query(collection(firestore, 'users', user.uid, 'favoriteJobs'), orderBy('addedAt', 'desc'));
+  }, [firestore, user?.uid]);
+  const { data: favoriteJobs, isLoading: favoriteJobsLoading } = useCollection<FavoriteJob>(favoriteJobsQuery);
+
+  const favoriteRoomsQuery = useMemo(() => {
+      if (!firestore || !user?.uid) return null;
+      return query(collection(firestore, 'users', user.uid, 'favoriteRooms'), orderBy('addedAt', 'desc'));
+  }, [firestore, user?.uid]);
+  const { data: favoriteRooms, isLoading: favoriteRoomsLoading } = useCollection<FavoriteRoom>(favoriteRoomsQuery);
+
   React.useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
@@ -181,7 +212,7 @@ export default function DashboardPage() {
     }
   };
 
-  const isLoading = isUserLoading || isProfileLoading || bookingsLoading || roomListingsLoading || applicationsLoading || jobListingsLoading;
+  const isLoading = isUserLoading || isProfileLoading || bookingsLoading || roomListingsLoading || applicationsLoading || jobListingsLoading || favoriteJobsLoading || favoriteRoomsLoading;
 
   if (isLoading || !user) {
     return (
@@ -221,6 +252,64 @@ export default function DashboardPage() {
         </div>
       </div>
         <div className="grid gap-8">
+
+            {/* My Favorites Section */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>My Favorites</CardTitle>
+                    <CardDescription>Your saved jobs and spaces.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid gap-8 md:grid-cols-2">
+                        <div>
+                            <h3 className="font-semibold mb-4 flex items-center gap-2"><Briefcase className="h-5 w-5" />Favorite Jobs</h3>
+                            {favoriteJobs && favoriteJobs.length > 0 ? (
+                                <div className="space-y-4">
+                                    {favoriteJobs.map(job => (
+                                        <Link key={job.id} href={`/jobs/${job.jobId}`}>
+                                        <div className="p-3 rounded-lg border hover:bg-muted cursor-pointer">
+                                            <p className="font-medium">{job.title}</p>
+                                            <p className="text-sm text-muted-foreground">{job.companyName} - {job.location}, {job.country}</p>
+                                        </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">No favorite jobs yet.</p>
+                            )}
+                        </div>
+                        <div>
+                            <h3 className="font-semibold mb-4 flex items-center gap-2"><BedDouble className="h-5 w-5" />Favorite Spaces</h3>
+                            {favoriteRooms && favoriteRooms.length > 0 ? (
+                                <div className="space-y-4">
+                                    {favoriteRooms.map(room => (
+                                        <Link key={room.id} href={`/rooms/${room.roomId}`}>
+                                        <div className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted cursor-pointer">
+                                            <Image src={room.image} alt={room.title} width={64} height={64} className="rounded-md object-cover aspect-square" />
+                                            <div>
+                                                <p className="font-medium">{room.title}</p>
+                                                <p className="text-sm text-muted-foreground">{room.location}, {room.country}</p>
+                                            </div>
+                                        </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">No favorite spaces yet.</p>
+                            )}
+                        </div>
+                    </div>
+                     {(favoriteJobs?.length === 0 && favoriteRooms?.length === 0) && (
+                         <div className='text-center py-12 border-2 border-dashed rounded-lg'>
+                            <Heart className="mx-auto h-12 w-12 text-muted-foreground" />
+                            <h3 className="mt-4 text-lg font-medium">Nothing in your favorites yet</h3>
+                            <p className="mt-1 text-sm text-muted-foreground">Click the heart icon on any listing to save it here.</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+
             {/* Job Seeker View */}
             {isSeeker && (
                 <Card>
@@ -444,7 +533,5 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
 
     

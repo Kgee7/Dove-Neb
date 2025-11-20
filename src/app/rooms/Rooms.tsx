@@ -8,6 +8,7 @@ import { useCollection, useFirestore } from '@/firebase';
 import { Room } from '@/lib/data';
 import { useState, useMemo, useEffect } from 'react';
 import { collection, query, where } from 'firebase/firestore';
+import FavoriteButton from '@/components/favorite-button';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
@@ -133,7 +134,8 @@ export default function Rooms() {
                 key={room.id}
                 className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-2xl group"
               >
-                <CardHeader className="p-0">
+                <CardHeader className="p-0 relative">
+                    <FavoriteButton item={room} itemType="room" />
                     <Link href={`/rooms/${room.id}`}>
                         <div className="relative aspect-video overflow-hidden">
                             <Image
@@ -184,3 +186,5 @@ export default function Rooms() {
     </div>
   );
 }
+
+    

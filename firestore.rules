@@ -25,6 +25,16 @@ service cloud.firestore {
       allow read, create, delete: if isOwner(userId);
     }
 
+    match /users/{userId}/favoriteJobs/{favoriteId} {
+      // A user can read and write their own favorite jobs.
+      allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/favoriteRooms/{favoriteId} {
+       // A user can read and write their own favorite rooms.
+      allow read, write: if isOwner(userId);
+    }
+
     // PUBLIC JOB LISTINGS
     // Anyone can read job listings.
     // Only authenticated employers can create jobs.
@@ -68,3 +78,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
