@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCollection, useFirestore } from '@/firebase';
 import { Room } from '@/lib/data';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { collection, query, where } from 'firebase/firestore';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +24,11 @@ export default function Rooms() {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [locationQuery, setLocationQuery] = useState(searchParams.get('loc') || '');
   const [listingTypeFilter, setListingTypeFilter] = useState(searchParams.get('type') || 'all');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const roomsQuery = useMemo(() => {
     if (!firestore) return null;
@@ -76,41 +81,43 @@ export default function Rooms() {
 
        <Card className="mx-auto mb-12 max-w-4xl shadow-lg">
           <CardContent className="p-4">
-            <form className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" onSubmit={handleSearch}>
-              <div className="relative lg:col-span-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  placeholder="Destination, e.g., 'beach house'"
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <div className="relative lg:col-span-1">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input 
-                  placeholder="Location, e.g., 'Paris'" 
-                  className="pl-10"
-                  value={locationQuery}
-                  onChange={(e) => setLocationQuery(e.target.value)}
-                />
-              </div>
-               <div className="grid grid-cols-2 gap-2">
-                 <Select value={listingTypeFilter} onValueChange={setListingTypeFilter}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Listing Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="rent">For Rent</SelectItem>
-                        <SelectItem value="sale">For Sale</SelectItem>
-                    </SelectContent>
-                </Select>
-                <Button type="submit" className='w-full'>
-                    Search
-                </Button>
-               </div>
-            </form>
+            {isClient && (
+              <form className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" onSubmit={handleSearch}>
+                <div className="relative lg:col-span-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    placeholder="Destination, e.g., 'beach house'"
+                    className="pl-10"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <div className="relative lg:col-span-1">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input 
+                    placeholder="Location, e.g., 'Paris'" 
+                    className="pl-10"
+                    value={locationQuery}
+                    onChange={(e) => setLocationQuery(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Select value={listingTypeFilter} onValueChange={setListingTypeFilter}>
+                      <SelectTrigger>
+                          <SelectValue placeholder="Listing Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="all">All Types</SelectItem>
+                          <SelectItem value="rent">For Rent</SelectItem>
+                          <SelectItem value="sale">For Sale</SelectItem>
+                      </SelectContent>
+                  </Select>
+                  <Button type="submit" className='w-full'>
+                      Search
+                  </Button>
+                </div>
+              </form>
+            )}
           </CardContent>
         </Card>
 
@@ -177,5 +184,3 @@ export default function Rooms() {
     </div>
   );
 }
-
-    
