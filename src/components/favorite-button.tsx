@@ -81,7 +81,7 @@ export default function FavoriteButton({ item, itemType }: FavoriteButtonProps) 
                 title: job.title,
                 companyName: job.companyName,
                 location: job.location,
-                country: job.country,
+                country: job.country || '',
                 addedAt: new Date(),
             };
         } else {
@@ -125,5 +125,3 @@ export default function FavoriteButton({ item, itemType }: FavoriteButtonProps) 
     </Button>
   );
 }
-
-    
