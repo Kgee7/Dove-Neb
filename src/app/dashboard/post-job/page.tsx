@@ -122,50 +122,24 @@ export default function PostJobPage() {
   }
 
   return (
-    <div className="container max-w-3xl py-12">
-      <Card>
-        <CardHeader>
-          <CardTitle>Post a New Job</CardTitle>
-          <CardDescription>Fill out the details below to create a new job listing.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Job Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Senior Software Engineer" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="companyName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Acme Inc." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="flex min-h-[calc(100vh-8rem)] w-full items-center justify-center">
+      <div className="container max-w-3xl py-12">
+        <Card>
+          <CardHeader>
+            <CardTitle>Post a New Job</CardTitle>
+            <CardDescription>Fill out the details below to create a new job listing.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <FormField
                   control={form.control}
-                  name="country"
+                  name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Country</FormLabel>
+                      <FormLabel>Job Title</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., United States" {...field} />
+                        <Input placeholder="e.g., Senior Software Engineer" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -173,140 +147,168 @@ export default function PostJobPage() {
                 />
                 <FormField
                   control={form.control}
-                  name="location"
+                  name="companyName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>City / State</FormLabel>
+                      <FormLabel>Company Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., San Francisco, CA" {...field} />
+                        <Input placeholder="e.g., Acme Inc." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Job Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="country"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Country</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a job type" />
-                          </SelectTrigger>
+                          <Input placeholder="e.g., United States" {...field} />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Full-time">Full-time</SelectItem>
-                          <SelectItem value="Part-time">Part-time</SelectItem>
-                          <SelectItem value="Contract">Contract</SelectItem>
-                           <SelectItem value="Internship">Internship</SelectItem>
-                           <SelectItem value="Remote">Remote</SelectItem>
-                           <SelectItem value="Hybrid">Hybrid</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="currency"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Currency</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>City / State</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a currency" />
-                          </SelectTrigger>
+                          <Input placeholder="e.g., San Francisco, CA" {...field} />
                         </FormControl>
-                        <SelectContent>
-                          {currencies.map(currency => (
-                            <SelectItem key={currency.code} value={currency.code}>
-                              {currency.code} - {currency.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Job Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a job type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Full-time">Full-time</SelectItem>
+                            <SelectItem value="Part-time">Part-time</SelectItem>
+                            <SelectItem value="Contract">Contract</SelectItem>
+                            <SelectItem value="Internship">Internship</SelectItem>
+                            <SelectItem value="Remote">Remote</SelectItem>
+                            <SelectItem value="Hybrid">Hybrid</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="currency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Currency</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a currency" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {currencies.map(currency => (
+                              <SelectItem key={currency.code} value={currency.code}>
+                                {currency.code} - {currency.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="salaryMin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Minimum Salary (Optional)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="70000" {...field} value={field.value ?? ''} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="salaryMax"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Maximum Salary (Optional)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="120000" {...field} value={field.value ?? ''} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <FormField
                   control={form.control}
-                  name="salaryMin"
+                  name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Minimum Salary (Optional)</FormLabel>
+                      <FormLabel>Job Description</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="70000" {...field} value={field.value ?? ''} />
+                        <Textarea
+                          placeholder="Describe the role, responsibilities, and requirements..."
+                          className="min-h-[200px]"
+                          {...field}
+                        />
                       </FormControl>
+                      <FormDescription>
+                          Use Markdown for formatting.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                 <FormField
+                <FormField
                   control={form.control}
-                  name="salaryMax"
+                  name="applicationEmail"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Maximum Salary (Optional)</FormLabel>
+                      <FormLabel>Application Email</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="120000" {...field} value={field.value ?? ''} />
+                        <Input placeholder="recruiting@example.com" {...field} value={field.value ?? ''} />
                       </FormControl>
+                      <FormDescription>
+                        Job seekers will send their applications to this email address.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Job Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Describe the role, responsibilities, and requirements..."
-                        className="min-h-[200px]"
-                        {...field}
-                      />
-                    </FormControl>
-                     <FormDescription>
-                        Use Markdown for formatting.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="applicationEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Application Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="recruiting@example.com" {...field} value={field.value ?? ''} />
-                    </FormControl>
-                    <FormDescription>
-                      Job seekers will send their applications to this email address.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Post Job'}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Post Job'}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

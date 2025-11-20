@@ -195,328 +195,330 @@ export default function ListRoomPage() {
   }
   
   return (
-    <div className="container max-w-3xl py-12">
-      <Card>
-        <CardHeader>
-          <CardTitle>List Your Space</CardTitle>
-          <CardDescription>Fill out the details below to put your space on the market.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-               <FormField
+    <div className="flex min-h-[calc(100vh-8rem)] w-full items-center justify-center">
+      <div className="container max-w-3xl py-12">
+        <Card>
+          <CardHeader>
+            <CardTitle>List Your Space</CardTitle>
+            <CardDescription>Fill out the details below to put your space on the market.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <FormField
+                    control={form.control}
+                    name="listingType"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>What are you listing?</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="grid grid-cols-2 gap-4"
+                          >
+                            <FormItem>
+                              <FormControl>
+                                <RadioGroupItem value="rent" id="rent" className="peer sr-only" />
+                              </FormControl>
+                              <Label
+                                htmlFor="rent"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                              >
+                                For Rent
+                              </Label>
+                            </FormItem>
+                            <FormItem>
+                              <FormControl>
+                                <RadioGroupItem value="sale" id="sale" className="peer sr-only" />
+                              </FormControl>
+                              <Label
+                                htmlFor="sale"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                              >
+                                For Sale
+                              </Label>
+                            </FormItem>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                <FormField
                   control={form.control}
-                  name="listingType"
+                  name="title"
                   render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>What are you listing?</FormLabel>
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
                       <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="grid grid-cols-2 gap-4"
-                        >
-                          <FormItem>
-                            <FormControl>
-                              <RadioGroupItem value="rent" id="rent" className="peer sr-only" />
-                            </FormControl>
-                            <Label
-                              htmlFor="rent"
-                              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                            >
-                              For Rent
-                            </Label>
-                          </FormItem>
-                          <FormItem>
-                            <FormControl>
-                              <RadioGroupItem value="sale" id="sale" className="peer sr-only" />
-                            </FormControl>
-                            <Label
-                              htmlFor="sale"
-                              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                            >
-                              For Sale
-                            </Label>
-                          </FormItem>
-                        </RadioGroup>
+                        <Input placeholder="e.g., Cozy Downtown Apartment" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Tell guests about your space..."
+                          className="min-h-[120px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="country"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Country</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., France" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>City / State</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Paris" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+              <FormField
+                  control={form.control}
+                  name="currency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Currency</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a currency" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {currencies.map(currency => (
+                            <SelectItem key={currency.code} value={currency.code}>
+                              {currency.code} - {currency.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Cozy Downtown Apartment" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Tell guests about your space..."
-                        className="min-h-[120px]"
-                        {...field}
+              {listingType === 'rent' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="priceNight"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Price per Night (Optional)</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="100" {...field} value={field.value ?? ''}/>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
+                      <FormField
+                        control={form.control}
+                        name="priceMonth"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Price per Month (Optional)</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="2000" {...field} value={field.value ?? ''}/>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                  </div>
+              )}
+
+              {listingType === 'sale' && (
+                  <FormField
+                    control={form.control}
+                    name="salePrice"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sale Price</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="250000" {...field} value={field.value ?? ''}/>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+              )}
+                
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="country"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Country</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., France" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>City / State</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Paris" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                      control={form.control}
+                      name="contactPhone"
+                      render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Contact Phone (Optional)</FormLabel>
+                          <FormControl>
+                          <Input placeholder="+1 123 456 7890" {...field} value={field.value ?? ''}/>
+                          </FormControl>
+                          <FormMessage />
+                      </FormItem>
+                      )}
+                  />
+                  <FormField
+                      control={form.control}
+                      name="contactWhatsapp"
+                      render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>WhatsApp Number (Optional)</FormLabel>
+                          <FormControl>
+                          <Input placeholder="+1 123 456 7890" {...field} value={field.value ?? ''}/>
+                          </FormControl>
+                          <FormMessage />
+                      </FormItem>
+                      )}
+                  />
               </div>
 
-             <FormField
-                control={form.control}
-                name="currency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Currency</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a currency" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {currencies.map(currency => (
-                          <SelectItem key={currency.code} value={currency.code}>
-                            {currency.code} - {currency.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
-            {listingType === 'rent' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="priceNight"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Price per Night (Optional)</FormLabel>
-                          <FormControl>
-                            <Input type="number" placeholder="100" {...field} value={field.value ?? ''}/>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="priceMonth"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Price per Month (Optional)</FormLabel>
-                          <FormControl>
-                            <Input type="number" placeholder="2000" {...field} value={field.value ?? ''}/>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                </div>
-            )}
-
-            {listingType === 'sale' && (
-                 <FormField
+                <FormField
                   control={form.control}
-                  name="salePrice"
-                  render={({ field }) => (
+                  name="images"
+                  render={({ field, fieldState }) => (
                     <FormItem>
-                      <FormLabel>Sale Price</FormLabel>
+                      <FormLabel>Room Images</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="250000" {...field} value={field.value ?? ''}/>
+                        <Input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            const currentFiles = form.getValues('images');
+                            if (currentFiles.length + files.length > MAX_IMAGES) {
+                                toast({ variant: 'destructive', title: 'Too many images', description: `You can only upload up to ${MAX_IMAGES} images.` });
+                                return;
+                            }
+                            form.setValue('images', [...currentFiles, ...files], { shouldValidate: true });
+                          }}
+                          className="hidden"
+                          id="image-upload"
+                        />
                       </FormControl>
-                      <FormMessage />
+                      <label htmlFor="image-upload" className="flex items-center justify-center w-full p-6 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted">
+                          <div className="text-center">
+                              <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
+                              <p className="mt-2 text-sm text-muted-foreground">Click or drag to upload images</p>
+                          </div>
+                      </label>
+                      <FormDescription>
+                          Up to {MAX_IMAGES} images. Each under 500KB. Total under 6MB.
+                      </FormDescription>
+                      {fieldState.error && <FormMessage />}
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+                          {form.watch('images').map((file, index) => (
+                            <div key={index} className="relative group">
+                                  <img src={URL.createObjectURL(file)} alt={`preview ${index}`} className="w-full h-24 object-cover rounded-md" />
+                                  <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => {
+                                      const currentImages = form.getValues('images');
+                                      const updatedImages = currentImages.filter((_, i) => i !== index);
+                                      form.setValue('images', updatedImages, { shouldValidate: true });
+                                  }}>
+                                      <Trash2 className="h-4 w-4" />
+                                  </Button>
+                            </div>
+                          ))}
+                      </div>
                     </FormItem>
                   )}
                 />
-            )}
-              
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                    control={form.control}
-                    name="contactPhone"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Contact Phone (Optional)</FormLabel>
-                        <FormControl>
-                        <Input placeholder="+1 123 456 7890" {...field} value={field.value ?? ''}/>
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="contactWhatsapp"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>WhatsApp Number (Optional)</FormLabel>
-                        <FormControl>
-                        <Input placeholder="+1 123 456 7890" {...field} value={field.value ?? ''}/>
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-            </div>
 
+                  <FormField
+                  control={form.control}
+                  name="amenities"
+                  render={() => (
+                      <FormItem>
+                      <div className="mb-4">
+                          <FormLabel className="text-base">Amenities</FormLabel>
+                          <FormDescription>
+                          Select the amenities available.
+                          </FormDescription>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {amenitiesList.map((amenity) => (
+                          <FormField
+                          key={amenity}
+                          control={form.control}
+                          name="amenities"
+                          render={({ field }) => {
+                              return (
+                              <FormItem
+                                  key={amenity}
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                              >
+                                  <FormControl>
+                                  <Checkbox
+                                      checked={field.value?.includes(amenity)}
+                                      onCheckedChange={(checked) => {
+                                      return checked
+                                          ? field.onChange([...(field.value || []), amenity])
+                                          : field.onChange(
+                                              (field.value || [])?.filter(
+                                              (value) => value !== amenity
+                                              )
+                                          )
+                                      }}
+                                  />
+                                  </FormControl>
+                                  <FormLabel className="font-normal">
+                                  {amenity}
+                                  </FormLabel>
+                              </FormItem>
+                              )
+                          }}
+                          />
+                      ))}
+                      </div>
+                      <FormMessage />
+                      </FormItem>
+                  )}
+                  />
 
-               <FormField
-                control={form.control}
-                name="images"
-                render={({ field, fieldState }) => (
-                  <FormItem>
-                    <FormLabel>Room Images</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={(e) => {
-                          const files = Array.from(e.target.files || []);
-                          const currentFiles = form.getValues('images');
-                          if (currentFiles.length + files.length > MAX_IMAGES) {
-                              toast({ variant: 'destructive', title: 'Too many images', description: `You can only upload up to ${MAX_IMAGES} images.` });
-                              return;
-                          }
-                           form.setValue('images', [...currentFiles, ...files], { shouldValidate: true });
-                        }}
-                        className="hidden"
-                        id="image-upload"
-                      />
-                    </FormControl>
-                    <label htmlFor="image-upload" className="flex items-center justify-center w-full p-6 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted">
-                        <div className="text-center">
-                            <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-                            <p className="mt-2 text-sm text-muted-foreground">Click or drag to upload images</p>
-                        </div>
-                    </label>
-                    <FormDescription>
-                        Up to {MAX_IMAGES} images. Each under 500KB. Total under 6MB.
-                    </FormDescription>
-                    {fieldState.error && <FormMessage />}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
-                        {form.watch('images').map((file, index) => (
-                           <div key={index} className="relative group">
-                                <img src={URL.createObjectURL(file)} alt={`preview ${index}`} className="w-full h-24 object-cover rounded-md" />
-                                <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => {
-                                    const currentImages = form.getValues('images');
-                                    const updatedImages = currentImages.filter((_, i) => i !== index);
-                                    form.setValue('images', updatedImages, { shouldValidate: true });
-                                }}>
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                           </div>
-                        ))}
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-                <FormField
-                control={form.control}
-                name="amenities"
-                render={() => (
-                    <FormItem>
-                    <div className="mb-4">
-                        <FormLabel className="text-base">Amenities</FormLabel>
-                        <FormDescription>
-                        Select the amenities available.
-                        </FormDescription>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {amenitiesList.map((amenity) => (
-                        <FormField
-                        key={amenity}
-                        control={form.control}
-                        name="amenities"
-                        render={({ field }) => {
-                            return (
-                            <FormItem
-                                key={amenity}
-                                className="flex flex-row items-start space-x-3 space-y-0"
-                            >
-                                <FormControl>
-                                <Checkbox
-                                    checked={field.value?.includes(amenity)}
-                                    onCheckedChange={(checked) => {
-                                    return checked
-                                        ? field.onChange([...(field.value || []), amenity])
-                                        : field.onChange(
-                                            (field.value || [])?.filter(
-                                            (value) => value !== amenity
-                                            )
-                                        )
-                                    }}
-                                />
-                                </FormControl>
-                                <FormLabel className="font-normal">
-                                {amenity}
-                                </FormLabel>
-                            </FormItem>
-                            )
-                        }}
-                        />
-                    ))}
-                    </div>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'List My Space'}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'List My Space'}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
