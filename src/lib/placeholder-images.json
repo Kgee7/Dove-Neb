@@ -2,8 +2,8 @@
   "placeholderImages": [
     {
       "id": "hero-background",
-      "description": "A stunning modern architectural structure with flowing lines, representing opportunity and innovation.",
-      "imageUrl": "https://images.unsplash.com/photo-1520242133-948855913222?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBhcmNoaXRlY3R1cmV8ZW58MHx8fHwxNzYxMzk5MDAyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "description": "An uplifting view of a modern building with a spiral staircase against a clear blue sky, symbolizing growth and opportunity.",
+      "imageUrl": "https://images.unsplash.com/photo-1560969184-10fe8719e047?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtb2Rlcm4lMjBidWlsZGluZyUyMHNreXxlbnwwfHx8fDE3NjIzNzE2ODV8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "modern architecture"
     },
     {
