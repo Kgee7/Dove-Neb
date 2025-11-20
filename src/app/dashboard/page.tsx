@@ -278,7 +278,7 @@ export default function DashboardPage() {
                                      <Card key={job.id}>
                                       <CardHeader>
                                         <CardTitle className="text-lg">{job.title}</CardTitle>
-                                        <CardDescription>{job.location}</CardDescription>
+                                        <CardDescription>{job.location}, {job.country}</CardDescription>
                                       </CardHeader>
                                       <CardContent>
                                         <div className="flex flex-wrap gap-2">
@@ -377,7 +377,7 @@ export default function DashboardPage() {
                                         </div>
                                         <div className='p-4 flex-1'>
                                             <h3 className="font-semibold">{listing.title}</h3>
-                                            <p className="text-sm text-muted-foreground">{listing.location}</p>
+                                            <p className="text-sm text-muted-foreground">{listing.location}, {listing.country}</p>
                                             <p className="text-sm mt-2 font-semibold">
                                                 {listing.listingType === 'sale' && listing.salePrice ? `${listing.currencySymbol}${listing.salePrice.toLocaleString()}` : ''}
                                                 {listing.listingType === 'rent' && listing.priceNight ? `${listing.currencySymbol}${listing.priceNight}/night` : ''}

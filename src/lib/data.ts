@@ -26,12 +26,13 @@ export interface Room {
     listingType: 'rent' | 'sale';
     title: string;
     description: string;
+    country: string;
+    location: string;
     priceNight: number | null;
     priceMonth: number | null;
     salePrice: number | null;
     currency: string;
     currencySymbol: string;
-    location: string;
     images: string[];
     amenities: string[];
     ownerName: string;
@@ -47,12 +48,13 @@ export const roomConverter: FirestoreDataConverter<Room> = {
             listingType: room.listingType,
             title: room.title,
             description: room.description,
+            country: room.country,
+            location: room.location,
             priceNight: room.priceNight,
             priceMonth: room.priceMonth,
             salePrice: room.salePrice,
             currency: room.currency,
             currencySymbol: room.currencySymbol,
-            location: room.location,
             images: room.images,
             amenities: room.amenities,
             ownerName: room.ownerName,
@@ -68,12 +70,13 @@ export const roomConverter: FirestoreDataConverter<Room> = {
             listingType: data.listingType,
             title: data.title,
             description: data.description,
+            country: data.country,
+            location: data.location,
             priceNight: data.priceNight,
             priceMonth: data.priceMonth,
             salePrice: data.salePrice,
             currency: data.currency,
             currencySymbol: data.currencySymbol,
-            location: data.location,
             images: data.images,
             amenities: data.amenities,
             ownerName: data.ownerName,

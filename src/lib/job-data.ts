@@ -1,7 +1,9 @@
+
 export type Job = {
   id: string;
   title: string;
   companyName: string;
+  country: string;
   location: string;
   type: 'Full-time' | 'Part-time' | 'Contract' | 'Internship' | 'Remote' | 'Hybrid';
   description: string;
@@ -9,7 +11,7 @@ export type Job = {
   salaryMax?: number;
   salaryCurrency?: string;
   salaryCurrencySymbol?: string;
-  applicationMethod: 'in-app' | 'email';
+  applicationMethod: 'email';
   applicationEmail?: string;
   employerId: string;
 };

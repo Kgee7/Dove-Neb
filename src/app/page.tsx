@@ -220,7 +220,7 @@ export default function HomePage() {
                   <CardContent className="flex flex-1 flex-col">
                     <p className="text-sm text-white/80 mt-1 flex items-center">
                         <MapPin className="h-4 w-4 mr-2" />
-                        {job.location}
+                        {job.location}, {job.country}
                     </p>
                     <div className="mt-4 flex-grow" />
                      <div className="flex justify-between items-center mt-2">
@@ -293,7 +293,7 @@ export default function HomePage() {
                     </CardTitle>
                     <p className="text-sm text-muted-foreground mt-1 flex items-center">
                         <MapPin className="h-4 w-4 mr-1" />
-                        {room.location}
+                        {room.location}, {room.country}
                     </p>
                     <div className="mt-4 flex-grow" />
                      <div className="flex justify-between items-center mt-2">

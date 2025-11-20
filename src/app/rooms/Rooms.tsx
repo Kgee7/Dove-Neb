@@ -47,7 +47,8 @@ export default function Rooms() {
         room.description.toLowerCase().includes(searchLower);
 
       const matchesLocation = locationQuery === '' ||
-        room.location.toLowerCase().includes(locationLower);
+        room.location.toLowerCase().includes(locationLower) ||
+        room.country.toLowerCase().includes(locationLower);
 
       return matchesSearch && matchesLocation;
     });
@@ -145,7 +146,7 @@ export default function Rooms() {
                     </CardTitle>
                     <p className="text-sm text-muted-foreground mt-1 flex items-center">
                         <MapPin className="h-4 w-4 mr-1" />
-                        {room.location}
+                        {room.location}, {room.country}
                     </p>
                     <div className="mt-4 flex-grow" />
                      <div className="flex justify-between items-center mt-2">

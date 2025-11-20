@@ -175,7 +175,7 @@ function JobCard({ job }: { job: Job }) {
         <div className="space-y-3 text-sm text-muted-foreground flex-grow">
             <div className="flex items-center">
                 <MapPin className="h-4 w-4 mr-2" />
-                <span>{job.location}</span>
+                <span>{job.location}, {job.country}</span>
             </div>
              <div className="flex items-center">
                 <Briefcase className="h-4 w-4 mr-2" />

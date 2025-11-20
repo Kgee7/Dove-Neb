@@ -157,7 +157,7 @@ export default function RoomDetailsPage() {
                         <span className="underline">(120 reviews)</span>
                     </div>
                     <span>·</span>
-                    <p>{room.location}</p>
+                    <p>{room.location}, {room.country}</p>
                 </div>
             </div>
 

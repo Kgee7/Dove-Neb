@@ -63,7 +63,7 @@ export default function JobDetailsPage() {
             <CardDescription className="text-lg">{job.companyName}</CardDescription>
             <div className="flex flex-wrap gap-4 pt-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" /> {job.location}
+                <MapPin className="h-4 w-4" /> {job.location}, {job.country}
               </div>
               <div className="flex items-center gap-1">
                 <Briefcase className="h-4 w-4" /> {job.type}
