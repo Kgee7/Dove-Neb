@@ -13,10 +13,9 @@ export function SiteFooter() {
               Dove Neb
             </p>
           </div>
-          <div className="flex flex-col items-center gap-2 text-center md:flex-row md:gap-4">
-            <p className="text-sm text-muted-foreground">
-              Connecting dreams with direction.
-            </p>
+          <div className="flex flex-col items-center gap-2 text-center text-sm text-muted-foreground md:flex-row md:gap-4">
+             <Link href="/terms-of-service" className="hover:underline">Terms of Service</Link>
+             <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link>
           </div>
           <p className="text-center text-sm text-muted-foreground md:text-left">
             &copy; {new Date().getFullYear()} Dove Neb, Inc. All rights reserved.
