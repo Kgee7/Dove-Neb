@@ -90,7 +90,7 @@ export default function HomePage() {
   return (
     <div className="flex-1">
       {/* Hero Section */}
-      <section className="relative h-[70vh] min-h-[550px] w-full">
+      <section className="relative h-[70vh] md:min-h-[480px] w-full">
         {heroImage && (
           <Image
             src={heroImage.imageUrl}
@@ -330,5 +330,7 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
 
     
