@@ -90,7 +90,7 @@ export default function HomePage() {
   return (
     <div className="flex-1">
       {/* Hero Section */}
-      <section className="relative h-[70vh] md:min-h-[480px] w-full">
+      <section className="relative h-[80vh] w-full">
         {heroImage && (
           <Image
             src={heroImage.imageUrl}
@@ -120,11 +120,11 @@ export default function HomePage() {
                 </TabsList>
                 <TabsContent value="jobs">
                   <CardContent className="p-4">
-                    <form className="flex flex-col gap-4 sm:flex-row" onSubmit={handleJobSearch}>
+                    <form className="flex flex-row gap-2" onSubmit={handleJobSearch}>
                       <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
-                          placeholder="Job title, keywords, or company"
+                          placeholder="Job title..."
                           className="pl-10"
                           value={jobSearchQuery}
                           onChange={(e) => setJobSearchQuery(e.target.value)}
@@ -139,19 +139,20 @@ export default function HomePage() {
                           onChange={(e) => setJobLocationQuery(e.target.value)}
                         />
                       </div>
-                      <Button type="submit">
-                        Search Jobs
+                      <Button type="submit" className="px-3">
+                        <Search className="h-5 w-5 sm:hidden" />
+                        <span className="hidden sm:inline">Search</span>
                       </Button>
                     </form>
                   </CardContent>
                 </TabsContent>
                 <TabsContent value="rooms">
                    <CardContent className="p-4">
-                    <form className="flex flex-col gap-4 sm:flex-row" onSubmit={handleRoomSearch}>
+                    <form className="flex flex-row gap-2" onSubmit={handleRoomSearch}>
                       <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
-                          placeholder="Destination, e.g., 'downtown'"
+                          placeholder="Destination..."
                           className="pl-10"
                           value={roomSearchQuery}
                           onChange={(e) => setRoomSearchQuery(e.target.value)}
@@ -166,8 +167,9 @@ export default function HomePage() {
                           onChange={(e) => setRoomLocationQuery(e.target.value)}
                         />
                       </div>
-                      <Button type="submit">
-                        Search Spaces
+                      <Button type="submit" className="px-3">
+                        <Search className="h-5 w-5 sm:hidden" />
+                        <span className="hidden sm:inline">Search</span>
                       </Button>
                     </form>
                   </CardContent>
