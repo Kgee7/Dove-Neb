@@ -33,8 +33,8 @@ import { Label } from '@/components/ui/label';
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
 const MAX_IMAGE_SIZE = 500 * 1024; // 500KB per image
-const MAX_TOTAL_SIZE = 4 * 1024 * 1024; // 4MB total for all images
-const MAX_IMAGES = 5;
+const MAX_TOTAL_SIZE = 6 * 1024 * 1024; // 6MB total for all images
+const MAX_IMAGES = 12;
 
 const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -438,10 +438,10 @@ export default function ListRoomPage() {
                         </div>
                     </label>
                     <FormDescription>
-                        Up to {MAX_IMAGES} images. Each under 500KB. Total under 4MB.
+                        Up to {MAX_IMAGES} images. Each under 500KB. Total under 6MB.
                     </FormDescription>
                     {fieldState.error && <FormMessage />}
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
                         {form.watch('images').map((file, index) => (
                            <div key={index} className="relative group">
                                 <img src={URL.createObjectURL(file)} alt={`preview ${index}`} className="w-full h-24 object-cover rounded-md" />
@@ -520,3 +520,5 @@ export default function ListRoomPage() {
     </div>
   );
 }
+
+    
