@@ -63,8 +63,12 @@ service cloud.firestore {
         // An authenticated user (seeker) can create an application for a job.
         allow create: if request.auth != null && request.resource.data.seekerId == request.auth.uid;
         
-        // Only the employer who owns the job can update or delete applications.
-        allow update, delete: if get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid;
+        // The employer who owns the job OR the seeker who created the application can delete it.
+        allow delete: if get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid ||
+                       (request.auth != null && resource.data.seekerId == request.auth.uid);
+
+        // Only the employer who owns the job can update applications.
+        allow update: if get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid;
     }
 
     // PUBLIC ROOM LISTINGS
@@ -78,5 +82,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

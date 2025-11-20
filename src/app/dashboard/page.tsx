@@ -119,6 +119,7 @@ export default function DashboardPage() {
 
   const [jobToDelete, setJobToDelete] = useState<string | null>(null);
   const [roomToDelete, setRoomToDelete] = useState<string | null>(null);
+  const [applicationToDelete, setApplicationToDelete] = useState<JobApplication | null>(null);
 
   const userDocRef = useMemo(() => {
     if (!firestore || !user?.uid) return null;
@@ -211,6 +212,37 @@ export default function DashboardPage() {
         setRoomToDelete(null);
     }
   };
+
+  const handleWithdrawApplication = async () => {
+    if (!firestore || !user || !applicationToDelete) return;
+    const { id, jobId, applicantDocId } = applicationToDelete;
+    
+    try {
+        // 1. Delete the application record from the user's subcollection
+        const userApplicationRef = doc(firestore, 'users', user.uid, 'applications', id);
+        await deleteDoc(userApplicationRef);
+        
+        // 2. Delete the application record from the job's subcollection
+        if (jobId && applicantDocId) {
+            const jobApplicantRef = doc(firestore, 'jobs', jobId, 'applicants', applicantDocId);
+            await deleteDoc(jobApplicantRef);
+        }
+
+        toast({
+            title: 'Application Withdrawn',
+            description: 'Your application has been successfully withdrawn.',
+        });
+    } catch (error: any) {
+         toast({
+            variant: 'destructive',
+            title: 'Withdrawal Failed',
+            description: error.message || 'Could not withdraw your application.',
+        });
+    } finally {
+        setApplicationToDelete(null);
+    }
+  };
+
 
   const isLoading = isUserLoading || isProfileLoading || bookingsLoading || roomListingsLoading || applicationsLoading || jobListingsLoading || favoriteJobsLoading || favoriteRoomsLoading;
 
@@ -335,6 +367,15 @@ export default function DashboardPage() {
                                         ) : (
                                             <Badge className="mt-2 capitalize" variant="secondary">Applied</Badge>
                                         )}
+                                        <div className='mt-4 flex gap-2'>
+                                            <Link href={`/jobs/${app.jobId}`}>
+                                                <Button variant="outline" size="sm">View Job</Button>
+                                            </Link>
+                                            <Button variant="destructive" size="sm" onClick={() => setApplicationToDelete(app)}>
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Withdraw
+                                            </Button>
+                                        </div>
                                       </CardContent>
                                     </Card>
                                 ))}
@@ -461,7 +502,7 @@ export default function DashboardPage() {
                             {roomListings.map(listing => (
                                  <Card key={listing.id}>
                                     <div className="flex">
-                                        <div className="relative w-1/3 aspect-video">
+                                        <div className="relative w-1.3 aspect-video">
                                             <Image src={listing.images[0]} alt={listing.title} fill className="object-cover rounded-l-lg" />
                                         </div>
                                         <div className='p-4 flex-1'>
@@ -530,8 +571,20 @@ export default function DashboardPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
+     <AlertDialog open={!!applicationToDelete} onOpenChange={(open) => !open && setApplicationToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will withdraw your application. The employer will no longer be able to see it.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleWithdrawApplication}>Withdraw</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
-
-    
