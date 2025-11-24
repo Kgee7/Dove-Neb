@@ -8,9 +8,10 @@ import { useDoc, useFirestore } from '@/firebase';
 import { Job } from '@/lib/job-data';
 import Link from 'next/link';
 import FavoriteButton from '@/components/favorite-button';
+import ApplyButton from '@/components/apply-button';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase, Mail } from 'lucide-react';
+import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
@@ -85,22 +86,7 @@ export default function JobDetailsPage() {
             </div>
             <Separator className="my-6" />
             <div className="flex justify-center">
-              {job.applicationEmail ? (
-                <Card className="bg-secondary p-6 w-full max-w-md text-white">
-                    <CardHeader className="p-0">
-                        <CardTitle className="text-xl flex items-center gap-2">
-                            <Mail className="h-5 w-5"/>
-                            Apply via Email
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0 mt-4">
-                        <p className="text-white/80">To apply for this position, please send your resume and cover letter to:</p>
-                        <a href={`mailto:${job.applicationEmail}`} className="font-semibold text-white text-lg break-all underline">{job.applicationEmail}</a>
-                    </CardContent>
-                </Card>
-              ) : (
-                <p className="text-muted-foreground">Application information is not available for this job.</p>
-              )}
+              <ApplyButton jobId={job.id} />
             </div>
           </CardContent>
         </Card>
@@ -108,5 +94,3 @@ export default function JobDetailsPage() {
     </div>
   );
 }
-
-    

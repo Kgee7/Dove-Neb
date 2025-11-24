@@ -2,8 +2,27 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    // User profile pictures: only the user can upload, anyone can read.
+    match /users/{userId}/profilePicture/{fileName} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // User resumes: only the user can upload and read.
+    // Employers will get a temporary signed URL to view resumes.
+    match /users/{userId}/resumes/{fileName} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Room images: only the room owner can upload, anyone can read.
+    match /rooms/{roomId}/{fileName} {
+      allow read;
+      allow write: if request.auth != null; // Further rules can be added if room ownership can be verified.
+    }
+
     match /{allPaths=**} {
-      allow read, write: if request.auth != null;
+      // Default deny for any other paths
+      allow read, write: if false;
     }
   }
 }

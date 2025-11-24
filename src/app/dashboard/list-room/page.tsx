@@ -5,11 +5,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser, useDoc } from '@/firebase';
+import { useFirestore, useUser, useDoc, getStorage, ref, uploadBytes, getDownloadURL } from '@/firebase';
 import { collection, addDoc, doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { currencies, Currency } from '@/lib/currencies';
+import { currencies } from '@/lib/currencies';
+import { v4 as uuidv4 } from 'uuid';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -32,25 +33,14 @@ import { Label } from '@/components/ui/label';
 
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
-const MAX_IMAGE_SIZE = 500 * 1024; // 500KB per image
-const MAX_TOTAL_SIZE = 6 * 1024 * 1024; // 6MB total for all images
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB per image
 const MAX_IMAGES = 12;
-
-const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-});
 
 const fileArraySchema = z.array(z.instanceof(File))
   .min(1, 'At least one image is required.')
   .max(MAX_IMAGES, `You can upload a maximum of ${MAX_IMAGES} images.`)
   .refine(files => files.every(file => file.size <= MAX_IMAGE_SIZE), {
-    message: `Each image must be less than ${MAX_IMAGE_SIZE / 1024}KB.`,
-  })
-  .refine(files => files.reduce((acc, file) => acc + file.size, 0) <= MAX_TOTAL_SIZE, {
-    message: `Total size of images must be less than ${MAX_TOTAL_SIZE / (1024 * 1024)}MB.`,
+    message: `Each image must be less than ${MAX_IMAGE_SIZE / (1024 * 1024)}MB.`,
   });
 
 const formSchema = z.object({
@@ -91,6 +81,7 @@ type UserProfile = {
 
 export default function ListRoomPage() {
   const firestore = useFirestore();
+  const storage = getStorage();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
@@ -129,7 +120,7 @@ export default function ListRoomPage() {
   }, [isUserLoading, user, router]);
 
   const onSubmit = async (data: ListRoomFormValues) => {
-    if (!user || !firestore || !userProfile) {
+    if (!user || !firestore || !storage || !userProfile) {
       toast({
         variant: 'destructive',
         title: 'Authentication Error',
@@ -140,7 +131,13 @@ export default function ListRoomPage() {
     setIsLoading(true);
 
     try {
-        const imageUrls = await Promise.all(data.images.map(image => toBase64(image)));
+        const roomId = uuidv4();
+        const uploadPromises = data.images.map(imageFile => {
+            const imageRef = ref(storage, `rooms/${roomId}/${uuidv4()}-${imageFile.name}`);
+            return uploadBytes(imageRef, imageFile).then(snapshot => getDownloadURL(snapshot.ref));
+        });
+        
+        const imageUrls = await Promise.all(uploadPromises);
         
         const ownerName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
         const selectedCurrency = currencies.find(c => c.code === data.currency);
@@ -166,8 +163,9 @@ export default function ListRoomPage() {
           amenities: data.amenities || [],
           createdAt: new Date(),
         };
-
-        await addDoc(collection(firestore, 'rooms'), roomData);
+        
+        // Use the generated roomId to create the document
+        await addDoc(collection(firestore, 'rooms'), { ...roomData, id: roomId });
 
         toast({
             title: 'Room Listed!',
@@ -439,7 +437,7 @@ export default function ListRoomPage() {
                           </div>
                       </label>
                       <FormDescription>
-                          Up to {MAX_IMAGES} images. Each under 500KB. Total under 6MB.
+                          Up to {MAX_IMAGES} images. Each under {MAX_IMAGE_SIZE / (1024*1024)}MB.
                       </FormDescription>
                       {fieldState.error && <FormMessage />}
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">

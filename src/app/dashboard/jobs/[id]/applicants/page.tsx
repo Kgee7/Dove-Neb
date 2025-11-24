@@ -4,7 +4,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, collection, query, orderBy, updateDoc, getDoc } from 'firebase/firestore';
-import { useDoc, useCollection, useFirestore, useUser } from '@/firebase';
+import { useDoc, useCollection, useFirestore, useUser, getStorage, ref, getDownloadURL } from '@/firebase';
 import { Job, JobApplicant } from '@/lib/job-data';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -29,6 +29,48 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
+
+function DownloadResumeButton({ resumePath }: { resumePath: string | undefined }) {
+    const { toast } = useToast();
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    const handleDownload = async () => {
+        if (!resumePath) {
+            toast({ variant: 'destructive', title: 'No Resume', description: 'This applicant has not provided a resume.' });
+            return;
+        }
+
+        setIsDownloading(true);
+        try {
+            const storage = getStorage();
+            if (!storage) throw new Error("Storage not available");
+            const storageRef = ref(storage, resumePath);
+            const downloadUrl = await getDownloadURL(storageRef);
+            
+            // This will open the URL in a new tab, which for most browsers and file types will trigger a download or display.
+            window.open(downloadUrl, '_blank');
+
+        } catch (error: any) {
+            console.error("Error getting download URL:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Download Failed',
+                description: error.code === 'storage/object-not-found' 
+                    ? 'The resume file could not be found.'
+                    : error.message || 'Could not download the resume.',
+            });
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    return (
+        <Button variant="outline" size="sm" onClick={handleDownload} disabled={isDownloading}>
+            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+            Resume
+        </Button>
+    );
+}
 
 export default function JobApplicantsPage() {
   const firestore = useFirestore();
@@ -129,20 +171,6 @@ export default function JobApplicantsPage() {
       </div>
     );
   }
-  
-  const getResumeFileName = (resumeURL: string | undefined): string => {
-    if (!resumeURL) return 'resume.txt';
-    try {
-      const mimeType = resumeURL.substring(resumeURL.indexOf(':') + 1, resumeURL.indexOf(';'));
-      if (mimeType === 'application/pdf') return 'resume.pdf';
-      if (mimeType === 'application/msword') return 'resume.doc';
-      if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return 'resume.docx';
-    } catch (e) {
-      // Fallback for unexpected formats
-    }
-    return 'resume.txt';
-  };
-
 
   return (
     <div className="container py-10">
@@ -192,14 +220,7 @@ export default function JobApplicantsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {applicant.resumeURL && (
-                            <a 
-                                href={applicant.resumeURL} 
-                                download={getResumeFileName(applicant.resumeURL)}
-                            >
-                                <Button variant="outline" size="sm"><Download className="mr-2 h-4 w-4" />Resume</Button>
-                            </a>
-                        )}
+                        <DownloadResumeButton resumePath={applicant.resumeURL} />
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">

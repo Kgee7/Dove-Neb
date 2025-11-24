@@ -5,10 +5,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useDoc, useFirestore, setDoc, updateProfile } from '@/firebase';
+import { useUser, useDoc, useFirestore, setDoc, getStorage, ref, uploadBytes, getDownloadURL } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { v4 as uuidv4 } from 'uuid';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -47,16 +48,10 @@ const profileSchema = z.object({
   preferredName: z.string().optional(),
 });
 
-const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-});
-
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const storage = getStorage();
   const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -108,25 +103,26 @@ export default function ProfilePage() {
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user || !userDocRef) return;
+    if (!file || !user || !userDocRef || !storage) return;
 
-    if (file.size > 1024 * 1024) { // 1MB limit for safety with base64 encoding
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
         toast({
             variant: 'destructive',
             title: 'File Too Large',
-            description: 'Profile picture must be less than 1MB.',
+            description: 'Profile picture must be less than 2MB.',
         });
         return;
     }
 
     setUploading(true);
+    const photoPath = `users/${user.uid}/profilePicture/${uuidv4()}-${file.name}`;
+    const storageRef = ref(storage, photoPath);
 
     try {
-      const dataUrl = await toBase64(file);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
       
-      // We only save the photo URL to the Firestore document.
-      // We DO NOT save it to the Auth user profile, as it's too long.
-      await setDoc(userDocRef, { photoURL: dataUrl }, { merge: true });
+      await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
       
       toast({
         title: 'Profile Picture Updated',
@@ -141,7 +137,7 @@ export default function ProfilePage() {
       
   const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user || !userDocRef) return;
+    if (!file || !user || !userDocRef || !storage) return;
 
     const allowedResumeTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!allowedResumeTypes.includes(file.type)) {
@@ -153,20 +149,23 @@ export default function ProfilePage() {
         return;
     }
 
-    if (file.size > 1.5 * 1024 * 1024) { // 1.5MB limit for safety, Firestore limit is 1MB per document but fields are smaller
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
         toast({
             variant: 'destructive',
             title: 'File Too Large',
-            description: 'Resume file must be less than 1.5MB.',
+            description: 'Resume file must be less than 5MB.',
         });
         return;
     }
 
     setUploadingResume(true);
+    const resumePath = `users/${user.uid}/resumes/${uuidv4()}-${file.name}`;
+    const storageRef = ref(storage, resumePath);
 
     try {
-      const dataUrl = await toBase64(file);
-      await setDoc(userDocRef, { resumeURL: dataUrl }, { merge: true });
+      await uploadBytes(storageRef, file);
+      // We store the path, not the download URL, for better security control.
+      await setDoc(userDocRef, { resumeURL: resumePath }, { merge: true });
       toast({
         title: 'Resume Uploaded',
         description: 'Your resume has been saved successfully.',
@@ -215,8 +214,23 @@ export default function ProfilePage() {
     );
   }
 
-  const photoURL = user?.photoURL || userProfile?.photoURL;
-  const resumeFileName = userProfile?.resumeURL?.startsWith('data:application/pdf') ? 'resume.pdf' : 'resume.docx';
+  const photoURL = userProfile?.photoURL;
+  
+  const viewResume = async () => {
+    if (!userProfile?.resumeURL || !storage) {
+        toast({ variant: 'destructive', title: 'No resume found.' });
+        return;
+    }
+    try {
+        const storageRef = ref(storage, userProfile.resumeURL);
+        const url = await getDownloadURL(storageRef);
+        window.open(url, '_blank');
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Could not open resume.'});
+        console.error(error);
+    }
+  }
+
 
   return (
     <div className="container max-w-2xl py-12">
@@ -326,13 +340,9 @@ export default function ProfilePage() {
                         <CardContent>
                             <div className="flex items-center gap-4">
                                 {userProfile.resumeURL ? (
-                                    <a 
-                                        href={userProfile.resumeURL} 
-                                        download={resumeFileName}
-                                        className="text-primary underline"
-                                    >
+                                    <Button type="button" variant="link" onClick={viewResume}>
                                         View Current Resume
-                                    </a>
+                                    </Button>
                                 ) : (
                                     <p className="text-sm text-muted-foreground">No resume uploaded.</p>
                                 )}
