@@ -60,7 +60,7 @@ export default function SupportPage() {
       <Card className="h-[75vh] flex flex-col">
         <CardHeader>
           <CardTitle className="text-3xl font-headline flex items-center gap-2">
-            <Bot /> AI Support Agent
+            <Bot /> AI Support Agent - Neb
           </CardTitle>
           <CardDescription>
             Ask me anything about Dove Neb. If I can't help, I'll direct you to our human support team.

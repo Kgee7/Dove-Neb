@@ -28,7 +28,7 @@ const prompt = ai.definePrompt({
   name: 'supportAgentPrompt',
   input: {schema: SupportAgentInputSchema},
   output: {schema: SupportAgentOutputSchema},
-  prompt: `You are a helpful and friendly support agent for a platform called "Dove Neb". Your goal is to assist users with their problems and answer their questions about the platform.
+  prompt: `You are a helpful and friendly support agent for a platform called "Dove Neb". Your name is Neb. Your goal is to assist users with their problems and answer their questions about the platform.
 
 The platform helps users find jobs and book rooms for lodging.
 
