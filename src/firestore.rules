@@ -24,7 +24,7 @@ service cloud.firestore {
       // A user can read, create, and delete their own applications.
       allow read, create, delete: if isOwner(userId);
     }
-    
+
     match /users/{userId}/favoriteJobs/{favoriteId} {
       // A user can read and write their own favorite jobs.
       allow read, write: if isOwner(userId);
