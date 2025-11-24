@@ -39,14 +39,22 @@ export default function PrivacyPolicyPage() {
             <li>Fulfill and manage job applications, room listings, and other services.</li>
           </ul>
 
-          <h2 className="text-2xl font-semibold mt-6 mb-2">3. Security of Your Information</h2>
+          <h2 className="text-2xl font-semibold mt-6 mb-2">3. AI Agent Usage</h2>
+          <p>
+            To enhance your experience, our platform uses AI agents to provide certain features, such as personalized recommendations and content generation. By using these features, you acknowledge that your data may be processed by these AI agents. We are committed to the responsible use of AI and the protection of your data throughout this process.
+          </p>
+
+          <h2 className="text-2xl font-semibold mt-6 mb-2">4. Security of Your Information</h2>
           <p>
             We use administrative, technical, and physical security measures to help protect your personal information. While we have taken reasonable steps to secure the personal information you provide to us, please be aware that despite our efforts, no security measures are perfect or impenetrable, and no method of data transmission can be guaranteed against any interception or other type of misuse.
           </p>
 
           <h2 className="text-2xl font-semibold mt-6 mb-2">Contact Us</h2>
           <p>
-            If you have questions or comments about this Privacy Policy, please contact our support team at: dovenebinfo@gmail.com
+            If you have questions or comments about this Privacy Policy, please contact our support team.
+          </p>
+          <p>
+            <strong>Support:</strong> dovenebinfo@gmail.com
           </p>
         </CardContent>
       </Card>
