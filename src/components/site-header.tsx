@@ -171,6 +171,11 @@ export function SiteHeader() {
                         Post a Job
                     </Button>
                 </Link>
+                <Link href="/support">
+                    <Button variant="outline">
+                        AI Support
+                    </Button>
+                </Link>
                 <Link
                     href="/login"
                     className={cn(buttonVariants({ variant: "ghost" }))}
@@ -218,6 +223,9 @@ export function SiteHeader() {
                             </Link>
                             <Link href="/dashboard/post-job" onClick={() => setIsMobileMenuOpen(false)}>
                                 <Button variant="outline" className="w-full justify-start">Post a Job</Button>
+                            </Link>
+                             <Link href="/support" onClick={() => setIsMobileMenuOpen(false)}>
+                                <Button variant="outline" className="w-full justify-start">AI Support</Button>
                             </Link>
                             <div className="border-t pt-4">
                                 <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
