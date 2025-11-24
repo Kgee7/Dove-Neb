@@ -23,6 +23,9 @@ import { Calendar } from "@/components/ui/calendar"
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog"
 import {
@@ -326,6 +329,10 @@ export default function RoomDetailsPage() {
             </div>
              {selectedImage && (
                 <DialogContent className="max-w-4xl max-h-[80vh]">
+                    <DialogHeader>
+                        <DialogTitle className="sr-only">{room.title}</DialogTitle>
+                        <DialogDescription className="sr-only">Full screen image of the room.</DialogDescription>
+                    </DialogHeader>
                     <div className="relative aspect-video">
                         <Image
                             src={selectedImage}
@@ -340,4 +347,3 @@ export default function RoomDetailsPage() {
     </div>
   );
 }
-
