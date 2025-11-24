@@ -24,6 +24,16 @@ service cloud.firestore {
       // A user can read, create, and delete their own applications.
       allow read, create, delete: if isOwner(userId);
     }
+    
+    match /users/{userId}/favoriteJobs/{favoriteId} {
+      // A user can read and write their own favorite jobs.
+      allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/favoriteRooms/{favoriteId} {
+       // A user can read and write their own favorite rooms.
+      allow read, write: if isOwner(userId);
+    }
 
     // PUBLIC JOB LISTINGS
     // Anyone can read job listings.
@@ -45,15 +55,20 @@ service cloud.firestore {
     // JOB APPLICANTS INDIVIDUAL DOCUMENT
     // Rules for individual applicant documents
     match /jobs/{jobId}/applicants/{applicantId} {
-        // The job owner OR the applicant can read the document.
+        // The job owner can read individual applicant docs.
+        // A seeker can read their OWN application record to check the status.
         allow get: if get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid ||
                        (request.auth != null && resource.data.seekerId == request.auth.uid);
         
         // An authenticated user (seeker) can create an application for a job.
         allow create: if request.auth != null && request.resource.data.seekerId == request.auth.uid;
         
-        // Only the employer who owns the job can update or delete applications.
-        allow update, delete: if get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid;
+        // The employer who owns the job OR the seeker who created the application can delete it.
+        allow delete: if get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid ||
+                       (request.auth != null && resource.data.seekerId == request.auth.uid);
+
+        // Only the employer who owns the job can update applications.
+        allow update: if get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid;
     }
 
     // PUBLIC ROOM LISTINGS
@@ -64,6 +79,17 @@ service cloud.firestore {
       allow read: if true;
       allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
       allow update, delete: if isOwner(resource.data.ownerId);
+    }
+
+    // RATINGS SUBCOLLECTION
+    // Anyone can read ratings.
+    match /rooms/{roomId}/ratings {
+        allow list: if true;
+    }
+    // Only authenticated users can create a rating for themselves.
+    match /rooms/{roomId}/ratings/{ratingId} {
+        allow get: if true;
+        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
   }
 }
