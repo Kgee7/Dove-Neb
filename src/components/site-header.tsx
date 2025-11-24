@@ -173,7 +173,7 @@ export function SiteHeader() {
                 </Link>
                 <Link href="/support">
                     <Button variant="outline">
-                        AI Support
+                        Help Center
                     </Button>
                 </Link>
                 <Link
@@ -225,7 +225,7 @@ export function SiteHeader() {
                                 <Button variant="outline" className="w-full justify-start">Post a Job</Button>
                             </Link>
                              <Link href="/support" onClick={() => setIsMobileMenuOpen(false)}>
-                                <Button variant="outline" className="w-full justify-start">AI Support</Button>
+                                <Button variant="outline" className="w-full justify-start">Help Center</Button>
                             </Link>
                             <div className="border-t pt-4">
                                 <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
