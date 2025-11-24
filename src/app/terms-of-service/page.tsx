@@ -23,15 +23,20 @@ export default function TermsOfServicePage() {
 
           <h2 className="text-2xl font-semibold mt-6 mb-2">2. User Content</h2>
           <p>
-            Our Service allows you to post, link, store, share and otherwise make available certain information, text, graphics, videos, or other material ("Content"). You are responsible for the Content that you post to the Service, including its legality, reliability, and appropriateness. By posting Content to the Service, you grant us the right and license to use, modify, publicly perform, publicly display, reproduce, and distribute such Content on and through the Service.
+            Our Service allows you to post, link, store, share and otherwise make available certain information, text, graphics, videos, or other material ("Content"). You are responsible for the Content that you post to the Service, including its legality, reliability, and appropriateness. You agree that you will only post content that is legal and does not violate any applicable laws. By posting Content to the Service, you grant us the right and license to use, modify, publicly perform, publicly display, reproduce, and distribute such Content on and through the Service.
           </p>
 
           <h2 className="text-2xl font-semibold mt-6 mb-2">3. Prohibited Activities</h2>
           <p>
             You may not access or use the Site for any purpose other than that for which we make the Site available. The Site may not be used in connection with any commercial endeavors except those that are specifically endorsed or approved by us.
           </p>
+
+          <h2 className="text-2xl font-semibold mt-6 mb-2">4. Limitation of Liability</h2>
+          <p>
+            Dove Neb acts solely as a platform to connect users for the purpose of finding jobs and lodging. We are not a party to any agreements or financial transactions entered into between users. As such, Dove Neb is not responsible for any disputes, damages, or liabilities that may arise from interactions or transactions between users.
+          </p>
           
-          <h2 className="text-2xl font-semibold mt-6 mb-2">4. Termination</h2>
+          <h2 className="text-2xl font-semibold mt-6 mb-2">5. Termination</h2>
           <p>
             We may terminate or suspend your account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.
           </p>
