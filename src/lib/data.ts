@@ -40,23 +40,7 @@ export interface Room {
     ownerId: string;
     contactPhone: string | null;
     contactWhatsapp: string | null;
-    averageRating?: number;
-    ratingCount?: number;
 }
-
-export interface Rating {
-    id: string;
-    roomId: string;
-    userId: string;
-    userName: string;
-    userPhoto?: string;
-    rating: number;
-    comment: string;
-    createdAt: {
-        toDate: () => Date;
-    };
-}
-
 
 // Firestore data converters
 export const roomConverter: FirestoreDataConverter<Room> = {
@@ -78,8 +62,6 @@ export const roomConverter: FirestoreDataConverter<Room> = {
             ownerId: room.ownerId,
             contactPhone: room.contactPhone,
             contactWhatsapp: room.contactWhatsapp,
-            averageRating: room.averageRating,
-            ratingCount: room.ratingCount,
         };
     },
     fromFirestore(snapshot, options): Room {
@@ -102,10 +84,6 @@ export const roomConverter: FirestoreDataConverter<Room> = {
             ownerId: data.ownerId,
             contactPhone: data.contactPhone,
             contactWhatsapp: data.contactWhatsapp,
-            averageRating: data.averageRating,
-            ratingCount: data.ratingCount,
         };
     },
 };
-
-    
