@@ -46,7 +46,7 @@ export default function PrivacyPolicyPage() {
 
           <h2 className="text-2xl font-semibold mt-6 mb-2">Contact Us</h2>
           <p>
-            If you have questions or comments about this Privacy Policy, please contact us at: contact@doveneb.com
+            If you have questions or comments about this Privacy Policy, please contact our support team at: dovenebinfo@gmail.com
           </p>
         </CardContent>
       </Card>
