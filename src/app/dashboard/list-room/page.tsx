@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser, useDoc, getStorage, ref, uploadBytes, getDownloadURL } from '@/firebase';
+import { useFirestore, useUser, useDoc, useStorage, ref, uploadBytes, getDownloadURL } from '@/firebase';
 import { collection, addDoc, doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -81,7 +81,7 @@ type UserProfile = {
 
 export default function ListRoomPage() {
   const firestore = useFirestore();
-  const storage = getStorage();
+  const storage = useStorage();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
@@ -164,7 +164,7 @@ export default function ListRoomPage() {
           createdAt: new Date(),
         };
         
-        // Use the generated roomId to create the document
+        const roomDocRef = doc(firestore, 'rooms', roomId);
         await addDoc(collection(firestore, 'rooms'), { ...roomData, id: roomId });
 
         toast({
