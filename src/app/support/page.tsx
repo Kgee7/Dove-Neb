@@ -126,7 +126,7 @@ export default function SupportPage() {
       
        <Card className="mt-8">
         <CardHeader>
-            <CardTitle>Contact Human Support</CardTitle>
+            <CardTitle>Contact our Support Team</CardTitle>
             <CardDescription>If you need further assistance, reach out to us directly.</CardDescription>
         </CardHeader>
          <CardContent className="space-y-4">
