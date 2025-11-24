@@ -14,6 +14,7 @@ export function SiteFooter() {
             </p>
           </div>
           <div className="flex flex-col items-center gap-2 text-center text-sm text-muted-foreground md:flex-row md:gap-4">
+             <Link href="/support" className="hover:underline">Support</Link>
              <Link href="/terms-of-service" className="hover:underline">Terms of Service</Link>
              <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link>
           </div>

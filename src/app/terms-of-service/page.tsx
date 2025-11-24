@@ -1,5 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Link from 'next/link';
 
 export default function TermsOfServicePage() {
   return (
@@ -37,10 +38,7 @@ export default function TermsOfServicePage() {
 
           <h2 className="text-2xl font-semibold mt-6 mb-2">Contact Us</h2>
           <p>
-            If you have any questions about these Terms, please contact our support team.
-          </p>
-          <p>
-            <strong>Support:</strong> dovenebinfo@gmail.com
+            If you have any questions about these Terms, please contact our <Link href="/support">support team</Link>.
           </p>
         </CardContent>
       </Card>
