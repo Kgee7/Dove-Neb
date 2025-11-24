@@ -5,11 +5,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useDoc, useFirestore, setDoc, getStorage, ref, uploadBytes, getDownloadURL } from '@/firebase';
+import { useUser, useDoc, useFirestore, setDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -48,10 +47,16 @@ const profileSchema = z.object({
   preferredName: z.string().optional(),
 });
 
+const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+});
+
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
-  const storage = getStorage();
   const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -103,7 +108,7 @@ export default function ProfilePage() {
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user || !userDocRef || !storage) return;
+    if (!file || !user || !userDocRef) return;
 
     if (file.size > 2 * 1024 * 1024) { // 2MB limit
         toast({
@@ -113,16 +118,20 @@ export default function ProfilePage() {
         });
         return;
     }
+    if (!file.type.startsWith('image/')) {
+        toast({
+            variant: 'destructive',
+            title: 'Invalid File Type',
+            description: 'Please select an image file.',
+        });
+        return;
+    }
 
     setUploading(true);
-    const photoPath = `users/${user.uid}/profilePicture/${uuidv4()}-${file.name}`;
-    const storageRef = ref(storage, photoPath);
 
     try {
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
-      
-      await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
+      const dataUri = await fileToDataUri(file);
+      await setDoc(userDocRef, { photoURL: dataUri }, { merge: true });
       
       toast({
         title: 'Profile Picture Updated',
@@ -137,7 +146,7 @@ export default function ProfilePage() {
       
   const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user || !userDocRef || !storage) return;
+    if (!file || !user || !userDocRef) return;
 
     const allowedResumeTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!allowedResumeTypes.includes(file.type)) {
@@ -159,13 +168,10 @@ export default function ProfilePage() {
     }
 
     setUploadingResume(true);
-    const resumePath = `users/${user.uid}/resumes/${uuidv4()}-${file.name}`;
-    const storageRef = ref(storage, resumePath);
 
     try {
-      await uploadBytes(storageRef, file);
-      // We store the path, not the download URL, for better security control.
-      await setDoc(userDocRef, { resumeURL: resumePath }, { merge: true });
+      const dataUri = await fileToDataUri(file);
+      await setDoc(userDocRef, { resumeURL: dataUri }, { merge: true });
       toast({
         title: 'Resume Uploaded',
         description: 'Your resume has been saved successfully.',
@@ -217,14 +223,12 @@ export default function ProfilePage() {
   const photoURL = userProfile?.photoURL;
   
   const viewResume = async () => {
-    if (!userProfile?.resumeURL || !storage) {
+    if (!userProfile?.resumeURL) {
         toast({ variant: 'destructive', title: 'No resume found.' });
         return;
     }
     try {
-        const storageRef = ref(storage, userProfile.resumeURL);
-        const url = await getDownloadURL(storageRef);
-        window.open(url, '_blank');
+        window.open(userProfile.resumeURL, '_blank');
     } catch (error) {
         toast({ variant: 'destructive', title: 'Could not open resume.'});
         console.error(error);
@@ -375,3 +379,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    

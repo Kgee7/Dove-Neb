@@ -4,7 +4,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, collection, query, orderBy, updateDoc, getDoc } from 'firebase/firestore';
-import { useDoc, useCollection, useFirestore, useUser, getStorage, ref, getDownloadURL } from '@/firebase';
+import { useDoc, useCollection, useFirestore, useUser } from '@/firebase';
 import { Job, JobApplicant } from '@/lib/job-data';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -42,22 +42,14 @@ function DownloadResumeButton({ resumePath }: { resumePath: string | undefined }
 
         setIsDownloading(true);
         try {
-            const storage = getStorage();
-            if (!storage) throw new Error("Storage not available");
-            const storageRef = ref(storage, resumePath);
-            const downloadUrl = await getDownloadURL(storageRef);
-            
-            // This will open the URL in a new tab, which for most browsers and file types will trigger a download or display.
-            window.open(downloadUrl, '_blank');
-
+            // For data URIs, we just open them in a new tab.
+            window.open(resumePath, '_blank');
         } catch (error: any) {
-            console.error("Error getting download URL:", error);
+            console.error("Error opening resume:", error);
             toast({
                 variant: 'destructive',
                 title: 'Download Failed',
-                description: error.code === 'storage/object-not-found' 
-                    ? 'The resume file could not be found.'
-                    : error.message || 'Could not download the resume.',
+                description: error.message || 'Could not download the resume.',
             });
         } finally {
             setIsDownloading(false);
@@ -257,3 +249,5 @@ export default function JobApplicantsPage() {
     </div>
   );
 }
+
+    

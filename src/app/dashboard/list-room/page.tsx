@@ -5,8 +5,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser, useDoc, useStorage, ref, uploadBytes, getDownloadURL } from '@/firebase';
-import { collection, addDoc, doc } from 'firebase/firestore';
+import { useFirestore, useUser, useDoc } from '@/firebase';
+import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { currencies } from '@/lib/currencies';
@@ -79,9 +79,16 @@ type UserProfile = {
   lastName: string;
 };
 
+const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+});
+
+
 export default function ListRoomPage() {
   const firestore = useFirestore();
-  const storage = useStorage();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
@@ -120,7 +127,7 @@ export default function ListRoomPage() {
   }, [isUserLoading, user, router]);
 
   const onSubmit = async (data: ListRoomFormValues) => {
-    if (!user || !firestore || !storage || !userProfile) {
+    if (!user || !firestore || !userProfile) {
       toast({
         variant: 'destructive',
         title: 'Authentication Error',
@@ -131,20 +138,17 @@ export default function ListRoomPage() {
     setIsLoading(true);
 
     try {
-        const roomId = uuidv4();
-        const uploadPromises = data.images.map(imageFile => {
-            const imageRef = ref(storage, `rooms/${roomId}/${uuidv4()}-${imageFile.name}`);
-            return uploadBytes(imageRef, imageFile).then(snapshot => getDownloadURL(snapshot.ref));
-        });
-        
-        const imageUrls = await Promise.all(uploadPromises);
+        const imageUrls = await Promise.all(data.images.map(imageFile => fileToDataUri(imageFile)));
         
         const ownerName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
         const selectedCurrency = currencies.find(c => c.code === data.currency);
         const currency = selectedCurrency?.code || 'USD';
         const currencySymbol = selectedCurrency?.symbol || '$';
+        
+        const newRoomRef = doc(collection(firestore, "rooms"));
 
         const roomData = {
+          id: newRoomRef.id,
           ownerId: user.uid,
           ownerName: ownerName,
           listingType: data.listingType,
@@ -164,8 +168,7 @@ export default function ListRoomPage() {
           createdAt: new Date(),
         };
         
-        const roomDocRef = doc(firestore, 'rooms', roomId);
-        await addDoc(collection(firestore, 'rooms'), { ...roomData, id: roomId });
+        await setDoc(newRoomRef, roomData);
 
         toast({
             title: 'Room Listed!',
@@ -520,3 +523,5 @@ export default function ListRoomPage() {
     </div>
   );
 }
+
+    
