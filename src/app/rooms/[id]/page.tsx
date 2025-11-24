@@ -3,9 +3,9 @@
 
 import React, { useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { useDoc, useFirestore, useUser } from '@/firebase';
-import { Room } from '@/lib/data';
+import { doc, addDoc, collection, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
+import { useDoc, useFirestore, useUser, useCollection } from '@/firebase';
+import { Room, Rating } from '@/lib/data';
 import Image from 'next/image';
 import Link from 'next/link';
 import { DateRange } from "react-day-picker";
@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/popover"
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 const amenityIcons: { [key: string]: React.ReactNode } = {
@@ -41,7 +43,7 @@ const amenityIcons: { [key: string]: React.ReactNode } = {
 
 export default function RoomDetailsPage() {
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -52,6 +54,12 @@ export default function RoomDetailsPage() {
     to: addDays(new Date(), 7),
   });
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [currentRating, setCurrentRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewLoading, setReviewLoading] = useState(false);
+  
+  const { data: userProfile } = useDoc(user ? doc(firestore!, 'users', user.uid) : null);
 
   const roomDocRef = useMemo(() => {
     if (!firestore || !id) return null;
@@ -59,6 +67,13 @@ export default function RoomDetailsPage() {
   }, [firestore, id]);
 
   const { data: room, isLoading } = useDoc<Room>(roomDocRef);
+
+  const ratingsQuery = useMemo(() => {
+    if (!firestore || !id) return null;
+    return collection(firestore, 'rooms', id, 'ratings');
+  }, [firestore, id]);
+
+  const { data: ratings, isLoading: ratingsLoading } = useCollection<Rating>(ratingsQuery);
 
   const handleBooking = async () => {
     if (!user || !room || !date?.from || !date?.to) {
@@ -112,8 +127,51 @@ export default function RoomDetailsPage() {
     }
   }
 
+  const handleReviewSubmit = async () => {
+      if (!user || !userProfile || !firestore || !roomDocRef) {
+          toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to leave a review.' });
+          return;
+      }
+      if (currentRating === 0) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Please select a star rating.' });
+          return;
+      }
+      setReviewLoading(true);
+      try {
+          const ratingsCollectionRef = collection(firestore, 'rooms', id, 'ratings');
+          await addDoc(ratingsCollectionRef, {
+              roomId: id,
+              userId: user.uid,
+              userName: (userProfile as any).firstName || user.displayName,
+              userPhoto: (userProfile as any).photoURL || user.photoURL,
+              rating: currentRating,
+              comment: reviewComment,
+              createdAt: serverTimestamp(),
+          });
 
-  if (isLoading) {
+          // Update average rating on the room
+          const newRatingCount = (room?.ratingCount || 0) + 1;
+          const oldTotalRating = (room?.averageRating || 0) * (room?.ratingCount || 0);
+          const newAverageRating = (oldTotalRating + currentRating) / newRatingCount;
+
+          await updateDoc(roomDocRef, {
+              ratingCount: increment(1),
+              averageRating: newAverageRating,
+          });
+
+          toast({ title: 'Review Submitted', description: 'Thank you for your feedback!' });
+          setCurrentRating(0);
+          setReviewComment('');
+      } catch (error: any) {
+          console.error("Error submitting review: ", error);
+          toast({ variant: 'destructive', title: 'Error', description: error.message || 'Could not submit your review.' });
+      } finally {
+          setReviewLoading(false);
+      }
+  }
+
+
+  if (isLoading || isUserLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -154,8 +212,8 @@ export default function RoomDetailsPage() {
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className='flex items-center gap-1'>
                         <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
-                        <span className="font-semibold">4.95</span>
-                        <span className="underline">(120 reviews)</span>
+                        <span className="font-semibold">{room.averageRating?.toFixed(1) || 'New'}</span>
+                        {room.ratingCount ? <span className="underline">({room.ratingCount} reviews)</span> : null}
                     </div>
                     <span>·</span>
                     <p>{room.location}, {room.country}</p>
@@ -206,6 +264,78 @@ export default function RoomDetailsPage() {
                             ))}
                         </div>
                     </div>
+                    <Separator className="my-6" />
+                    {/* Reviews Section */}
+                    <div>
+                        <h3 className="font-semibold text-xl mb-4">Reviews</h3>
+                        {ratingsLoading ? (
+                             <Loader2 className="h-8 w-8 animate-spin" />
+                        ) : ratings && ratings.length > 0 ? (
+                            <div className="space-y-6">
+                                {ratings.map(rating => (
+                                    <div key={rating.id} className="flex gap-4">
+                                        <Avatar>
+                                            <AvatarImage src={rating.userPhoto} />
+                                            <AvatarFallback>{rating.userName.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-semibold">{rating.userName}</p>
+                                                <p className="text-xs text-muted-foreground">{format(rating.createdAt.toDate(), 'MMM yyyy')}</p>
+                                            </div>
+                                            <div className="flex items-center gap-0.5 mt-1">
+                                                {[...Array(5)].map((_, i) => (
+                                                    <Star key={i} className={cn("h-4 w-4", i < rating.rating ? "text-amber-500 fill-amber-500" : "text-muted-foreground/50")} />
+                                                ))}
+                                            </div>
+                                            <p className="mt-2 text-muted-foreground">{rating.comment}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-muted-foreground">No reviews yet. Be the first to leave one!</p>
+                        )}
+                    </div>
+                     <Separator className="my-6" />
+                     {/* Review Form */}
+                    <div>
+                        <h3 className="font-semibold text-xl mb-4">Leave a Review</h3>
+                        {user ? (
+                            <div className="space-y-4">
+                                <div>
+                                    <div className="flex items-center gap-1">
+                                        {[...Array(5)].map((_, index) => {
+                                            const ratingValue = index + 1;
+                                            return (
+                                                <Star
+                                                    key={ratingValue}
+                                                    className={cn("h-6 w-6 cursor-pointer", ratingValue <= (hoverRating || currentRating) ? "text-amber-500 fill-amber-500" : "text-muted-foreground/50")}
+                                                    onClick={() => setCurrentRating(ratingValue)}
+                                                    onMouseEnter={() => setHoverRating(ratingValue)}
+                                                    onMouseLeave={() => setHoverRating(0)}
+                                                />
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                                <Textarea 
+                                    placeholder="Share your thoughts about your stay..." 
+                                    value={reviewComment}
+                                    onChange={(e) => setReviewComment(e.target.value)}
+                                />
+                                <Button onClick={handleReviewSubmit} disabled={reviewLoading}>
+                                    {reviewLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Submit Review
+                                </Button>
+                            </div>
+                        ) : (
+                            <p className="text-muted-foreground">
+                                <Link href="/login" className="underline text-primary">Log in</Link> to leave a review.
+                            </p>
+                        )}
+                    </div>
+
                 </div>
                 <div className="md:col-span-1">
                      <Card className="sticky top-24 shadow-lg">
@@ -314,3 +444,5 @@ export default function RoomDetailsPage() {
     </div>
   );
 }
+
+    

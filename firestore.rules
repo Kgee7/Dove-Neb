@@ -80,5 +80,15 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
       allow update, delete: if isOwner(resource.data.ownerId);
     }
+
+    // RATINGS SUBCOLLECTION
+    // Anyone can read ratings.
+    // Only authenticated users can create a rating.
+    match /rooms/{roomId}/ratings/{ratingId} {
+        allow read: if true;
+        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
   }
 }
+
+    

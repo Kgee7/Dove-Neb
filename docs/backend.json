@@ -93,7 +93,9 @@
         "contactPhone": { "type": "string" },
         "contactWhatsapp": { "type": "string" },
         "images": { "type": "array", "items": { "type": "string", "format": "uri" } },
-        "amenities": { "type": "array", "items": { "type": "string" } }
+        "amenities": { "type": "array", "items": { "type": "string" } },
+        "averageRating": { "type": "number", "description": "The average rating of the room from 0 to 5." },
+        "ratingCount": { "type": "number", "description": "The total number of ratings the room has received." }
       },
       "required": ["id", "ownerId", "ownerName", "listingType", "title", "description", "country", "location", "images"]
     },
@@ -111,6 +113,22 @@
         "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"] }
       },
       "required": ["id", "roomId", "renterId", "checkInDate", "checkOutDate", "totalPrice", "status"]
+    },
+    "Rating": {
+      "title": "Rating",
+      "type": "object",
+      "description": "Represents a rating submitted by a user for a room.",
+      "properties": {
+        "id": { "type": "string" },
+        "roomId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhoto": { "type": "string" },
+        "rating": { "type": "number", "minimum": 1, "maximum": 5 },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "roomId", "userId", "userName", "rating", "createdAt"]
     },
     "FavoriteJob": {
       "title": "Favorite Job",
@@ -175,6 +193,10 @@
       {
         "path": "/rooms/{roomId}",
         "definition": { "schema": { "$ref": "#/entities/Room" }, "description": "Top-level collection for all room listings.", "publicRead": true }
+      },
+       {
+        "path": "/rooms/{roomId}/ratings/{ratingId}",
+        "definition": { "schema": { "$ref": "#/entities/Rating" }, "description": "Subcollection for a room's ratings.", "publicRead": true }
       },
       {
         "path": "/rooms/{roomId}/bookings/{bookingId}",
