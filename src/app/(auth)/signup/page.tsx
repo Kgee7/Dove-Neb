@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -31,6 +32,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2 } from "lucide-react";
 import React from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const formSchema = z.object({
   fullName: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -38,6 +40,9 @@ const formSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
   userType: z.enum(["seeker", "employer"], {
     required_error: "Please select an account type.",
+  }),
+  terms: z.boolean().refine(val => val === true, {
+    message: "You must accept the Terms of Service and Privacy Policy.",
   }),
 });
 
@@ -56,6 +61,7 @@ export default function SignupPage() {
       email: "",
       password: "",
       userType: "seeker",
+      terms: false,
     },
   });
 
@@ -201,6 +207,30 @@ export default function SignupPage() {
                     <Input type="password" {...field} />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="terms"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      Accept terms and conditions
+                    </FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      You agree to our <Link href="/terms-of-service" className="underline hover:text-primary">Terms of Service</Link> and <Link href="/privacy-policy" className="underline hover:text-primary">Privacy Policy</Link>.
+                    </p>
+                     <FormMessage />
+                  </div>
                 </FormItem>
               )}
             />
