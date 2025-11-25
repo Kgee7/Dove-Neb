@@ -292,7 +292,7 @@ export default function PostJobPage() {
                     <FormItem>
                       <FormLabel>Application Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="recruiting@example.com" {...field} value={field.value ?? ''} />
+                        <Input placeholder="recruiting@example.com" {...field} />
                       </FormControl>
                       <FormDescription>
                         Job seekers will send their applications to this email address.

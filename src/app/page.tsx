@@ -300,13 +300,16 @@ export default function HomePage() {
                      <div className="flex justify-between items-center mt-2">
                         <p className="text-lg font-semibold">
                             {room.listingType === 'sale' && room.salePrice ? (
-                                <>
-                                    {room.currencySymbol}{room.salePrice.toLocaleString()}
-                                </>
+                                `${room.currencySymbol}${room.salePrice.toLocaleString()}`
                             ) : room.listingType === 'rent' && room.priceNight ? (
                                 <>
                                     {room.currencySymbol}{room.priceNight}
                                     <span className="text-sm font-normal text-muted-foreground">/night</span>
+                                </>
+                            ) : room.listingType === 'rent' && room.priceMonth ? (
+                                <>
+                                    {room.currencySymbol}{room.priceMonth}
+                                    <span className="text-sm font-normal text-muted-foreground">/month</span>
                                 </>
                             ) : null}
                         </p>

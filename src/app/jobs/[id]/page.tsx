@@ -11,7 +11,7 @@ import FavoriteButton from '@/components/favorite-button';
 import ApplyButton from '@/components/apply-button';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase } from 'lucide-react';
+import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
@@ -80,13 +80,33 @@ export default function JobDetailsPage() {
           </CardHeader>
           <CardContent>
             <Separator className="my-4" />
-            <h3 className="font-semibold text-xl mb-3">About the Job</h3>
-            <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap">
-                {job.description}
-            </div>
-            <Separator className="my-6" />
-            <div className="flex justify-center">
-              <ApplyButton jobId={job.id} />
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="md:col-span-2">
+                <h3 className="font-semibold text-xl mb-3">About the Job</h3>
+                <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap">
+                    {job.description}
+                </div>
+              </div>
+              <div className='md:col-span-1'>
+                 <Card className="bg-muted/50">
+                    <CardHeader>
+                        <CardTitle className="text-lg">How to Apply</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {job.applicationMethod === 'email' && job.applicationEmail ? (
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-2">Send your application to:</p>
+                          <a href={`mailto:${job.applicationEmail}`} className="font-semibold text-primary hover:underline flex items-center gap-2">
+                            <Mail className="h-4 w-4" />
+                            {job.applicationEmail}
+                          </a>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Application instructions not specified.</p>
+                      )}
+                    </CardContent>
+                  </Card>
+              </div>
             </div>
           </CardContent>
         </Card>
