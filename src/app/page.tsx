@@ -199,44 +199,42 @@ export default function HomePage() {
               <p className="text-muted-foreground">Could not load jobs. The backend may be offline.</p>
             </div>
           ) : (
-            <div className="flex justify-center">
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {jobs?.map((job) => {
-                  const salarySymbol = job.salaryCurrencySymbol || '$';
-                  return (
-                  <Card
-                    key={job.id}
-                    className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg w-full max-w-sm bg-muted/30"
-                  >
-                    <CardHeader>
-                      <CardTitle className="text-xl">
-                          <Link href={`/jobs/${job.id}`} className="hover:underline">
-                            {job.title}
-                          </Link>
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground flex items-center pt-1">
-                          <Building2 className="h-4 w-4 mr-2" />
-                          {job.companyName}
-                      </p>
-                    </CardHeader>
-                    <CardContent className="flex flex-1 flex-col">
-                      <p className="text-sm text-muted-foreground mt-1 flex items-center">
-                          <MapPin className="h-4 w-4 mr-2" />
-                          {job.location}, {job.country}
-                      </p>
-                      <div className="mt-4 flex-grow" />
-                      <div className="flex justify-between items-center mt-2">
-                          <Badge variant="secondary">{job.type}</Badge>
-                          {(job.salaryMin && job.salaryMax) && (
-                            <p className="text-lg font-semibold">
-                                {salarySymbol}{job.salaryMin/1000}k - {salarySymbol}{job.salaryMax/1000}k
-                            </p>
-                          )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )})}
-              </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mx-auto w-fit">
+              {jobs?.map((job) => {
+                const salarySymbol = job.salaryCurrencySymbol || '$';
+                return (
+                <Card
+                  key={job.id}
+                  className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg w-full max-w-sm bg-muted/30"
+                >
+                  <CardHeader>
+                    <CardTitle className="text-xl">
+                        <Link href={`/jobs/${job.id}`} className="hover:underline">
+                          {job.title}
+                        </Link>
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground flex items-center pt-1">
+                        <Building2 className="h-4 w-4 mr-2" />
+                        {job.companyName}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="flex flex-1 flex-col">
+                    <p className="text-sm text-muted-foreground mt-1 flex items-center">
+                        <MapPin className="h-4 w-4 mr-2" />
+                        {job.location}, {job.country}
+                    </p>
+                    <div className="mt-4 flex-grow" />
+                    <div className="flex justify-between items-center mt-2">
+                        <Badge variant="secondary">{job.type}</Badge>
+                        {(job.salaryMin && job.salaryMax) && (
+                          <p className="text-lg font-semibold">
+                              {salarySymbol}{job.salaryMin/1000}k - {salarySymbol}{job.salaryMax/1000}k
+                          </p>
+                        )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )})}
             </div>
           )}
           <div className="mt-12 text-center">
@@ -269,59 +267,57 @@ export default function HomePage() {
               <p className="text-muted-foreground">Could not load rooms. The backend may be offline.</p>
             </div>
           ) : (
-            <div className="flex justify-center">
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {rooms?.map((room) => (
-                  <Card
-                    key={room.id}
-                    className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg w-full max-w-sm"
-                  >
-                    <CardHeader className="p-0">
-                      <Link href={`/rooms/${room.id}`}>
-                        <div className="relative aspect-video">
-                          <Image
-                              src={room.images[0] || "/placeholder.jpg"}
-                              alt={room.title}
-                              fill
-                              className="object-cover"
-                              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                          />
-                        </div>
-                      </Link>
-                    </CardHeader>
-                    <CardContent className="flex flex-1 flex-col p-4">
-                      <CardTitle className="text-xl">
-                          <Link href={`/rooms/${room.id}`} className="hover:underline">
-                            {room.title}
-                          </Link>
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1 flex items-center">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          {room.location}, {room.country}
-                      </p>
-                      <div className="mt-4 flex-grow" />
-                      <div className="flex justify-between items-center mt-2">
-                          <p className="text-lg font-semibold">
-                              {room.listingType === 'sale' && room.salePrice ? (
-                                  `${room.currencySymbol}${room.salePrice.toLocaleString()}`
-                              ) : room.listingType === 'rent' && room.priceNight ? (
-                                  <>
-                                      {room.currencySymbol}{room.priceNight}
-                                      <span className="text-sm font-normal text-muted-foreground">/night</span>
-                                  </>
-                              ) : room.listingType === 'rent' && room.priceMonth ? (
-                                  <>
-                                      {room.currencySymbol}{room.priceMonth}
-                                      <span className="text-sm font-normal text-muted-foreground">/month</span>
-                                  </>
-                              ) : null}
-                          </p>
-                          <Badge variant={room.listingType === 'sale' ? 'default' : 'outline'} className="capitalize">{room.listingType}</Badge>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mx-auto w-fit">
+              {rooms?.map((room) => (
+                <Card
+                  key={room.id}
+                  className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg w-full max-w-sm"
+                >
+                  <CardHeader className="p-0">
+                    <Link href={`/rooms/${room.id}`}>
+                      <div className="relative aspect-video">
+                        <Image
+                            src={room.images[0] || "/placeholder.jpg"}
+                            alt={room.title}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        />
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                    </Link>
+                  </CardHeader>
+                  <CardContent className="flex flex-1 flex-col p-4">
+                    <CardTitle className="text-xl">
+                        <Link href={`/rooms/${room.id}`} className="hover:underline">
+                          {room.title}
+                        </Link>
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1 flex items-center">
+                        <MapPin className="h-4 w-4 mr-1" />
+                        {room.location}, {room.country}
+                    </p>
+                    <div className="mt-4 flex-grow" />
+                    <div className="flex justify-between items-center mt-2">
+                        <p className="text-lg font-semibold">
+                            {room.listingType === 'sale' && room.salePrice ? (
+                                `${room.currencySymbol}${room.salePrice.toLocaleString()}`
+                            ) : room.listingType === 'rent' && room.priceNight ? (
+                                <>
+                                    {room.currencySymbol}{room.priceNight}
+                                    <span className="text-sm font-normal text-muted-foreground">/night</span>
+                                </>
+                            ) : room.listingType === 'rent' && room.priceMonth ? (
+                                <>
+                                    {room.currencySymbol}{room.priceMonth}
+                                    <span className="text-sm font-normal text-muted-foreground">/month</span>
+                                </>
+                            ) : null}
+                        </p>
+                        <Badge variant={room.listingType === 'sale' ? 'default' : 'outline'} className="capitalize">{room.listingType}</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
           <div className="mt-12 text-center">
