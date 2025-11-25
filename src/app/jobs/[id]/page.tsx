@@ -80,14 +80,14 @@ export default function JobDetailsPage() {
           </CardHeader>
           <CardContent>
             <Separator className="my-4" />
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="md:col-span-2">
+            <div>
+              <div>
                 <h3 className="font-semibold text-xl mb-3">About the Job</h3>
                 <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap">
                     {job.description}
                 </div>
               </div>
-              <div className='md:col-span-1'>
+              <div className='mt-8'>
                  <Card className="bg-muted/50">
                     <CardHeader>
                         <CardTitle className="text-lg">How to Apply</CardTitle>
