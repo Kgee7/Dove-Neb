@@ -88,14 +88,14 @@ export default function JobDetailsPage() {
                 </div>
               </div>
               <div className='mt-8'>
-                 <Card className="bg-muted/50">
+                 <Card className="bg-secondary/20">
                     <CardHeader>
-                        <CardTitle className="text-lg">How to Apply</CardTitle>
+                        <CardTitle className="text-lg">Apply Now</CardTitle>
                     </CardHeader>
                     <CardContent>
                       {job.applicationMethod === 'email' && job.applicationEmail ? (
                         <div>
-                          <p className="text-sm text-muted-foreground mb-2">Send your application to:</p>
+                          <p className="text-sm text-muted-foreground mb-2">Send your CV/resume and cover letter to:</p>
                           <a href={`mailto:${job.applicationEmail}`} className="font-semibold text-primary hover:underline flex items-center gap-2">
                             <Mail className="h-4 w-4" />
                             {job.applicationEmail}
