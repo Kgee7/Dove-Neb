@@ -167,7 +167,7 @@ export default function JobsPage() {
 function JobCard({ job }: { job: Job }) {
   const salarySymbol = job.salaryCurrencySymbol || '$';
   return (
-    <Card className="hover:shadow-xl transition-shadow duration-300 h-full flex flex-col relative">
+    <Card className="hover:shadow-xl transition-shadow duration-300 h-full flex flex-col relative bg-muted/30">
       <FavoriteButton item={job} itemType="job" />
       <CardHeader>
         <div className="flex items-start justify-between">

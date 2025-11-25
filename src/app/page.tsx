@@ -205,7 +205,7 @@ export default function HomePage() {
                 return (
                 <Card
                   key={job.id}
-                  className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg w-full max-w-sm"
+                  className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-lg w-full max-w-sm bg-muted/30"
                 >
                   <CardHeader>
                      <CardTitle className="text-xl">
