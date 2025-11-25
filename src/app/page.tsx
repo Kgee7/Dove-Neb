@@ -199,7 +199,7 @@ export default function HomePage() {
               <p className="text-muted-foreground">Could not load jobs. The backend may be offline.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 justify-end">
               {jobs?.map((job) => {
                 const salarySymbol = job.salaryCurrencySymbol || '$';
                 return (
@@ -267,7 +267,7 @@ export default function HomePage() {
               <p className="text-muted-foreground">Could not load rooms. The backend may be offline.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 justify-end">
               {rooms?.map((room) => (
                 <Card
                   key={room.id}
