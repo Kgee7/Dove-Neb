@@ -331,12 +331,14 @@ export default function RoomDetailsPage() {
                     <DialogDescription className="sr-only">Full screen image of the room.</DialogDescription>
                 </DialogHeader>
                 <div className="relative aspect-video">
-                    <Image
-                        src={selectedImage || ''}
-                        alt="Full screen room image"
-                        fill
-                        className="object-contain"
-                    />
+                    {selectedImage && (
+                        <Image
+                            src={selectedImage}
+                            alt="Full screen room image"
+                            fill
+                            className="object-contain"
+                        />
+                    )}
                 </div>
             </DialogContent>
         </Dialog>
