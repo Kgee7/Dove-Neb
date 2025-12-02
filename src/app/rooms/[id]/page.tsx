@@ -152,7 +152,7 @@ export default function RoomDetailsPage() {
 
   return (
     <div className="bg-muted/40">
-        <Dialog onOpenChange={(isOpen) => !isOpen && setSelectedImage(null)}>
+        <Dialog open={!!selectedImage} onOpenChange={(isOpen) => !isOpen && setSelectedImage(null)}>
             <div className="container max-w-5xl py-12 mx-auto">
                 <div className="mb-4">
                     <Link href="/rooms" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary">
@@ -178,19 +178,17 @@ export default function RoomDetailsPage() {
                     <CarouselContent>
                         {room.images.map((img, index) => (
                         <CarouselItem key={index}>
-                            <DialogTrigger asChild>
-                                <div className="relative aspect-video cursor-pointer group" onClick={() => setSelectedImage(img)}>
-                                    <Image
-                                        src={img}
-                                        alt={`${room.title} image ${index + 1}`}
-                                        fill
-                                        className="object-cover rounded-lg"
-                                    />
-                                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <Maximize className="h-10 w-10 text-white" />
-                                    </div>
+                            <div className="relative aspect-video cursor-pointer group" onClick={() => setSelectedImage(img)}>
+                                <Image
+                                    src={img}
+                                    alt={`${room.title} image ${index + 1}`}
+                                    fill
+                                    className="object-cover rounded-lg"
+                                />
+                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <Maximize className="h-10 w-10 text-white" />
                                 </div>
-                            </DialogTrigger>
+                            </div>
                         </CarouselItem>
                         ))}
                     </CarouselContent>
@@ -327,22 +325,20 @@ export default function RoomDetailsPage() {
                 </div>
 
             </div>
-             {selectedImage && (
-                <DialogContent className="max-w-4xl max-h-[80vh]">
-                    <DialogHeader>
-                        <DialogTitle className="sr-only">{room.title}</DialogTitle>
-                        <DialogDescription className="sr-only">Full screen image of the room.</DialogDescription>
-                    </DialogHeader>
-                    <div className="relative aspect-video">
-                        <Image
-                            src={selectedImage}
-                            alt="Full screen room image"
-                            fill
-                            className="object-contain"
-                        />
-                    </div>
-                </DialogContent>
-            )}
+            <DialogContent className="max-w-4xl max-h-[80vh]">
+                <DialogHeader>
+                    <DialogTitle className="sr-only">{room.title}</DialogTitle>
+                    <DialogDescription className="sr-only">Full screen image of the room.</DialogDescription>
+                </DialogHeader>
+                <div className="relative aspect-video">
+                    <Image
+                        src={selectedImage || ''}
+                        alt="Full screen room image"
+                        fill
+                        className="object-contain"
+                    />
+                </div>
+            </DialogContent>
         </Dialog>
     </div>
   );
