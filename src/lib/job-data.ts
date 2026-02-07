@@ -11,8 +11,9 @@ export type Job = {
   salaryMax?: number;
   salaryCurrency?: string;
   salaryCurrencySymbol?: string;
-  applicationMethod: 'email';
+  applicationMethod: 'email' | 'whatsapp';
   applicationEmail?: string;
+  applicationWhatsapp?: string;
   employerId: string;
 };
 

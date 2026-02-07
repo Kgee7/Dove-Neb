@@ -35,11 +35,12 @@
         "salaryMax": { "type": "number", "description": "Maximum salary for the position." },
         "salaryCurrency": { "type": "string", "description": "The currency for the salary." },
         "salaryCurrencySymbol": { "type": "string", "description": "The symbol for the salary currency." },
-        "applicationMethod": { "type": "string", "description": "How job seekers should apply. Always 'email'."},
-        "applicationEmail": { "type": "string", "format": "email", "description": "Email for applications."},
+        "applicationMethod": { "type": "string", "enum": ["email", "whatsapp"], "description": "How job seekers should apply."},
+        "applicationEmail": { "type": "string", "format": "email", "description": "Email for applications. Required if method is 'email'."},
+        "applicationWhatsapp": { "type": "string", "description": "WhatsApp number for applications. Required if method is 'whatsapp'." },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "employerId", "companyName", "title", "description", "country", "location", "type", "applicationEmail"]
+      "required": ["id", "employerId", "companyName", "title", "description", "country", "location", "type", "applicationMethod"]
     },
     "JobApplication": {
         "title": "Job Application",
@@ -53,7 +54,7 @@
             "seekerId": { "type": "string" },
             "status": { "type": "string", "enum": ["pending", "reviewed", "rejected", "hired"] },
             "appliedAt": { "type": "string", "format": "date-time" },
-            "applicationMethod": { "type": "string", "description": "The method of application (e.g., 'email')." },
+            "applicationMethod": { "type": "string", "enum": ["email", "whatsapp"], "description": "The method of application (e.g., 'email', 'whatsapp')." },
             "applicationContact": { "type": "string", "description": "The contact detail for the application." }
         },
         "required": ["id", "jobId", "jobTitle", "companyName", "seekerId", "status", "appliedAt"]

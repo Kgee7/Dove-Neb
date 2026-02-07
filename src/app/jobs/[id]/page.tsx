@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -12,7 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase, Mail, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase, Mail, CheckCircle, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
@@ -118,7 +119,7 @@ export default function JobDetailsPage() {
             appliedAt,
             applicantDocId: applicantId,
             applicationMethod: job.applicationMethod,
-            applicationContact: job.applicationEmail,
+            applicationContact: job.applicationMethod === 'email' ? job.applicationEmail : job.applicationWhatsapp,
         };
 
         const batch = writeBatch(firestore);
@@ -197,8 +198,8 @@ export default function JobDetailsPage() {
                     <CheckCircle className="mx-auto h-8 w-8 text-green-500" />
                     <p className="mt-4 font-semibold text-sm">To complete your application, please also send your CV to:</p>
                     <div className="flex items-center justify-center gap-2 mt-2 font-mono p-2 bg-background rounded-md">
-                        <Mail className="h-4 w-4" />
-                        <span>{job.applicationEmail}</span>
+                        {job.applicationMethod === 'email' ? <Mail className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
+                        <span>{job.applicationMethod === 'email' ? job.applicationEmail : job.applicationWhatsapp}</span>
                     </div>
                 </CardContent>
             </Card>

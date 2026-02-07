@@ -28,6 +28,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters long.'),
@@ -39,8 +41,23 @@ const formSchema = z.object({
   currency: z.string().min(1, 'Currency is required.'),
   salaryMin: z.coerce.number().min(0).optional(),
   salaryMax: z.coerce.number().min(0).optional(),
-  applicationEmail: z.string().email('Please enter a valid email.'),
-});
+  applicationMethod: z.enum(['email', 'whatsapp'], { required_error: 'Please select an application method.' }),
+  applicationEmail: z.string().email('Please enter a valid email.').optional(),
+  applicationWhatsapp: z.string().min(10, 'Please enter a valid WhatsApp number.').optional(),
+}).refine((data) => {
+    if (data.applicationMethod === 'email') return !!data.applicationEmail;
+    return true;
+  }, {
+    message: 'Email is required for this application method.',
+    path: ['applicationEmail'],
+  })
+  .refine((data) => {
+    if (data.applicationMethod === 'whatsapp') return !!data.applicationWhatsapp;
+    return true;
+  }, {
+    message: 'WhatsApp number is required for this application method.',
+    path: ['applicationWhatsapp'],
+  });
 
 type EditJobFormValues = z.infer<typeof formSchema>;
 
@@ -71,9 +88,13 @@ export default function EditJobPage() {
         currency: 'USD',
         salaryMin: undefined,
         salaryMax: undefined,
+        applicationMethod: 'email',
         applicationEmail: '',
+        applicationWhatsapp: '',
     },
   });
+
+  const applicationMethod = form.watch('applicationMethod');
 
   useEffect(() => {
     if (job) {
@@ -85,6 +106,7 @@ export default function EditJobPage() {
       form.reset({
         ...job,
         applicationEmail: job.applicationEmail || '',
+        applicationWhatsapp: job.applicationWhatsapp || '',
         country: (job as any).country || '',
         currency: job.salaryCurrency || 'USD',
       });
@@ -101,12 +123,15 @@ export default function EditJobPage() {
     const salaryCurrencySymbol = selectedCurrency?.symbol || '$';
 
     try {
-      await updateDoc(jobDocRef, { 
+      const jobData = {
           ...data,
-          applicationMethod: 'email',
           salaryCurrency,
           salaryCurrencySymbol,
-      });
+          applicationEmail: data.applicationMethod === 'email' ? data.applicationEmail : null,
+          applicationWhatsapp: data.applicationMethod === 'whatsapp' ? data.applicationWhatsapp : null,
+      };
+
+      await updateDoc(jobDocRef, jobData);
       toast({
         title: 'Job Updated!',
         description: 'Your job listing has been successfully updated.',
@@ -314,20 +339,72 @@ export default function EditJobPage() {
               />
               <FormField
                 control={form.control}
-                name="applicationEmail"
+                name="applicationMethod"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Application Email</FormLabel>
+                  <FormItem className="space-y-3">
+                    <FormLabel>Application Method</FormLabel>
                     <FormControl>
-                      <Input placeholder="recruiting@example.com" {...field} value={field.value ?? ''} />
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="flex items-center space-x-4"
+                      >
+                        <FormItem className="flex items-center space-x-2">
+                          <FormControl>
+                            <RadioGroupItem value="email" id="email" />
+                          </FormControl>
+                          <Label htmlFor="email" className="font-normal">Email</Label>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-2">
+                          <FormControl>
+                            <RadioGroupItem value="whatsapp" id="whatsapp" />
+                          </FormControl>
+                          <Label htmlFor="whatsapp" className="font-normal">WhatsApp</Label>
+                        </FormItem>
+                      </RadioGroup>
                     </FormControl>
-                    <FormDescription>
-                      Job seekers will send their applications to this email address.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {applicationMethod === 'email' && (
+                <FormField
+                  control={form.control}
+                  name="applicationEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Application Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="recruiting@example.com" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormDescription>
+                        Job seekers will send their applications to this email address.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {applicationMethod === 'whatsapp' && (
+                <FormField
+                  control={form.control}
+                  name="applicationWhatsapp"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Application WhatsApp Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="+1234567890" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormDescription>
+                        Job seekers will contact this WhatsApp number. Include the country code.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Changes'}
               </Button>
