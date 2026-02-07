@@ -10,8 +10,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Loader2, Download, User, Check, X, MoreHorizontal, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Download, User, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -22,12 +21,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -115,51 +108,11 @@ export default function JobApplicantsPage() {
 
   const applicantsQuery = useMemo(() => {
     // Only build the query if the user is loaded, authorized, and all necessary IDs are present.
-    if (!firestore || !id || !user || isAuthorized !== true) return null;
+    if (!firestore || !id || isAuthorized !== true) return null;
     return query(collection(firestore, `jobs/${id}/applicants`), orderBy('appliedAt', 'desc'));
-  }, [firestore, id, user, isAuthorized]);
+  }, [firestore, id, isAuthorized]);
 
   const { data: applicants, isLoading: areApplicantsLoading } = useCollection<JobApplicant>(applicantsQuery);
-
-  const handleStatusChange = async (applicant: JobApplicant, newStatus: 'reviewed' | 'rejected' | 'hired') => {
-    if (!firestore || !id || !user) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not connect to services.' });
-        return;
-    }
-
-    const { id: applicantId, seekerId, userApplicationId } = applicant;
-
-    if (!seekerId || !userApplicationId) {
-      toast({ variant: 'destructive', title: 'Update Error', description: 'Cannot find the corresponding user application to update. The application may be from an older version.' });
-      return;
-    }
-    
-    try {
-        const batch = writeBatch(firestore);
-
-        // Update the document in the employer's view
-        const applicantDocRef = doc(firestore, 'jobs', id, 'applicants', applicantId);
-        batch.update(applicantDocRef, { status: newStatus });
-        
-        // Update the corresponding document in the user's view
-        const userApplicationDocRef = doc(firestore, 'users', seekerId, 'applications', userApplicationId);
-        batch.update(userApplicationDocRef, { status: newStatus });
-
-        await batch.commit();
-        
-        toast({
-            title: 'Status Updated',
-            description: `Applicant status changed to ${newStatus}.`,
-        });
-    } catch (error: any) {
-        console.error("Error updating application status:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Update Failed',
-            description: error.message || 'Could not update the application status.',
-        });
-    }
-  };
 
   const handleDeleteApplicant = async () => {
     if (!firestore || !id || !user || !applicantToDelete) {
@@ -278,34 +231,15 @@ export default function JobApplicantsPage() {
                     </TableCell>
                     <TableCell>{format(applicant.appliedAt.toDate(), 'MMM d, yyyy')}</TableCell>
                     <TableCell>
-                      <Badge variant={applicant.status === 'pending' ? 'secondary' : applicant.status === 'rejected' ? 'destructive' : applicant.status === 'reviewed' ? 'default' : 'default'}>
-                        {applicant.status}
-                      </Badge>
+                      <p className="text-sm text-muted-foreground">Check inbox for email/WhatsApp</p>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <DownloadResumeButton resumePath={applicant.resumeURL} />
-                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleStatusChange(applicant, 'reviewed')}>
-                                    <Check className="mr-2 h-4 w-4" /> Mark as Reviewed
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleStatusChange(applicant, 'hired')}>
-                                    <Check className="mr-2 h-4 w-4" /> Mark as Hired
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleStatusChange(applicant, 'rejected')} className="text-red-600">
-                                    <X className="mr-2 h-4 w-4" /> Reject Application
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setApplicantToDelete(applicant)} className="text-red-600">
-                                    <Trash2 className="mr-2 h-4 w-4" /> Delete Applicant
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        <Button variant="destructive" size="sm" onClick={() => setApplicantToDelete(applicant)}>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
