@@ -23,6 +23,8 @@ service cloud.firestore {
     match /users/{userId}/applications/{applicationId} {
       // A user can read, create, and delete their own applications.
       allow read, create, delete: if isOwner(userId);
+      // The employer who owns the job can update the application status.
+      allow update: if get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.employerId == request.auth.uid;
     }
 
     match /users/{userId}/favoriteJobs/{favoriteId} {
