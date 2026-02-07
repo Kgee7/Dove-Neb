@@ -1,33 +1,148 @@
-
 'use client';
 
-import React, { useMemo } from 'react';
-import { useParams } from 'next/navigation';
-import { doc } from 'firebase/firestore';
-import { useDoc, useFirestore } from '@/firebase';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { doc, writeBatch, query, collection, where, getDocs } from 'firebase/firestore';
+import { useDoc, useFirestore, useUser } from '@/firebase';
 import { Job } from '@/lib/job-data';
 import Link from 'next/link';
 import FavoriteButton from '@/components/favorite-button';
 import ShareButton from '@/components/share-button';
-import ApplyButton from '@/components/apply-button';
+import { v4 as uuidv4 } from 'uuid';
+import { useToast } from '@/hooks/use-toast';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase } from 'lucide-react';
+import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase, Mail, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+
+type UserProfile = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  resumeURL?: string;
+  photoURL?: string;
+  userType?: 'seeker' | 'employer';
+};
+
 
 export default function JobDetailsPage() {
   const firestore = useFirestore();
   const params = useParams();
+  const router = useRouter();
+  const { toast } = useToast();
+  const { user, isUserLoading } = useUser();
   const id = params.id as string;
+  
+  const [applicationState, setApplicationState] = useState<'idle' | 'loading' | 'applied'>('idle');
+  const [hasAlreadyApplied, setHasAlreadyApplied] = useState(false);
 
   const jobDocRef = useMemo(() => {
     if (!firestore || !id) return null;
     return doc(firestore, 'jobs', id);
   }, [firestore, id]);
 
-  const { data: job, isLoading } = useDoc<Job>(jobDocRef);
+  const { data: job, isLoading: isJobLoading } = useDoc<Job>(jobDocRef);
   
+  const userDocRef = useMemo(() => {
+    if (!user?.uid || !firestore) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user?.uid, firestore]);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
+
+  useEffect(() => {
+    if (!user || !firestore || !job) return;
+
+    const checkStatus = async () => {
+        const applicationQuery = query(collection(firestore, `users/${user.uid}/applications`), where("jobId", "==", job.id));
+        const querySnapshot = await getDocs(applicationQuery);
+        if (!querySnapshot.empty) {
+            setHasAlreadyApplied(true);
+        }
+    };
+    checkStatus();
+  }, [user, firestore, job]);
+
+
+  const handleApplyClick = async () => {
+    if (!user) {
+      router.push('/signup?redirect=/jobs/' + id);
+      return;
+    }
+
+    if (isProfileLoading) return;
+
+    if (userProfile?.userType !== 'seeker') {
+        toast({ variant: 'destructive', title: 'Only Job Seekers can apply.'});
+        return;
+    }
+    
+    if (!userProfile.resumeURL) {
+        toast({ variant: 'destructive', title: 'Resume Required', description: 'Please upload a resume to your profile before applying.'});
+        router.push('/profile');
+        return;
+    }
+
+    setApplicationState('loading');
+    if (!firestore || !job) {
+        setApplicationState('idle');
+        toast({ variant: 'destructive', title: 'Error', description: 'Job data is not available.' });
+        return;
+    }
+    
+    try {
+        const seekerName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
+        const applicantId = uuidv4();
+        const applicationId = uuidv4();
+        const appliedAt = new Date();
+
+        const applicantData = {
+            id: applicantId,
+            seekerId: user.uid,
+            seekerName,
+            seekerEmail: userProfile.email,
+            resumeURL: userProfile.resumeURL,
+            photoURL: userProfile.photoURL || null,
+            status: 'pending',
+            appliedAt,
+            userApplicationId: applicationId,
+        };
+
+        const applicationData = {
+            id: applicationId,
+            jobId: job.id,
+            jobTitle: job.title,
+            companyName: job.companyName,
+            seekerId: user.uid,
+            status: 'pending',
+            appliedAt,
+            applicantDocId: applicantId,
+        };
+
+        const batch = writeBatch(firestore);
+        
+        const applicantRef = doc(firestore, 'jobs', job.id, 'applicants', applicantId);
+        batch.set(applicantRef, applicantData);
+
+        const applicationRef = doc(firestore, 'users', user.uid, 'applications', applicationId);
+        batch.set(applicationRef, applicationData);
+
+        await batch.commit();
+        
+        setApplicationState('applied');
+        toast({
+            title: 'Application Sent!',
+            description: `You have successfully applied for the ${job.title} position.`,
+        });
+
+    } catch(error: any) {
+        setApplicationState('idle');
+        toast({ variant: 'destructive', title: 'Application Failed', description: error.message || 'Could not submit your application.' });
+    }
+  };
+
+  const isLoading = isJobLoading || isUserLoading;
+
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -49,6 +164,58 @@ export default function JobDetailsPage() {
   }
   
   const salarySymbol = job.salaryCurrencySymbol || '$';
+
+  const renderApplySection = () => {
+    if (userProfile && userProfile.userType !== 'seeker') {
+        return null;
+    }
+    if (hasAlreadyApplied) {
+        return (
+            <Card className="bg-secondary/20">
+                <CardHeader>
+                    <CardTitle className="text-lg">Application Sent</CardTitle>
+                    <CardDescription>You have already applied for this position.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center">
+                    <Button disabled className="w-full max-w-sm">
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Applied
+                    </Button>
+                </CardContent>
+            </Card>
+        );
+    }
+    if (applicationState === 'applied') {
+        return (
+            <Card className="bg-secondary/20 text-center">
+                <CardHeader>
+                    <CardTitle className="text-lg">Application Submitted!</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <CheckCircle className="mx-auto h-8 w-8 text-green-500" />
+                    <p className="mt-4 font-semibold text-sm">To complete your application, please also send your CV to:</p>
+                    <div className="flex items-center justify-center gap-2 mt-2 font-mono p-2 bg-background rounded-md">
+                        <Mail className="h-4 w-4" />
+                        <span>{job.applicationEmail}</span>
+                    </div>
+                </CardContent>
+            </Card>
+        );
+    }
+    return (
+        <Card className="bg-secondary/20">
+            <CardHeader className="text-center">
+                <CardTitle className="text-lg">Do you want to apply for this job?</CardTitle>
+            </CardHeader>
+            <CardContent className="flex justify-center">
+                <Button onClick={handleApplyClick} className="w-full max-w-sm" disabled={applicationState === 'loading' || isProfileLoading}>
+                    {(applicationState === 'loading' || isProfileLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Apply Now
+                </Button>
+            </CardContent>
+        </Card>
+    );
+  }
 
   return (
     <div className="bg-muted/40">
@@ -94,7 +261,7 @@ export default function JobDetailsPage() {
                 </div>
               </div>
               <div className='mt-8'>
-                {job && <ApplyButton job={job} />}
+                {renderApplySection()}
               </div>
             </div>
           </CardContent>
