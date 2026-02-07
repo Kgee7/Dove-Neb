@@ -117,6 +117,8 @@ export default function JobDetailsPage() {
             status: 'pending',
             appliedAt,
             applicantDocId: applicantId,
+            applicationMethod: job.applicationMethod,
+            applicationContact: job.applicationEmail,
         };
 
         const batch = writeBatch(firestore);

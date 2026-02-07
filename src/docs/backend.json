@@ -52,7 +52,9 @@
             "companyName": { "type": "string" },
             "seekerId": { "type": "string" },
             "status": { "type": "string", "enum": ["pending", "reviewed", "rejected", "hired"] },
-            "appliedAt": { "type": "string", "format": "date-time" }
+            "appliedAt": { "type": "string", "format": "date-time" },
+            "applicationMethod": { "type": "string", "description": "The method of application (e.g., 'email')." },
+            "applicationContact": { "type": "string", "description": "The contact detail for the application." }
         },
         "required": ["id", "jobId", "jobTitle", "companyName", "seekerId", "status", "appliedAt"]
     },
@@ -111,6 +113,36 @@
         "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"] }
       },
       "required": ["id", "roomId", "renterId", "checkInDate", "checkOutDate", "totalPrice", "status"]
+    },
+    "FavoriteJob": {
+      "title": "Favorite Job",
+      "type": "object",
+      "description": "Represents a job a user has favorited.",
+      "properties": {
+        "id": { "type": "string" },
+        "jobId": { "type": "string" },
+        "title": { "type": "string" },
+        "companyName": { "type": "string" },
+        "location": { "type": "string" },
+        "country": { "type": "string" },
+        "addedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "jobId", "title", "companyName", "location", "country", "addedAt"]
+    },
+    "FavoriteRoom": {
+      "title": "Favorite Room",
+      "type": "object",
+      "description": "Represents a room a user has favorited.",
+      "properties": {
+        "id": { "type": "string" },
+        "roomId": { "type": "string" },
+        "title": { "type": "string" },
+        "location": { "type": "string" },
+        "country": { "type": "string" },
+        "image": { "type": "string" },
+        "addedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "roomId", "title", "location", "country", "image", "addedAt"]
     }
   },
   "auth": {
@@ -121,6 +153,14 @@
       {
         "path": "/users/{userId}",
         "definition": { "schema": { "$ref": "#/entities/User" }, "description": "Stores user profiles." }
+      },
+      {
+        "path": "/users/{userId}/favoriteJobs/{favoriteId}",
+        "definition": { "schema": { "$ref": "#/entities/FavoriteJob" }, "description": "Subcollection for a user's favorite jobs." }
+      },
+      {
+        "path": "/users/{userId}/favoriteRooms/{favoriteId}",
+        "definition": { "schema": { "$ref": "#/entities/FavoriteRoom" }, "description": "Subcollection for a user's favorite rooms." }
       },
       {
         "path": "/jobs/{jobId}",

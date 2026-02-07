@@ -54,7 +54,9 @@ type JobApplication = {
     companyName: string;
     status: 'pending' | 'reviewed' | 'rejected' | 'hired';
     appliedAt: { toDate: () => Date };
-    applicantDocId?: string; // The ID of the document in the employer's `applicants` subcollection
+    applicantDocId?: string;
+    applicationMethod?: 'email' | 'whatsapp';
+    applicationContact?: string;
 }
 
 type FavoriteJob = {
@@ -341,7 +343,13 @@ export default function DashboardPage() {
                                                     return <Badge className="mt-2 capitalize" variant="default">Under Review</Badge>;
                                                 case 'pending':
                                                 default:
-                                                    return <Badge className="mt-2 capitalize" variant="secondary">{status || 'Applied'}</Badge>;
+                                                    if (app.applicationMethod === 'whatsapp') {
+                                                        return <p className="text-sm text-muted-foreground mt-2">Check your WhatsApp for status updates.</p>;
+                                                    }
+                                                    if (app.applicationMethod === 'email') {
+                                                        return <p className="text-sm text-muted-foreground mt-2">Check your email for status updates.</p>;
+                                                    }
+                                                    return <p className="text-sm text-muted-foreground mt-2">Check your email or WhatsApp for status updates.</p>;
                                             }
                                         })()}
                                         <div className='mt-4 flex gap-2'>
