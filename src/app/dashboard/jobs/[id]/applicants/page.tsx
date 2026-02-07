@@ -113,6 +113,14 @@ export default function JobApplicantsPage() {
   }, [firestore, id, isAuthorized]);
 
   const { data: applicants, isLoading: areApplicantsLoading } = useCollection<JobApplicant>(applicantsQuery);
+  
+  const maskEmail = (email: string | undefined): string => {
+    if (!email || !email.includes('@')) {
+      return email || '';
+    }
+    const [name, domain] = email.split('@');
+    return `${name.substring(0, 3)}...` + `@${domain}`;
+  };
 
   const handleDeleteApplicant = async () => {
     if (!firestore || !id || !user || !applicantToDelete) {
@@ -225,7 +233,7 @@ export default function JobApplicantsPage() {
                         </Avatar>
                         <div>
                             <p className="font-medium">{applicant.seekerName}</p>
-                            <p className="text-sm text-muted-foreground">{applicant.seekerEmail}</p>
+                            <p className="text-sm text-muted-foreground">{maskEmail(applicant.seekerEmail)}</p>
                         </div>
                       </div>
                     </TableCell>
