@@ -4,7 +4,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { getFirestore } from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -76,6 +76,7 @@ const applyForJobFlow = ai.defineFlow(
         photoURL: seekerData.photoURL || null,
         status: 'pending',
         appliedAt,
+        userApplicationId: applicationId, // Link to the user's application document
       };
 
       const applicationData = {

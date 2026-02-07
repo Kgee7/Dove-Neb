@@ -77,40 +77,6 @@ type FavoriteRoom = {
 
 type ApplicantStatus = 'pending' | 'reviewed' | 'rejected' | 'hired';
 
-function ApplicationStatus({ jobId, applicantDocId, jobTitle }: { jobId: string; applicantDocId: string; jobTitle: string; }) {
-    const firestore = useFirestore();
-
-    // Strict guard clause to prevent invalid queries. This is the definitive fix.
-    if (!firestore || typeof jobId !== 'string' || !jobId || typeof applicantDocId !== 'string' || !applicantDocId) {
-        return <Badge className="mt-2" variant="secondary">Applied</Badge>;
-    }
-
-    const applicantDocRef = useMemo(() => {
-        return doc(firestore, 'jobs', jobId, 'applicants', applicantDocId);
-    }, [firestore, jobId, applicantDocId]);
-
-    const { data: applicantData, isLoading: isDocLoading } = useDoc<{status: ApplicantStatus}>(applicantDocRef);
-
-    if (isDocLoading) {
-        return <Badge className="mt-2" variant="secondary">Loading Status...</Badge>;
-    }
-
-    const status = applicantData?.status;
-
-    switch (status) {
-        case 'hired':
-            return <p className="text-sm text-green-600 font-semibold mt-2">Congratulations, you have been hired as a {jobTitle}.</p>;
-        case 'rejected':
-            return <p className="text-sm text-red-600 font-semibold mt-2">Sorry, your application for {jobTitle} has been rejected.</p>;
-        case 'reviewed':
-            return <Badge className="mt-2 capitalize" variant="default">Under Review</Badge>;
-        case 'pending':
-        default:
-            return <Badge className="mt-2 capitalize" variant="secondary">{status || 'Applied'}</Badge>;
-    }
-}
-
-
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -362,11 +328,22 @@ export default function DashboardPage() {
                                       </CardHeader>
                                       <CardContent>
                                         <p className="text-sm text-muted-foreground">Applied: {format(app.appliedAt.toDate(), 'MMM d, yyyy')}</p>
-                                        {app.jobId && app.applicantDocId ? (
-                                            <ApplicationStatus jobId={app.jobId} applicantDocId={app.applicantDocId} jobTitle={app.jobTitle} />
-                                        ) : (
-                                            <Badge className="mt-2 capitalize" variant="secondary">Applied</Badge>
-                                        )}
+                                        {(() => {
+                                            const status = app.status;
+                                            const jobTitle = app.jobTitle;
+
+                                            switch (status) {
+                                                case 'hired':
+                                                    return <p className="text-sm text-green-600 font-semibold mt-2">Congratulations, you have been hired as a {jobTitle}.</p>;
+                                                case 'rejected':
+                                                    return <p className="text-sm text-red-600 font-semibold mt-2">Sorry, your application for {jobTitle} has been rejected.</p>;
+                                                case 'reviewed':
+                                                    return <Badge className="mt-2 capitalize" variant="default">Under Review</Badge>;
+                                                case 'pending':
+                                                default:
+                                                    return <Badge className="mt-2 capitalize" variant="secondary">{status || 'Applied'}</Badge>;
+                                            }
+                                        })()}
                                         <div className='mt-4 flex gap-2'>
                                             <Link href={`/jobs/${app.jobId}`}>
                                                 <Button variant="outline" size="sm">View Job</Button>

@@ -3,7 +3,7 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, collection, query, orderBy, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, collection, query, orderBy, writeBatch } from 'firebase/firestore';
 import { useDoc, useCollection, useFirestore, useUser } from '@/firebase';
 import { Job, JobApplicant } from '@/lib/job-data';
 import Link from 'next/link';
@@ -108,15 +108,32 @@ export default function JobApplicantsPage() {
 
   const { data: applicants, isLoading: areApplicantsLoading } = useCollection<JobApplicant>(applicantsQuery);
 
-  const handleStatusChange = async (applicantId: string, newStatus: 'reviewed' | 'rejected' | 'hired') => {
+  const handleStatusChange = async (applicant: JobApplicant, newStatus: 'reviewed' | 'rejected' | 'hired') => {
     if (!firestore || !id || !user) {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not connect to services.' });
         return;
     }
+
+    const { id: applicantId, seekerId, userApplicationId } = applicant;
+
+    if (!seekerId || !userApplicationId) {
+      toast({ variant: 'destructive', title: 'Update Error', description: 'Cannot find the corresponding user application to update. The application may be from an older version.' });
+      return;
+    }
     
     try {
+        const batch = writeBatch(firestore);
+
+        // Update the document in the employer's view
         const applicantDocRef = doc(firestore, 'jobs', id, 'applicants', applicantId);
-        await updateDoc(applicantDocRef, { status: newStatus });
+        batch.update(applicantDocRef, { status: newStatus });
+        
+        // Update the corresponding document in the user's view
+        const userApplicationDocRef = doc(firestore, 'users', seekerId, 'applications', userApplicationId);
+        batch.update(userApplicationDocRef, { status: newStatus });
+
+        await batch.commit();
+        
         toast({
             title: 'Status Updated',
             description: `Applicant status changed to ${newStatus}.`,
@@ -220,13 +237,13 @@ export default function JobApplicantsPage() {
                             </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, 'reviewed')}>
+                                <DropdownMenuItem onClick={() => handleStatusChange(applicant, 'reviewed')}>
                                     <Check className="mr-2 h-4 w-4" /> Mark as Reviewed
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, 'hired')}>
+                                <DropdownMenuItem onClick={() => handleStatusChange(applicant, 'hired')}>
                                     <Check className="mr-2 h-4 w-4" /> Mark as Hired
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, 'rejected')} className="text-red-600">
+                                <DropdownMenuItem onClick={() => handleStatusChange(applicant, 'rejected')} className="text-red-600">
                                     <X className="mr-2 h-4 w-4" /> Reject
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -249,5 +266,3 @@ export default function JobApplicantsPage() {
     </div>
   );
 }
-
-    

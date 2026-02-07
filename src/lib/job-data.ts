@@ -24,6 +24,7 @@ export type JobApplicant = {
   resumeURL?: string;
   photoURL?: string;
   status: 'pending' | 'reviewed' | 'rejected' | 'hired';
+  userApplicationId?: string;
   appliedAt: {
     toDate: () => Date;
   };

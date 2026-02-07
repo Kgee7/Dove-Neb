@@ -39,6 +39,7 @@ export {
   serverTimestamp,
   arrayUnion,
   arrayRemove,
+  writeBatch,
   type DocumentReference,
   type CollectionReference,
   type Query as FirestoreQuery,
