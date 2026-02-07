@@ -74,7 +74,6 @@ export default function JobApplicantsPage() {
   const router = useRouter();
   const id = params.id as string;
   const { toast } = useToast();
-  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [applicantToDelete, setApplicantToDelete] = useState<JobApplicant | null>(null);
 
 
@@ -85,32 +84,35 @@ export default function JobApplicantsPage() {
 
   const { data: job, isLoading: isJobLoading } = useDoc<Job>(jobDocRef);
 
+  // Directly check authorization and handle redirects in an effect.
+  // This is safer than setting a state that then triggers the query.
   useEffect(() => {
-    if (isUserLoading || isJobLoading) return;
-
+    if (isUserLoading || isJobLoading) {
+      return; // Wait until all data is loaded.
+    }
     if (!user) {
-      router.push('/login');
+      router.push('/login'); // Not logged in.
       return;
     }
-
-    if (job) {
-      if (job.employerId === user.uid) {
-        setIsAuthorized(true);
-      } else {
-        setIsAuthorized(false);
-      }
-    } else {
-      // Job doesn't exist, so user is not authorized
-      setIsAuthorized(false);
+    if (!job || job.employerId !== user.uid) {
+      toast({
+        variant: 'destructive',
+        title: 'Access Denied',
+        description: 'You are not authorized to view these applicants.',
+      });
+      router.push('/dashboard'); // Not the owner or job doesn't exist.
     }
-  }, [isUserLoading, user, isJobLoading, job, router]);
+  }, [isUserLoading, isJobLoading, user, job, router, toast]);
 
 
+  // The query is now gated by all necessary data being loaded and authorized.
+  // It will remain `null` until the user is confirmed to be the owner, preventing permission errors.
   const applicantsQuery = useMemo(() => {
-    // Only build the query if the user is loaded, authorized, and all necessary IDs are present.
-    if (!firestore || !id || isAuthorized !== true) return null;
-    return query(collection(firestore, `jobs/${id}/applicants`), orderBy('appliedAt', 'desc'));
-  }, [firestore, id, isAuthorized]);
+    if (isUserLoading || isJobLoading || !user || !job || user.uid !== job.employerId) {
+      return null;
+    }
+    return query(collection(firestore!, `jobs/${id}/applicants`), orderBy('appliedAt', 'desc'));
+  }, [isUserLoading, isJobLoading, user, job, firestore, id]);
 
   const { data: applicants, isLoading: areApplicantsLoading } = useCollection<JobApplicant>(applicantsQuery);
   
@@ -163,9 +165,10 @@ export default function JobApplicantsPage() {
     }
   };
 
-  const isLoading = isUserLoading || isJobLoading || isAuthorized === null || (isAuthorized && areApplicantsLoading);
-
-  if (isLoading) {
+  // Show a loader while we are verifying access and loading initial data.
+  const isLoading = isUserLoading || isJobLoading || (applicantsQuery && areApplicantsLoading);
+  
+  if (isLoading && !applicants) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -173,7 +176,8 @@ export default function JobApplicantsPage() {
     );
   }
 
-  if (!isAuthorized) {
+  // The redirect effect handles unauthorized access, but this serves as a fallback UI.
+  if (!job || (user && job.employerId !== user.uid)) {
     return (
      <div className="container py-12 text-center">
        <h1 className="text-3xl font-bold">Access Denied</h1>
@@ -184,17 +188,6 @@ export default function JobApplicantsPage() {
      </div>
    );
  }
-  
-  if (!job) {
-    return (
-      <div className="container py-12 text-center">
-        <h1 className="text-3xl font-bold">Job not found</h1>
-        <Link href="/dashboard">
-          <Button variant="link" className="mt-4">Back to Dashboard</Button>
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <>
