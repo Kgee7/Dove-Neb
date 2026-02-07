@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -51,6 +51,9 @@ export default function SignupPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
+
   const { toast } = useToast();
   const [loading, setLoading] = React.useState(false);
 
@@ -67,9 +70,13 @@ export default function SignupPage() {
 
   React.useEffect(() => {
     if (user) {
-      router.push("/dashboard");
+      if (redirectUrl) {
+        router.push(redirectUrl);
+      } else {
+        router.push("/dashboard");
+      }
     }
-  }, [user, router]);
+  }, [user, router, redirectUrl]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
@@ -98,8 +105,11 @@ export default function SignupPage() {
 
       toast({
         title: "Account Created!",
-        description: "You will be redirected to your dashboard.",
+        description: "You will be redirected.",
       });
+
+      // The useEffect will handle redirection once the user state is updated.
+      // No explicit push is needed here if the useEffect is reliable.
     } catch (error: any) {
       console.error(error);
       toast({

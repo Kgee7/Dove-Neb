@@ -94,15 +94,7 @@ export default function JobDetailsPage() {
                 </div>
               </div>
               <div className='mt-8'>
-                <Card className="bg-secondary/20">
-                    <CardHeader>
-                        <CardTitle className="text-lg">Ready to Apply?</CardTitle>
-                        <CardDescription>Submit your application with one click.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex justify-center">
-                      <ApplyButton jobId={id} />
-                    </CardContent>
-                  </Card>
+                {job && <ApplyButton job={job} />}
               </div>
             </div>
           </CardContent>
