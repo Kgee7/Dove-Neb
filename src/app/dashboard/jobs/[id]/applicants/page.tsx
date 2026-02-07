@@ -114,9 +114,10 @@ export default function JobApplicantsPage() {
 
 
   const applicantsQuery = useMemo(() => {
-    if (!firestore || !id || !isAuthorized) return null; // Only query if authorized
+    // Only build the query if the user is loaded, authorized, and all necessary IDs are present.
+    if (!firestore || !id || !user || isAuthorized !== true) return null;
     return query(collection(firestore, `jobs/${id}/applicants`), orderBy('appliedAt', 'desc'));
-  }, [firestore, id, isAuthorized]);
+  }, [firestore, id, user, isAuthorized]);
 
   const { data: applicants, isLoading: areApplicantsLoading } = useCollection<JobApplicant>(applicantsQuery);
 
