@@ -2,20 +2,21 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useUser, useDoc, useFirestore } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { applyForJob } from '@/ai/flows/apply-for-job-flow';
+import { doc, writeBatch } from 'firebase/firestore';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import { v4 as uuidv4 } from 'uuid';
+import type { Job } from '@/lib/job-data';
 
 type UserProfile = {
+  firstName: string;
+  lastName: string;
+  email: string;
   resumeURL?: string;
+  photoURL?: string;
   userType?: 'seeker' | 'employer';
-};
-
-type JobApplication = {
-  jobId: string;
 };
 
 export default function ApplyButton({ jobId }: { jobId: string }) {
@@ -30,40 +31,59 @@ export default function ApplyButton({ jobId }: { jobId: string }) {
     return doc(firestore, 'users', user.uid);
   }, [user?.uid, firestore]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
-  
-  const applicationsQuery = useMemo(() => {
-    if (!user?.uid || !firestore) return null;
-    return doc(firestore, `users/${user.uid}/applications/${jobId}`);
-  }, [user?.uid, firestore, jobId]);
-  const { data: existingApplication, isLoading: isApplicationLoading } = useDoc<JobApplication>(applicationsQuery);
 
+  const applicationQuery = useMemo(() => {
+    if (!user?.uid || !firestore) return null;
+    // We can't query by jobId directly without a composite index,
+    // but checking the dashboard `applications` collection is a good proxy.
+    // The most definitive check is done during the apply action.
+    return collection(firestore, `users/${user.uid}/applications`);
+  }, [user?.uid, firestore]);
+
+  const jobDocRef = useMemo(() => {
+    if (!firestore || !jobId) return null;
+    return doc(firestore, 'jobs', jobId);
+  }, [firestore, jobId]);
+  const { data: job, isLoading: isJobLoading } = useDoc<Job>(jobDocRef);
+  
+  // This effect determines the initial state of the button
   useEffect(() => {
-      if (isUserLoading || isProfileLoading || isApplicationLoading) {
-          setApplicationState('loading');
-          return;
-      }
-      if (!user) {
-          setApplicationState('idle'); // User can see the button but will be prompted to log in
-          return;
-      }
-       if (userProfile?.userType !== 'seeker') {
-           setApplicationState('idle'); // Hide for non-seekers
-           return;
-       }
-      if (existingApplication) {
-          setApplicationState('already-applied');
-          return;
-      }
-      if (!userProfile?.resumeURL) {
-          setApplicationState('no-resume');
-          return;
-      }
-      setApplicationState('idle');
-  }, [user, isUserLoading, userProfile, isProfileLoading, existingApplication, isApplicationLoading]);
+    const checkExistingApplication = async () => {
+        if (isUserLoading || isProfileLoading || isJobLoading) {
+            setApplicationState('loading');
+            return;
+        }
+        if (!user) {
+            setApplicationState('idle'); // Not logged in, can attempt to apply
+            return;
+        }
+        if (userProfile?.userType !== 'seeker') {
+           return; // Button is hidden anyway, no state needed
+        }
+
+        // Check if user has already applied by querying their own applications
+        if (firestore && user) {
+            const q = query(collection(firestore, `users/${user.uid}/applications`), where("jobId", "==", jobId));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                 setApplicationState('already-applied');
+                 return;
+            }
+        }
+        
+        if (!userProfile?.resumeURL) {
+            setApplicationState('no-resume');
+            return;
+        }
+        setApplicationState('idle');
+    };
+    checkExistingApplication();
+
+  }, [user, isUserLoading, userProfile, isProfileLoading, jobId, firestore, isJobLoading]);
 
 
   const handleApply = async () => {
-    if (!user || !userProfile) {
+    if (!user || !userProfile || !firestore || !job) {
       toast({
         variant: 'destructive',
         title: 'Please log in',
@@ -75,25 +95,50 @@ export default function ApplyButton({ jobId }: { jobId: string }) {
     setApplicationState('loading');
 
     try {
-      const result = await applyForJob({ jobId, seekerId: user.uid });
-      if (result.success) {
-        setApplicationState('applied');
-        toast({
-          title: 'Application Sent!',
-          description: 'Your application has been submitted successfully.',
-        });
-      } else {
-        if (result.message.includes('already applied')) {
-            setApplicationState('already-applied');
-        } else {
-            setApplicationState('error');
-        }
-        toast({
-          variant: 'destructive',
-          title: 'Application Failed',
-          description: result.message,
-        });
-      }
+      const seekerName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
+      const applicantId = uuidv4();
+      const applicationId = uuidv4();
+      const appliedAt = new Date();
+
+      const applicantData = {
+        id: applicantId,
+        seekerId: user.uid,
+        seekerName,
+        seekerEmail: user.email,
+        resumeURL: userProfile.resumeURL,
+        photoURL: userProfile.photoURL || null,
+        status: 'pending',
+        appliedAt,
+        userApplicationId: applicationId, // Link to the user's application document
+      };
+
+      const applicationData = {
+        id: applicationId,
+        jobId,
+        jobTitle: job.title,
+        companyName: job.companyName,
+        seekerId: user.uid,
+        status: 'pending',
+        appliedAt,
+        applicantDocId: applicantId, // Link to the document in the employer's subcollection
+      };
+
+      const batch = writeBatch(firestore);
+      
+      const applicantRef = doc(firestore, 'jobs', jobId, 'applicants', applicantId);
+      batch.set(applicantRef, applicantData);
+
+      const applicationRef = doc(firestore, 'users', user.uid, 'applications', applicationId);
+      batch.set(applicationRef, applicationData);
+
+      await batch.commit();
+
+      setApplicationState('applied');
+      toast({
+        title: 'Application Sent!',
+        description: 'Your application has been submitted successfully.',
+      });
+
     } catch (error: any) {
       setApplicationState('error');
       toast({
