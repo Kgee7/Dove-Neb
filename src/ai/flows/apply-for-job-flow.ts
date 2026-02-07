@@ -1,9 +1,8 @@
 'use server';
 /**
- * @fileOverview A flow for handling job applications.
+ * @fileOverview A server action for handling job applications.
  */
 
-import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import * as admin from 'firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -28,95 +27,87 @@ const ApplyForJobOutputSchema = z.object({
 });
 export type ApplyForJobOutput = z.infer<typeof ApplyForJobOutputSchema>;
 
-export async function applyForJob(input: ApplyForJobInput): Promise<ApplyForJobOutput> {
-  return applyForJobFlow(input);
-}
+export async function applyForJob({ jobId, seekerId }: ApplyForJobInput): Promise<ApplyForJobOutput> {
+  const firestore = getFirestore();
 
-const applyForJobFlow = ai.defineFlow(
-  {
-    name: 'applyForJobFlow',
-    inputSchema: ApplyForJobInputSchema,
-    outputSchema: ApplyForJobOutputSchema,
-  },
-  async ({ jobId, seekerId }) => {
-    const firestore = getFirestore();
+  try {
+    // 1. Get Seeker and Job data
+    const seekerDoc = await firestore.collection('users').doc(seekerId).get();
+    const jobDoc = await firestore.collection('jobs').doc(jobId).get();
 
-    try {
-      // 1. Get Seeker and Job data
-      const seekerDoc = await firestore.collection('users').doc(seekerId).get();
-      const jobDoc = await firestore.collection('jobs').doc(jobId).get();
-
-      if (!seekerDoc.exists) {
-        return { success: false, message: 'User profile not found.' };
-      }
-      if (!jobDoc.exists) {
-        return { success: false, message: 'Job listing not found.' };
-      }
-
-      const seekerData = seekerDoc.data()!;
-      const jobData = jobDoc.data()!;
-      
-      const seekerName = `${seekerData.firstName} ${seekerData.lastName}`.trim();
-
-      // Check for resume
-      if (!seekerData.resumeURL) {
-        return { success: false, message: 'You must upload a resume to your profile before applying.' };
-      }
-
-      // Check if already applied
-      const applicantQuery = await firestore.collection('jobs').doc(jobId).collection('applicants').where('seekerId', '==', seekerId).limit(1).get();
-      if (!applicantQuery.empty) {
-        return { success: false, message: 'You have already applied for this job.' };
-      }
-
-      const applicantId = uuidv4();
-      const applicationId = uuidv4();
-      const appliedAt = new Date();
-
-      const applicantData = {
-        id: applicantId,
-        seekerId,
-        seekerName,
-        seekerEmail: seekerData.email,
-        resumeURL: seekerData.resumeURL,
-        photoURL: seekerData.photoURL || null,
-        status: 'pending',
-        appliedAt,
-        userApplicationId: applicationId, // Link to the user's application document
-      };
-
-      const applicationData = {
-        id: applicationId,
-        jobId,
-        jobTitle: jobData.title,
-        companyName: jobData.companyName,
-        seekerId,
-        status: 'pending',
-        appliedAt,
-        applicantDocId: applicantId, // Link to the document in the employer's subcollection
-      };
-
-      // Create documents in a batch
-      const batch = firestore.batch();
-      
-      const applicantRef = firestore.collection('jobs').doc(jobId).collection('applicants').doc(applicantId);
-      batch.set(applicantRef, applicantData);
-
-      const applicationRef = firestore.collection('users').doc(seekerId).collection('applications').doc(applicationId);
-      batch.set(applicationRef, applicationData);
-
-      await batch.commit();
-
-      return { 
-        success: true, 
-        message: 'Application submitted successfully!',
-        applicationId,
-        applicantId,
-      };
-
-    } catch (error: any) {
-      console.error('Error in applyForJobFlow:', error);
-      return { success: false, message: error.message || 'An unexpected error occurred while submitting your application.' };
+    if (!seekerDoc.exists) {
+      return { success: false, message: 'User profile not found.' };
     }
+    if (!jobDoc.exists) {
+      return { success: false, message: 'Job listing not found.' };
+    }
+
+    const seekerData = seekerDoc.data()!;
+    const jobData = jobDoc.data()!;
+    
+    const seekerName = `${seekerData.firstName} ${seekerData.lastName}`.trim();
+
+    // Check for resume
+    if (!seekerData.resumeURL) {
+      return { success: false, message: 'You must upload a resume to your profile before applying.' };
+    }
+
+    // Check if already applied
+    const applicantQuery = await firestore.collection('jobs').doc(jobId).collection('applicants').where('seekerId', '==', seekerId).limit(1).get();
+    if (!applicantQuery.empty) {
+      return { success: false, message: 'You have already applied for this job.' };
+    }
+
+    const applicantId = uuidv4();
+    const applicationId = uuidv4();
+    const appliedAt = new Date();
+
+    const applicantData = {
+      id: applicantId,
+      seekerId,
+      seekerName,
+      seekerEmail: seekerData.email,
+      resumeURL: seekerData.resumeURL,
+      photoURL: seekerData.photoURL || null,
+      status: 'pending',
+      appliedAt,
+      userApplicationId: applicationId, // Link to the user's application document
+    };
+
+    const applicationData = {
+      id: applicationId,
+      jobId,
+      jobTitle: jobData.title,
+      companyName: jobData.companyName,
+      seekerId,
+      status: 'pending',
+      appliedAt,
+      applicantDocId: applicantId, // Link to the document in the employer's subcollection
+    };
+
+    // Create documents in a batch
+    const batch = firestore.batch();
+    
+    const applicantRef = firestore.collection('jobs').doc(jobId).collection('applicants').doc(applicantId);
+    batch.set(applicantRef, applicantData);
+
+    const applicationRef = firestore.collection('users').doc(seekerId).collection('applications').doc(applicationId);
+    batch.set(applicationRef, applicationData);
+
+    await batch.commit();
+
+    return { 
+      success: true, 
+      message: 'Application submitted successfully!',
+      applicationId,
+      applicantId,
+    };
+
+  } catch (error: any) {
+    console.error('Error in applyForJob server action:', error);
+    if (error.message && error.message.includes('Could not refresh access token')) {
+       return { success: false, message: 'There was a temporary problem with our server authentication. Please try again in a few moments.' };
+    }
+    return { success: false, message: error.message || 'An unexpected error occurred while submitting your application.' };
   }
-);
+}
