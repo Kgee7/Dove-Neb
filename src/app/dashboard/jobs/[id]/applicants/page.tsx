@@ -11,7 +11,7 @@ import { format } from 'date-fns';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Loader2, Download, User, Check, X, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, Loader2, Download, User, Check, X, MoreHorizontal, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -28,6 +28,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 
 function DownloadResumeButton({ resumePath }: { resumePath: string | undefined }) {
@@ -72,6 +82,8 @@ export default function JobApplicantsPage() {
   const id = params.id as string;
   const { toast } = useToast();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const [applicantToDelete, setApplicantToDelete] = useState<JobApplicant | null>(null);
+
 
   const jobDocRef = useMemo(() => {
     if (!firestore || !id) return null;
@@ -148,6 +160,47 @@ export default function JobApplicantsPage() {
     }
   };
 
+  const handleDeleteApplicant = async () => {
+    if (!firestore || !id || !user || !applicantToDelete) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not perform deletion.' });
+        return;
+    }
+
+    const { id: applicantId, seekerId, userApplicationId, seekerName } = applicantToDelete;
+
+    if (!seekerId || !userApplicationId) {
+        toast({ variant: 'destructive', title: 'Deletion Error', description: 'Cannot find the corresponding user application to delete. The application may be from an older version or corrupted.' });
+        setApplicantToDelete(null);
+        return;
+    }
+    
+    try {
+        const batch = writeBatch(firestore);
+
+        const applicantDocRef = doc(firestore, 'jobs', id, 'applicants', applicantId);
+        batch.delete(applicantDocRef);
+        
+        const userApplicationDocRef = doc(firestore, 'users', seekerId, 'applications', userApplicationId);
+        batch.delete(userApplicationDocRef);
+
+        await batch.commit();
+        
+        toast({
+            title: 'Applicant Deleted',
+            description: `The application from ${seekerName} has been deleted.`,
+        });
+    } catch (error: any) {
+        console.error("Error deleting application:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Deletion Failed',
+            description: error.message || 'Could not delete the application.',
+        });
+    } finally {
+        setApplicantToDelete(null);
+    }
+  };
+
   const isLoading = isUserLoading || isJobLoading || isAuthorized === null || (isAuthorized && areApplicantsLoading);
 
   if (isLoading) {
@@ -182,6 +235,7 @@ export default function JobApplicantsPage() {
   }
 
   return (
+    <>
     <div className="container py-10">
        <div className="mb-8">
             <Link href="/dashboard" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary">
@@ -244,7 +298,10 @@ export default function JobApplicantsPage() {
                                     <Check className="mr-2 h-4 w-4" /> Mark as Hired
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleStatusChange(applicant, 'rejected')} className="text-red-600">
-                                    <X className="mr-2 h-4 w-4" /> Reject
+                                    <X className="mr-2 h-4 w-4" /> Reject Application
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setApplicantToDelete(applicant)} className="text-red-600">
+                                    <Trash2 className="mr-2 h-4 w-4" /> Delete Applicant
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -264,5 +321,20 @@ export default function JobApplicantsPage() {
         </CardContent>
       </Card>
     </div>
+    <AlertDialog open={!!applicantToDelete} onOpenChange={(open) => !open && setApplicantToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This will permanently delete {applicantToDelete?.seekerName}'s application. This action cannot be undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteApplicant}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

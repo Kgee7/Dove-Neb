@@ -1,27 +1,25 @@
 
 'use client';
 
-import React, { useMemo, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import React, { useMemo } from 'react';
+import { useParams } from 'next/navigation';
 import { doc } from 'firebase/firestore';
-import { useDoc, useFirestore, useUser } from '@/firebase';
+import { useDoc, useFirestore } from '@/firebase';
 import { Job } from '@/lib/job-data';
 import Link from 'next/link';
 import FavoriteButton from '@/components/favorite-button';
 import ShareButton from '@/components/share-button';
+import ApplyButton from '@/components/apply-button';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase, Mail } from 'lucide-react';
+import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
 export default function JobDetailsPage() {
   const firestore = useFirestore();
   const params = useParams();
-  const router = useRouter();
-  const { user } = useUser();
   const id = params.id as string;
-  const [showEmail, setShowEmail] = useState(false);
 
   const jobDocRef = useMemo(() => {
     if (!firestore || !id) return null;
@@ -30,14 +28,6 @@ export default function JobDetailsPage() {
 
   const { data: job, isLoading } = useDoc<Job>(jobDocRef);
   
-  const handleApplyClick = () => {
-    if (!user) {
-      router.push('/signup');
-    } else {
-      setShowEmail(true);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -104,33 +94,13 @@ export default function JobDetailsPage() {
                 </div>
               </div>
               <div className='mt-8'>
-                 <Card className="bg-secondary/20">
+                <Card className="bg-secondary/20">
                     <CardHeader>
-                        <CardTitle className="text-lg">Apply Now</CardTitle>
+                        <CardTitle className="text-lg">Ready to Apply?</CardTitle>
+                        <CardDescription>Submit your application with one click.</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      {job.applicationMethod === 'email' && job.applicationEmail ? (
-                        <div>
-                          {!showEmail ? (
-                            <>
-                              <p className="text-sm text-muted-foreground mb-4">Do you want to apply for this job?</p>
-                              <Button onClick={handleApplyClick} className="w-full">
-                                Apply Now
-                              </Button>
-                            </>
-                          ) : (
-                            <div>
-                              <p className="text-sm text-muted-foreground mb-2">Send your CV/resume and cover letter to:</p>
-                              <a href={`mailto:${job.applicationEmail}`} className="font-semibold text-primary hover:underline flex items-center gap-2">
-                                <Mail className="h-4 w-4" />
-                                {job.applicationEmail}
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Application instructions not specified.</p>
-                      )}
+                    <CardContent className="flex justify-center">
+                      <ApplyButton jobId={id} />
                     </CardContent>
                   </Card>
               </div>
