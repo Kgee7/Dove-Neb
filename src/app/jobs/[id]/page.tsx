@@ -1,14 +1,14 @@
 
 'use client';
 
-import React, { useMemo } from 'react';
-import { useParams } from 'next/navigation';
+import React, { useMemo, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
-import { useDoc, useFirestore } from '@/firebase';
+import { useDoc, useFirestore, useUser } from '@/firebase';
 import { Job } from '@/lib/job-data';
 import Link from 'next/link';
 import FavoriteButton from '@/components/favorite-button';
-import ApplyButton from '@/components/apply-button';
+import ShareButton from '@/components/share-button';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase, Mail } from 'lucide-react';
@@ -18,7 +18,10 @@ import { Separator } from '@/components/ui/separator';
 export default function JobDetailsPage() {
   const firestore = useFirestore();
   const params = useParams();
+  const router = useRouter();
+  const { user } = useUser();
   const id = params.id as string;
+  const [showEmail, setShowEmail] = useState(false);
 
   const jobDocRef = useMemo(() => {
     if (!firestore || !id) return null;
@@ -27,6 +30,14 @@ export default function JobDetailsPage() {
 
   const { data: job, isLoading } = useDoc<Job>(jobDocRef);
   
+  const handleApplyClick = () => {
+    if (!user) {
+      router.push('/signup');
+    } else {
+      setShowEmail(true);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -62,8 +73,13 @@ export default function JobDetailsPage() {
         <Card className="relative">
            {job && <FavoriteButton item={job} itemType="job" />}
           <CardHeader>
-            <CardTitle className="text-3xl font-bold font-headline">{job.title}</CardTitle>
-            <CardDescription className="text-lg">{job.companyName}</CardDescription>
+            <div className='flex justify-between items-start'>
+              <div>
+                <CardTitle className="text-3xl font-bold font-headline">{job.title}</CardTitle>
+                <CardDescription className="text-lg">{job.companyName}</CardDescription>
+              </div>
+              <ShareButton title={job.title} text={`Check out this job: ${job.title} at ${job.companyName}`} />
+            </div>
             <div className="flex flex-wrap gap-4 pt-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" /> {job.location}, {job.country}
@@ -95,11 +111,22 @@ export default function JobDetailsPage() {
                     <CardContent>
                       {job.applicationMethod === 'email' && job.applicationEmail ? (
                         <div>
-                          <p className="text-sm text-muted-foreground mb-2">Send your CV/resume and cover letter to:</p>
-                          <a href={`mailto:${job.applicationEmail}`} className="font-semibold text-primary hover:underline flex items-center gap-2">
-                            <Mail className="h-4 w-4" />
-                            {job.applicationEmail}
-                          </a>
+                          {!showEmail ? (
+                            <>
+                              <p className="text-sm text-muted-foreground mb-4">Do you want to apply for this job?</p>
+                              <Button onClick={handleApplyClick} className="w-full">
+                                Apply Now
+                              </Button>
+                            </>
+                          ) : (
+                            <div>
+                              <p className="text-sm text-muted-foreground mb-2">Send your CV/resume and cover letter to:</p>
+                              <a href={`mailto:${job.applicationEmail}`} className="font-semibold text-primary hover:underline flex items-center gap-2">
+                                <Mail className="h-4 w-4" />
+                                {job.applicationEmail}
+                              </a>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <p className="text-sm text-muted-foreground">Application instructions not specified.</p>
