@@ -5,8 +5,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser, useDoc } from '@/firebase';
-import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
+import { useFirestore, useUser, useDoc, useStorage } from '@/firebase';
+import { collection, doc, setDoc } from 'firebase/firestore';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { currencies } from '@/lib/currencies';
@@ -80,16 +81,10 @@ type UserProfile = {
   lastName: string;
 };
 
-const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-});
-
 
 export default function ListRoomPage() {
   const firestore = useFirestore();
+  const storage = useStorage();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
@@ -144,7 +139,7 @@ export default function ListRoomPage() {
   };
 
   const onSubmit = async (data: ListRoomFormValues) => {
-    if (!user || !firestore || !userProfile) {
+    if (!user || !firestore || !storage || !userProfile) {
       toast({
         variant: 'destructive',
         title: 'Authentication Error',
@@ -155,17 +150,26 @@ export default function ListRoomPage() {
     setIsLoading(true);
 
     try {
-        const imageUrls = await Promise.all(data.images.map(imageFile => fileToDataUri(imageFile)));
+        const newRoomRef = doc(collection(firestore, "rooms"));
+        const roomId = newRoomRef.id;
+
+        const imageUrls = await Promise.all(
+            data.images.map(async (imageFile) => {
+                const imageId = uuidv4();
+                const imageRef = storageRef(storage, `rooms/${roomId}/${imageId}`);
+                await uploadBytes(imageRef, imageFile);
+                const downloadURL = await getDownloadURL(imageRef);
+                return downloadURL;
+            })
+        );
         
         const ownerName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
         const selectedCurrency = currencies.find(c => c.code === data.currency);
         const currency = selectedCurrency?.code || 'USD';
         const currencySymbol = selectedCurrency?.symbol || '$';
-        
-        const newRoomRef = doc(collection(firestore, "rooms"));
 
         const roomData = {
-          id: newRoomRef.id,
+          id: roomId,
           ownerId: user.uid,
           ownerName: ownerName,
           listingType: data.listingType,

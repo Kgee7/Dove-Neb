@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Loader2, Download, User, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Trash2, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -33,36 +33,36 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 
-function DownloadResumeButton({ resumePath }: { resumePath: string | undefined }) {
+function ViewResumeButton({ resumePath }: { resumePath: string | undefined }) {
     const { toast } = useToast();
-    const [isDownloading, setIsDownloading] = useState(false);
+    const [isOpening, setIsOpening] = useState(false);
 
-    const handleDownload = async () => {
+    const handleView = async () => {
         if (!resumePath) {
             toast({ variant: 'destructive', title: 'No Resume', description: 'This applicant has not provided a resume.' });
             return;
         }
 
-        setIsDownloading(true);
+        setIsOpening(true);
         try {
-            // For data URIs, we just open them in a new tab.
+            // This will open the data URI or the public storage URL in a new tab.
             window.open(resumePath, '_blank');
         } catch (error: any) {
             console.error("Error opening resume:", error);
             toast({
                 variant: 'destructive',
-                title: 'Download Failed',
-                description: error.message || 'Could not download the resume.',
+                title: 'Open Failed',
+                description: error.message || 'Could not open the resume.',
             });
         } finally {
-            setIsDownloading(false);
+            setIsOpening(false);
         }
     };
 
     return (
-        <Button variant="outline" size="sm" onClick={handleDownload} disabled={isDownloading}>
-            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-            Resume
+        <Button variant="outline" size="sm" onClick={handleView} disabled={isOpening}>
+            {isOpening && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            View Resume
         </Button>
     );
 }
@@ -236,7 +236,7 @@ export default function JobApplicantsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <DownloadResumeButton resumePath={applicant.resumeURL} />
+                        <ViewResumeButton resumePath={applicant.resumeURL} />
                         <Button variant="destructive" size="sm" onClick={() => setApplicantToDelete(applicant)}>
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
