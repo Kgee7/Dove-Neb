@@ -93,7 +93,7 @@
         "salePrice": { "type": "number", "description": "Total price if for sale." },
         "currency": { "type": "string" },
         "currencySymbol": { "type": "string" },
-        "contactPhone": { "type": "string" },
+        "contactEmail": { "type": "string", "format": "email" },
         "contactWhatsapp": { "type": "string" },
         "images": { "type": "array", "items": { "type": "string", "format": "uri" } },
         "amenities": { "type": "array", "items": { "type": "string" } }

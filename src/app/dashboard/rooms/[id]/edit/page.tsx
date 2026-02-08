@@ -44,7 +44,7 @@ const formSchema = z.object({
   priceNight: z.coerce.number().min(0).optional(),
   priceMonth: z.coerce.number().min(0).optional(),
   salePrice: z.coerce.number().min(0).optional(),
-  contactPhone: z.string().optional(),
+  contactEmail: z.string().email().optional(),
   contactWhatsapp: z.string().optional(),
   amenities: z.array(z.string()).optional(),
 }).refine(data => {
@@ -109,7 +109,7 @@ export default function EditRoomPage() {
         priceNight: room.priceNight || undefined,
         priceMonth: room.priceMonth || undefined,
         salePrice: room.salePrice || undefined,
-        contactPhone: room.contactPhone || '',
+        contactEmail: room.contactEmail || '',
         contactWhatsapp: room.contactWhatsapp || '',
       });
     }
@@ -363,12 +363,12 @@ export default function EditRoomPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                     control={form.control}
-                    name="contactPhone"
+                    name="contactEmail"
                     render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Contact Phone (Optional)</FormLabel>
+                        <FormLabel>Contact Email (Optional)</FormLabel>
                         <FormControl>
-                        <Input placeholder="+1 123 456 7890" {...field} value={field.value ?? ''}/>
+                        <Input placeholder="contact@example.com" {...field} value={field.value ?? ''}/>
                         </FormControl>
                         <FormMessage />
                     </FormItem>

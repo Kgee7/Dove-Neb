@@ -38,7 +38,7 @@ export interface Room {
     amenities: string[];
     ownerName: string;
     ownerId: string;
-    contactPhone: string | null;
+    contactEmail: string | null;
     contactWhatsapp: string | null;
 }
 
@@ -60,7 +60,7 @@ export const roomConverter: FirestoreDataConverter<Room> = {
             amenities: room.amenities,
             ownerName: room.ownerName,
             ownerId: room.ownerId,
-            contactPhone: room.contactPhone,
+            contactEmail: room.contactEmail,
             contactWhatsapp: room.contactWhatsapp,
         };
     },
@@ -82,7 +82,7 @@ export const roomConverter: FirestoreDataConverter<Room> = {
             amenities: data.amenities,
             ownerName: data.ownerName,
             ownerId: data.ownerId,
-            contactPhone: data.contactPhone,
+            contactEmail: data.contactEmail,
             contactWhatsapp: data.contactWhatsapp,
         };
     },

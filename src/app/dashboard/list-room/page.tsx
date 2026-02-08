@@ -53,7 +53,7 @@ const formSchema = z.object({
   priceNight: z.coerce.number().min(0).optional(),
   priceMonth: z.coerce.number().min(0).optional(),
   salePrice: z.coerce.number().min(0).optional(),
-  contactPhone: z.string().optional(),
+  contactEmail: z.string().email().optional(),
   contactWhatsapp: z.string().optional(),
   images: fileArraySchema,
   amenities: z.array(z.string()).optional(),
@@ -161,7 +161,7 @@ export default function ListRoomPage() {
           salePrice: data.salePrice || null,
           currency,
           currencySymbol,
-          contactPhone: data.contactPhone || null,
+          contactEmail: data.contactEmail || null,
           contactWhatsapp: data.contactWhatsapp || null,
           images: imageUrls,
           amenities: data.amenities || [],
@@ -382,12 +382,12 @@ export default function ListRoomPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                       control={form.control}
-                      name="contactPhone"
+                      name="contactEmail"
                       render={({ field }) => (
                       <FormItem>
-                          <FormLabel>Contact Phone (Optional)</FormLabel>
+                          <FormLabel>Contact Email (Optional)</FormLabel>
                           <FormControl>
-                          <Input placeholder="+1 123 456 7890" {...field} value={field.value ?? ''}/>
+                          <Input placeholder="contact@example.com" {...field} value={field.value ?? ''}/>
                           </FormControl>
                           <FormMessage />
                       </FormItem>
@@ -523,5 +523,3 @@ export default function ListRoomPage() {
     </div>
   );
 }
-
-    

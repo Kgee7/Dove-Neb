@@ -16,7 +16,7 @@ import ShareButton from '@/components/share-button';
 
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Loader2, Wifi, Tv, Utensils, Wind, Star, CalendarIcon, Phone, MessageSquare, Maximize } from 'lucide-react';
+import { ArrowLeft, Loader2, Wifi, Tv, Utensils, Wind, Star, CalendarIcon, Phone, MessageSquare, Maximize, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -302,10 +302,10 @@ export default function RoomDetailsPage() {
                                 ) : (
                                     <div className="space-y-3">
                                         <h3 className='font-semibold'>Contact Information</h3>
-                                        {room.contactPhone && (
-                                            <a href={`tel:${room.contactPhone}`} className='w-full'>
+                                        {room.contactEmail && (
+                                            <a href={`mailto:${room.contactEmail}`} className='w-full'>
                                                 <Button variant="outline" className='w-full'>
-                                                    <Phone className='mr-2 h-4 w-4' /> Call
+                                                    <Mail className='mr-2 h-4 w-4' /> Email
                                                 </Button>
                                             </a>
                                         )}
@@ -316,7 +316,7 @@ export default function RoomDetailsPage() {
                                                 </Button>
                                             </a>
                                         )}
-                                        {!room.contactPhone && !room.contactWhatsapp && (
+                                        {!room.contactEmail && !room.contactWhatsapp && (
                                             <p className="text-sm text-muted-foreground">Contact information not provided.</p>
                                         )}
                                     </div>
