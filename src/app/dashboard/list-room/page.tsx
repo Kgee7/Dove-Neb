@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -7,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser, useStorage } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
-import { ref as storageRef, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
+import { ref as storageRef, getDownloadURL, uploadBytes } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { currencies } from '@/lib/currencies';
@@ -200,7 +199,7 @@ export default function ListRoomPage() {
             const fileName = `${uuidv4()}.${fileExtension}`;
             const imageStorageRef = storageRef(storage, `rooms/${roomId}/${fileName}`);
             
-            await uploadBytesResumable(imageStorageRef, file as File);
+            await uploadBytes(imageStorageRef, file as File);
             const downloadURL = await getDownloadURL(imageStorageRef);
             imageUrls.push(downloadURL);
         }
@@ -604,7 +603,3 @@ export default function ListRoomPage() {
     </div>
   );
 }
-
-    
-
-    

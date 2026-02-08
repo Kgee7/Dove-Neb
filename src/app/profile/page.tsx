@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -7,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUser, useDoc, useFirestore, useStorage, setDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { ref as storageRef, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
+import { ref as storageRef, getDownloadURL, uploadBytes } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
@@ -133,7 +132,7 @@ export default function ProfilePage() {
     const imageRef = storageRef(storage, `users/${user.uid}/profilePicture/${fileName}`);
     
     try {
-      await uploadBytesResumable(imageRef, file);
+      await uploadBytes(imageRef, file);
       const photoURL = await getDownloadURL(imageRef);
       await setDoc(userDocRef, { photoURL }, { merge: true });
       toast({
@@ -177,7 +176,7 @@ export default function ProfilePage() {
     const resumeRef = storageRef(storage, `users/${user.uid}/resumes/${fileName}`);
     
     try {
-      await uploadBytesResumable(resumeRef, file);
+      await uploadBytes(resumeRef, file);
       const resumeURL = await getDownloadURL(resumeRef);
       await setDoc(userDocRef, { resumeURL }, { merge: true });
       toast({
@@ -389,7 +388,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
-
-    
