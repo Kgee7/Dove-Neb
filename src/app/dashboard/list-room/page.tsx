@@ -5,8 +5,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser, useDoc } from '@/firebase';
+import { useFirestore, useUser, useStorage } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { currencies } from '@/lib/currencies';
@@ -31,6 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { useDoc } from '@/firebase';
 
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
@@ -49,7 +51,7 @@ const formSchema = z.object({
   salePrice: z.coerce.number().min(0).optional(),
   contactEmail: z.string().email().optional().or(z.literal('')),
   contactWhatsapp: z.string().optional(),
-  images: z.array(z.string()).min(1, 'At least one image is required.').max(MAX_IMAGES, `You can upload a maximum of ${MAX_IMAGES} images.`),
+  images: z.array(z.any()).min(1, 'At least one image is required.').max(MAX_IMAGES, `You can upload a maximum of ${MAX_IMAGES} images.`),
   amenities: z.array(z.string()).optional(),
 }).refine(data => {
     if (data.listingType === 'rent') return data.priceNight || data.priceMonth;
@@ -73,23 +75,14 @@ type UserProfile = {
   lastName: string;
 };
 
-// Helper function to read a file as a Data URL
-const readFileAsDataURL = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
-    reader.readAsDataURL(file);
-  });
-};
-
-
 export default function ListRoomPage() {
   const firestore = useFirestore();
+  const storage = useStorage();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [newAmenity, setNewAmenity] = useState('');
 
   const userDocRef = useMemo(() => {
@@ -119,12 +112,24 @@ export default function ListRoomPage() {
   });
 
   const listingType = form.watch('listingType');
+  const watchedImages = form.watch('images');
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
     }
   }, [isUserLoading, user, router]);
+
+  useEffect(() => {
+    if (watchedImages) {
+      const newPreviews = watchedImages.map(file => URL.createObjectURL(file));
+      setImagePreviews(newPreviews);
+      
+      return () => {
+        newPreviews.forEach(url => URL.revokeObjectURL(url));
+      };
+    }
+  }, [watchedImages]);
 
   const handleAddAmenity = () => {
     const currentAmenities = form.getValues('amenities') || [];
@@ -139,7 +144,7 @@ export default function ListRoomPage() {
       form.setValue('amenities', currentAmenities.filter(a => a !== amenityToRemove), { shouldValidate: true });
   };
   
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
@@ -149,7 +154,6 @@ export default function ListRoomPage() {
         return;
     }
 
-    // Validate file sizes
     const oversizedFiles = files.filter(file => file.size > MAX_IMAGE_SIZE);
     if (oversizedFiles.length > 0) {
         toast({
@@ -160,20 +164,17 @@ export default function ListRoomPage() {
         return;
     }
 
-    setIsLoading(true); // Use the main isLoading state to disable the whole form during processing
-    try {
-        const dataUrls = await Promise.all(files.map(readFileAsDataURL));
-        form.setValue('images', [...currentImages, ...dataUrls], { shouldValidate: true });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error reading files', description: error.message || 'Could not process the selected images.' });
-        console.error(error);
-    } finally {
-        setIsLoading(false);
-    }
+    form.setValue('images', [...currentImages, ...files], { shouldValidate: true });
+  };
+  
+  const handleRemoveImage = (indexToRemove: number) => {
+      const currentImages = form.getValues('images');
+      const updatedImages = currentImages.filter((_, i) => i !== indexToRemove);
+      form.setValue('images', updatedImages, { shouldValidate: true });
   };
 
   const onSubmit = async (data: ListRoomFormValues) => {
-    if (!user || !firestore || !userProfile) {
+    if (!user || !firestore || !storage || !userProfile) {
       toast({
         variant: 'destructive',
         title: 'Authentication Error',
@@ -187,7 +188,15 @@ export default function ListRoomPage() {
         const newRoomRef = doc(collection(firestore, "rooms"));
         const roomId = newRoomRef.id;
 
-        const imageUrls = data.images;
+        const imageUrls = await Promise.all(
+          data.images.map(async (file: File) => {
+            const fileExtension = file.name.split('.').pop();
+            const fileName = `${uuidv4()}.${fileExtension}`;
+            const imageStorageRef = storageRef(storage, `rooms/${roomId}/${fileName}`);
+            await uploadBytes(imageStorageRef, file);
+            return getDownloadURL(imageStorageRef);
+          })
+        );
         
         const ownerName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
         const selectedCurrency = currencies.find(c => c.code === data.currency);
@@ -484,14 +493,10 @@ export default function ListRoomPage() {
                       </FormDescription>
                       {fieldState.error && <FormMessage />}
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
-                          {form.watch('images').map((dataUrl, index) => (
+                          {imagePreviews.map((previewUrl, index) => (
                             <div key={index} className="relative group">
-                                  <img src={dataUrl} alt={`preview ${index}`} className="w-full h-24 object-cover rounded-md" />
-                                  <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => {
-                                      const currentImages = form.getValues('images');
-                                      const updatedImages = currentImages.filter((_, i) => i !== index);
-                                      form.setValue('images', updatedImages, { shouldValidate: true });
-                                  }}>
+                                  <img src={previewUrl} alt={`preview ${index}`} className="w-full h-24 object-cover rounded-md" />
+                                  <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveImage(index)}>
                                       <Trash2 className="h-4 w-4" />
                                   </Button>
                             </div>
@@ -587,5 +592,3 @@ export default function ListRoomPage() {
     </div>
   );
 }
-
-    
