@@ -107,11 +107,11 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file || !user || !userDocRef || !storage) return;
 
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
         toast({
             variant: 'destructive',
             title: 'File Too Large',
-            description: 'Profile picture must be less than 5MB.',
+            description: 'Profile picture must be less than 10MB.',
         });
         return;
     }
@@ -160,11 +160,11 @@ export default function ProfilePage() {
         return;
     }
 
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
         toast({
             variant: 'destructive',
             title: 'File Too Large',
-            description: 'Resume file must be less than 5MB.',
+            description: 'Resume file must be less than 10MB.',
         });
         return;
     }

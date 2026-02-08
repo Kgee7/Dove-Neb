@@ -35,7 +35,7 @@ import { Badge } from '@/components/ui/badge';
 
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB per image
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB per image
 const MAX_IMAGES = 12;
 
 const fileArraySchema = z.array(z.instanceof(File))
