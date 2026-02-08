@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -25,12 +24,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Trash2, Upload, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, X } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
 
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
@@ -44,7 +44,7 @@ const formSchema = z.object({
   priceNight: z.coerce.number().min(0).optional(),
   priceMonth: z.coerce.number().min(0).optional(),
   salePrice: z.coerce.number().min(0).optional(),
-  contactEmail: z.string().email().optional(),
+  contactEmail: z.string().email().optional().or(z.literal('')),
   contactWhatsapp: z.string().optional(),
   amenities: z.array(z.string()).optional(),
 }).refine(data => {
@@ -71,6 +71,7 @@ export default function EditRoomPage() {
   const id = params.id as string;
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [newAmenity, setNewAmenity] = useState('');
 
   const roomDocRef = useMemo(() => {
     if (!firestore || !id) return null;
@@ -92,6 +93,8 @@ export default function EditRoomPage() {
       priceMonth: undefined,
       salePrice: undefined,
       amenities: [],
+      contactEmail: '',
+      contactWhatsapp: '',
     },
   });
 
@@ -114,6 +117,19 @@ export default function EditRoomPage() {
       });
     }
   }, [room, user, router, form, toast]);
+  
+  const handleAddAmenity = () => {
+    const currentAmenities = form.getValues('amenities') || [];
+    if (newAmenity.trim() && !currentAmenities.find(a => a.toLowerCase() === newAmenity.trim().toLowerCase())) {
+        form.setValue('amenities', [...currentAmenities, newAmenity.trim()], { shouldValidate: true });
+        setNewAmenity('');
+    }
+  };
+
+  const handleRemoveAmenity = (amenityToRemove: string) => {
+      const currentAmenities = form.getValues('amenities') || [];
+      form.setValue('amenities', currentAmenities.filter(a => a !== amenityToRemove), { shouldValidate: true });
+  };
 
   const onSubmit = async (data: EditRoomFormValues) => {
     if (!user || !roomDocRef) return;
@@ -320,7 +336,7 @@ export default function EditRoomPage() {
                       name="priceNight"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Price per Night (Optional)</FormLabel>
+                          <FormLabel>Price per Night</FormLabel>
                           <FormControl>
                             <Input type="number" placeholder="100" {...field} value={field.value ?? ''}/>
                           </FormControl>
@@ -333,7 +349,7 @@ export default function EditRoomPage() {
                       name="priceMonth"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Price per Month (Optional)</FormLabel>
+                          <FormLabel>Price per Month</FormLabel>
                           <FormControl>
                             <Input type="number" placeholder="2000" {...field} value={field.value ?? ''}/>
                           </FormControl>
@@ -389,56 +405,79 @@ export default function EditRoomPage() {
                 />
             </div>
             
-             <FormField
+            <FormField
                 control={form.control}
                 name="amenities"
-                render={() => (
+                render={({ field }) => (
                     <FormItem>
                     <div className="mb-4">
                         <FormLabel className="text-base">Amenities</FormLabel>
                         <FormDescription>
-                        Select the amenities available.
+                        Select from the list or add your own.
                         </FormDescription>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {amenitiesList.map((amenity) => (
-                        <FormField
-                        key={amenity}
-                        control={form.control}
-                        name="amenities"
-                        render={({ field }) => {
-                            return (
-                            <FormItem
-                                key={amenity}
-                                className="flex flex-row items-start space-x-3 space-y-0"
-                            >
-                                <FormControl>
-                                <Checkbox
-                                    checked={field.value?.includes(amenity)}
-                                    onCheckedChange={(checked) => {
-                                    return checked
-                                        ? field.onChange([...(field.value || []), amenity])
-                                        : field.onChange(
-                                            (field.value || [])?.filter(
-                                            (value) => value !== amenity
-                                            )
+                        {amenitiesList.map((amenity) => (
+                        <FormItem
+                            key={amenity}
+                            className="flex flex-row items-start space-x-3 space-y-0"
+                        >
+                            <FormControl>
+                            <Checkbox
+                                checked={field.value?.includes(amenity)}
+                                onCheckedChange={(checked) => {
+                                return checked
+                                    ? field.onChange([...(field.value || []), amenity])
+                                    : field.onChange(
+                                        (field.value || []).filter(
+                                        (value) => value !== amenity
                                         )
-                                    }}
-                                />
-                                </FormControl>
-                                <FormLabel className="font-normal">
-                                {amenity}
-                                </FormLabel>
-                            </FormItem>
-                            )
-                        }}
-                        />
-                    ))}
+                                    );
+                                }}
+                            />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                            {amenity}
+                            </FormLabel>
+                        </FormItem>
+                        ))}
                     </div>
+                    
+                    <div className="flex items-center gap-2 mt-4">
+                        <Input
+                            placeholder="e.g., Free Parking"
+                            value={newAmenity}
+                            onChange={(e) => setNewAmenity(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleAddAmenity();
+                                }
+                            }}
+                        />
+                        <Button type="button" onClick={handleAddAmenity}>Add</Button>
+                    </div>
+
                     <FormMessage />
+                    
+                    {field.value && field.value.length > 0 && (
+                        <div className="mt-4 border-t pt-4">
+                            <h4 className="text-sm font-medium mb-2">Selected amenities:</h4>
+                            <div className="flex flex-wrap gap-2">
+                                {field.value.map(amenity => (
+                                    <Badge key={amenity} variant="secondary" className="flex items-center gap-1.5 py-1 px-2">
+                                        {amenity}
+                                        <button type="button" onClick={() => handleRemoveAmenity(amenity)} className="rounded-full hover:bg-muted-foreground/20 p-0.5 focus:outline-none focus:ring-1 focus:ring-ring">
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    </Badge>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                     </FormItem>
                 )}
-                />
+            />
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Changes'}
@@ -450,5 +489,3 @@ export default function EditRoomPage() {
     </div>
   );
 }
-
-    
