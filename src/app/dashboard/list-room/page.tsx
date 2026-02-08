@@ -78,7 +78,7 @@ const readFileAsDataURL = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
+    reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
     reader.readAsDataURL(file);
   });
 };
@@ -164,8 +164,8 @@ export default function ListRoomPage() {
     try {
         const dataUrls = await Promise.all(files.map(readFileAsDataURL));
         form.setValue('images', [...currentImages, ...dataUrls], { shouldValidate: true });
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Error reading files', description: 'Could not process the selected images.' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error reading files', description: error.message || 'Could not process the selected images.' });
         console.error(error);
     } finally {
         setIsLoading(false);
@@ -587,3 +587,5 @@ export default function ListRoomPage() {
     </div>
   );
 }
+
+    
