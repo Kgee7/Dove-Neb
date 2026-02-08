@@ -33,7 +33,6 @@ import { Input } from '@/components/ui/input';
 import { Loader2, Edit, Upload, ArrowLeft } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { handleFirebaseError } from '@/firebase/error-handler';
-import { Progress } from '@/components/ui/progress';
 
 type UserProfile = {
     userType: 'seeker' | 'employer' | 'renter' | 'owner';
@@ -62,9 +61,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingResume, setUploadingResume] = useState(false);
-  const [avatarUploadProgress, setAvatarUploadProgress] = useState<number | null>(null);
-  const [resumeUploadProgress, setResumeUploadProgress] = useState<number | null>(null);
-
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const resumeInputRef = useRef<HTMLInputElement>(null);
@@ -109,7 +105,7 @@ export default function ProfilePage() {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user || !userDocRef || !storage) return;
 
@@ -131,43 +127,27 @@ export default function ProfilePage() {
     }
 
     setUploading(true);
-    setAvatarUploadProgress(0);
 
     const fileExtension = file.name.split('.').pop();
     const fileName = `${uuidv4()}.${fileExtension}`;
     const imageRef = storageRef(storage, `users/${user.uid}/profilePicture/${fileName}`);
     
-    const uploadTask = uploadBytesResumable(imageRef, file);
-
-    uploadTask.on('state_changed', 
-      (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setAvatarUploadProgress(progress);
-      }, 
-      (error) => {
-        handleFirebaseError(error, toast);
-        setUploading(false);
-        setAvatarUploadProgress(null);
-      }, 
-      async () => {
-        try {
-          const photoURL = await getDownloadURL(uploadTask.snapshot.ref);
-          await setDoc(userDocRef, { photoURL }, { merge: true });
-          toast({
-            title: 'Profile Picture Updated',
-            description: 'Your new avatar has been saved.',
-          });
-        } catch (error) {
-          handleFirebaseError(error, toast);
-        } finally {
-          setUploading(false);
-          setAvatarUploadProgress(null);
-        }
-      }
-    );
+    try {
+      await uploadBytesResumable(imageRef, file);
+      const photoURL = await getDownloadURL(imageRef);
+      await setDoc(userDocRef, { photoURL }, { merge: true });
+      toast({
+        title: 'Profile Picture Updated',
+        description: 'Your new avatar has been saved.',
+      });
+    } catch (error) {
+      handleFirebaseError(error, toast);
+    } finally {
+      setUploading(false);
+    }
   };
       
-  const handleResumeFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user || !userDocRef || !storage) return;
 
@@ -191,40 +171,24 @@ export default function ProfilePage() {
     }
 
     setUploadingResume(true);
-    setResumeUploadProgress(0);
 
     const fileExtension = file.name.split('.').pop();
     const fileName = `resume-${uuidv4()}.${fileExtension}`;
     const resumeRef = storageRef(storage, `users/${user.uid}/resumes/${fileName}`);
     
-    const uploadTask = uploadBytesResumable(resumeRef, file);
-
-    uploadTask.on('state_changed',
-      (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setResumeUploadProgress(progress);
-      },
-      (error) => {
-        handleFirebaseError(error, toast);
-        setUploadingResume(false);
-        setResumeUploadProgress(null);
-      },
-      async () => {
-        try {
-          const resumeURL = await getDownloadURL(uploadTask.snapshot.ref);
-          await setDoc(userDocRef, { resumeURL }, { merge: true });
-          toast({
-            title: 'Resume Uploaded',
-            description: 'Your resume has been saved successfully.',
-          });
-        } catch (error) {
-          handleFirebaseError(error, toast);
-        } finally {
-          setUploadingResume(false);
-          setResumeUploadProgress(null);
-        }
-      }
-    );
+    try {
+      await uploadBytesResumable(resumeRef, file);
+      const resumeURL = await getDownloadURL(resumeRef);
+      await setDoc(userDocRef, { resumeURL }, { merge: true });
+      toast({
+        title: 'Resume Uploaded',
+        description: 'Your resume has been saved successfully.',
+      });
+    } catch (error) {
+      handleFirebaseError(error, toast);
+    } finally {
+      setUploadingResume(false);
+    }
   };
 
 
@@ -305,10 +269,9 @@ export default function ProfilePage() {
                         {getInitials(userProfile?.firstName, userProfile?.lastName)}
                     </AvatarFallback>
                 </Avatar>
-                {uploading && avatarUploadProgress !== null && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 rounded-full text-white">
-                        <Progress value={avatarUploadProgress} className="w-16 h-2" />
-                        <span className="text-xs mt-1">{Math.round(avatarUploadProgress)}%</span>
+                {uploading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full">
+                        <Loader2 className="h-8 w-8 animate-spin text-white" />
                     </div>
                 )}
                 <Button
@@ -401,12 +364,6 @@ export default function ProfilePage() {
                                     {userProfile.resumeURL ? 'Replace Resume' : 'Upload Resume'}
                                 </Button>
                                </div>
-                               {uploadingResume && resumeUploadProgress !== null && (
-                                   <div className="w-full">
-                                     <Progress value={resumeUploadProgress} className="w-full h-2" />
-                                     <p className="text-xs text-muted-foreground text-center mt-1">{Math.round(resumeUploadProgress)}%</p>
-                                   </div>
-                               )}
                             </div>
                              <input
                                 type="file"
@@ -432,5 +389,7 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
 
     

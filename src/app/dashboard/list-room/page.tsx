@@ -33,7 +33,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useDoc } from '@/firebase';
-import { Progress } from '@/components/ui/progress';
 
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
@@ -85,7 +84,6 @@ export default function ListRoomPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [newAmenity, setNewAmenity] = useState('');
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const userDocRef = useMemo(() => {
       if (!firestore || !user?.uid) return null;
@@ -124,11 +122,16 @@ export default function ListRoomPage() {
 
   useEffect(() => {
     if (watchedImages) {
-      const newPreviews = watchedImages.map(file => URL.createObjectURL(file));
-      setImagePreviews(newPreviews);
+      const urls = watchedImages.map(file => {
+        if (file instanceof File) {
+          return URL.createObjectURL(file);
+        }
+        return ''; // Should not happen with current logic
+      }).filter(Boolean);
+      setImagePreviews(urls);
       
       return () => {
-        newPreviews.forEach(url => URL.revokeObjectURL(url));
+        urls.forEach(url => URL.revokeObjectURL(url));
       };
     }
   }, [watchedImages]);
@@ -150,7 +153,7 @@ export default function ListRoomPage() {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    const currentImages = form.getValues('images');
+    const currentImages = form.getValues('images') || [];
     if (currentImages.length + files.length > MAX_IMAGES) {
         toast({ variant: 'destructive', title: 'Too many images', description: `You can only upload up to ${MAX_IMAGES} images.` });
         return;
@@ -185,39 +188,21 @@ export default function ListRoomPage() {
       return;
     }
     setIsLoading(true);
-    setUploadProgress(0);
 
     try {
         const newRoomRef = doc(collection(firestore, "rooms"));
         const roomId = newRoomRef.id;
 
-        const totalFiles = data.images.length;
         const imageUrls: string[] = [];
-
-        for (let i = 0; i < totalFiles; i++) {
-          const file: File = data.images[i];
-          const fileExtension = file.name.split('.').pop();
-          const fileName = `${uuidv4()}.${fileExtension}`;
-          const imageStorageRef = storageRef(storage, `rooms/${roomId}/${fileName}`);
-
-          await new Promise<void>((resolve, reject) => {
-            const uploadTask = uploadBytesResumable(imageStorageRef, file);
-            uploadTask.on('state_changed',
-              (snapshot) => {
-                const progress = (i / totalFiles) * 100 + (snapshot.bytesTransferred / snapshot.totalBytes) * (100 / totalFiles);
-                setUploadProgress(progress);
-              },
-              (error) => {
-                console.error("Upload failed for one file", error);
-                reject(error);
-              },
-              async () => {
-                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                imageUrls.push(downloadURL);
-                resolve();
-              }
-            );
-          });
+        
+        for (const file of data.images) {
+            const fileExtension = (file as File).name.split('.').pop();
+            const fileName = `${uuidv4()}.${fileExtension}`;
+            const imageStorageRef = storageRef(storage, `rooms/${roomId}/${fileName}`);
+            
+            await uploadBytesResumable(imageStorageRef, file as File);
+            const downloadURL = await getDownloadURL(imageStorageRef);
+            imageUrls.push(downloadURL);
         }
         
         const ownerName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
@@ -262,7 +247,6 @@ export default function ListRoomPage() {
         })
     } finally {
         setIsLoading(false);
-        setUploadProgress(null);
     }
   };
 
@@ -606,19 +590,10 @@ export default function ListRoomPage() {
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
-                    <div className="flex items-center w-full justify-center">
-                      {uploadProgress !== null ? (
-                        <div className="flex items-center gap-2">
-                          <Progress value={uploadProgress} className="w-24 h-2" />
-                          <span className="text-xs">{Math.round(uploadProgress)}%</span>
-                        </div>
-                      ) : (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          <span>Processing...</span>
-                        </>
-                      )}
-                    </div>
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <span>Listing your space...</span>
+                    </>
                   ) : 'List My Space'}
                 </Button>
               </form>
@@ -629,5 +604,7 @@ export default function ListRoomPage() {
     </div>
   );
 }
+
+    
 
     
