@@ -385,7 +385,7 @@ export default function ListRoomPage() {
                       name="contactEmail"
                       render={({ field }) => (
                       <FormItem>
-                          <FormLabel>Contact Email (Optional)</FormLabel>
+                          <FormLabel>Contact Email</FormLabel>
                           <FormControl>
                           <Input placeholder="contact@example.com" {...field} value={field.value ?? ''}/>
                           </FormControl>
@@ -398,7 +398,7 @@ export default function ListRoomPage() {
                       name="contactWhatsapp"
                       render={({ field }) => (
                       <FormItem>
-                          <FormLabel>WhatsApp Number (Optional)</FormLabel>
+                          <FormLabel>WhatsApp Number</FormLabel>
                           <FormControl>
                           <Input placeholder="+1 123 456 7890" {...field} value={field.value ?? ''}/>
                           </FormControl>
@@ -523,3 +523,5 @@ export default function ListRoomPage() {
     </div>
   );
 }
+
+    
