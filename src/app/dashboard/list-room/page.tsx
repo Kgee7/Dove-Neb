@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -33,7 +34,7 @@ import { Badge } from '@/components/ui/badge';
 
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
-const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB per image
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB per image
 const MAX_IMAGES = 12;
 
 const fileArraySchema = z.array(z.instanceof(File))
