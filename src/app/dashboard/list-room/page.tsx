@@ -5,9 +5,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser, useDoc, useStorage } from '@/firebase';
+import { useFirestore, useUser, useDoc } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { currencies } from '@/lib/currencies';
@@ -35,15 +34,8 @@ import { Badge } from '@/components/ui/badge';
 
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
-const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB per image
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB per image
 const MAX_IMAGES = 12;
-
-const fileArraySchema = z.array(z.instanceof(File))
-  .min(1, 'At least one image is required.')
-  .max(MAX_IMAGES, `You can upload a maximum of ${MAX_IMAGES} images.`)
-  .refine(files => files.every(file => file.size <= MAX_IMAGE_SIZE), {
-    message: `Each image must be less than ${MAX_IMAGE_SIZE / (1024 * 1024)}MB.`,
-  });
 
 const formSchema = z.object({
   listingType: z.enum(['rent', 'sale'], { required_error: 'Please select a listing type.' }),
@@ -57,7 +49,7 @@ const formSchema = z.object({
   salePrice: z.coerce.number().min(0).optional(),
   contactEmail: z.string().email().optional().or(z.literal('')),
   contactWhatsapp: z.string().optional(),
-  images: fileArraySchema,
+  images: z.array(z.string()).min(1, 'At least one image is required.').max(MAX_IMAGES, `You can upload a maximum of ${MAX_IMAGES} images.`),
   amenities: z.array(z.string()).optional(),
 }).refine(data => {
     if (data.listingType === 'rent') return data.priceNight || data.priceMonth;
@@ -81,10 +73,19 @@ type UserProfile = {
   lastName: string;
 };
 
+// Helper function to read a file as a Data URL
+const readFileAsDataURL = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+    reader.readAsDataURL(file);
+  });
+};
+
 
 export default function ListRoomPage() {
   const firestore = useFirestore();
-  const storage = useStorage();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
@@ -137,9 +138,42 @@ export default function ListRoomPage() {
       const currentAmenities = form.getValues('amenities') || [];
       form.setValue('amenities', currentAmenities.filter(a => a !== amenityToRemove), { shouldValidate: true });
   };
+  
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const currentImages = form.getValues('images');
+    if (currentImages.length + files.length > MAX_IMAGES) {
+        toast({ variant: 'destructive', title: 'Too many images', description: `You can only upload up to ${MAX_IMAGES} images.` });
+        return;
+    }
+
+    // Validate file sizes
+    const oversizedFiles = files.filter(file => file.size > MAX_IMAGE_SIZE);
+    if (oversizedFiles.length > 0) {
+        toast({
+            variant: 'destructive',
+            title: 'Image too large',
+            description: `Each image must be less than ${MAX_IMAGE_SIZE / (1024*1024)}MB.`
+        });
+        return;
+    }
+
+    setIsLoading(true); // Use the main isLoading state to disable the whole form during processing
+    try {
+        const dataUrls = await Promise.all(files.map(readFileAsDataURL));
+        form.setValue('images', [...currentImages, ...dataUrls], { shouldValidate: true });
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error reading files', description: 'Could not process the selected images.' });
+        console.error(error);
+    } finally {
+        setIsLoading(false);
+    }
+  };
 
   const onSubmit = async (data: ListRoomFormValues) => {
-    if (!user || !firestore || !storage || !userProfile) {
+    if (!user || !firestore || !userProfile) {
       toast({
         variant: 'destructive',
         title: 'Authentication Error',
@@ -153,15 +187,7 @@ export default function ListRoomPage() {
         const newRoomRef = doc(collection(firestore, "rooms"));
         const roomId = newRoomRef.id;
 
-        const imageUrls = await Promise.all(
-            data.images.map(async (imageFile) => {
-                const imageId = uuidv4();
-                const imageRef = storageRef(storage, `rooms/${roomId}/${imageId}`);
-                await uploadBytes(imageRef, imageFile);
-                const downloadURL = await getDownloadURL(imageRef);
-                return downloadURL;
-            })
-        );
+        const imageUrls = data.images;
         
         const ownerName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
         const selectedCurrency = currencies.find(c => c.code === data.currency);
@@ -441,17 +467,10 @@ export default function ListRoomPage() {
                           type="file"
                           multiple
                           accept="image/*"
-                          onChange={(e) => {
-                            const files = Array.from(e.target.files || []);
-                            const currentFiles = form.getValues('images');
-                            if (currentFiles.length + files.length > MAX_IMAGES) {
-                                toast({ variant: 'destructive', title: 'Too many images', description: `You can only upload up to ${MAX_IMAGES} images.` });
-                                return;
-                            }
-                            form.setValue('images', [...currentFiles, ...files], { shouldValidate: true });
-                          }}
+                          onChange={handleFileChange}
                           className="hidden"
                           id="image-upload"
+                          disabled={isLoading}
                         />
                       </FormControl>
                       <label htmlFor="image-upload" className="flex items-center justify-center w-full p-6 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted">
@@ -465,9 +484,9 @@ export default function ListRoomPage() {
                       </FormDescription>
                       {fieldState.error && <FormMessage />}
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
-                          {form.watch('images').map((file, index) => (
+                          {form.watch('images').map((dataUrl, index) => (
                             <div key={index} className="relative group">
-                                  <img src={URL.createObjectURL(file)} alt={`preview ${index}`} className="w-full h-24 object-cover rounded-md" />
+                                  <img src={dataUrl} alt={`preview ${index}`} className="w-full h-24 object-cover rounded-md" />
                                   <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => {
                                       const currentImages = form.getValues('images');
                                       const updatedImages = currentImages.filter((_, i) => i !== index);
@@ -568,3 +587,5 @@ export default function ListRoomPage() {
     </div>
   );
 }
+
+    
