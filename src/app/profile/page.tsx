@@ -57,7 +57,7 @@ const readFileAsDataURL = (file: File): Promise<string> => {
   });
 };
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -384,5 +384,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
