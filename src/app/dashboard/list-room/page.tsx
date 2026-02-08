@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser, useStorage } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref as storageRef, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { currencies } from '@/lib/currencies';
@@ -33,6 +33,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useDoc } from '@/firebase';
+import { Progress } from '@/components/ui/progress';
 
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
@@ -84,6 +85,7 @@ export default function ListRoomPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [newAmenity, setNewAmenity] = useState('');
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const userDocRef = useMemo(() => {
       if (!firestore || !user?.uid) return null;
@@ -183,20 +185,40 @@ export default function ListRoomPage() {
       return;
     }
     setIsLoading(true);
+    setUploadProgress(0);
 
     try {
         const newRoomRef = doc(collection(firestore, "rooms"));
         const roomId = newRoomRef.id;
 
-        const imageUrls = await Promise.all(
-          data.images.map(async (file: File) => {
-            const fileExtension = file.name.split('.').pop();
-            const fileName = `${uuidv4()}.${fileExtension}`;
-            const imageStorageRef = storageRef(storage, `rooms/${roomId}/${fileName}`);
-            await uploadBytes(imageStorageRef, file);
-            return getDownloadURL(imageStorageRef);
-          })
-        );
+        const totalFiles = data.images.length;
+        const imageUrls: string[] = [];
+
+        for (let i = 0; i < totalFiles; i++) {
+          const file: File = data.images[i];
+          const fileExtension = file.name.split('.').pop();
+          const fileName = `${uuidv4()}.${fileExtension}`;
+          const imageStorageRef = storageRef(storage, `rooms/${roomId}/${fileName}`);
+
+          await new Promise<void>((resolve, reject) => {
+            const uploadTask = uploadBytesResumable(imageStorageRef, file);
+            uploadTask.on('state_changed',
+              (snapshot) => {
+                const progress = (i / totalFiles) * 100 + (snapshot.bytesTransferred / snapshot.totalBytes) * (100 / totalFiles);
+                setUploadProgress(progress);
+              },
+              (error) => {
+                console.error("Upload failed for one file", error);
+                reject(error);
+              },
+              async () => {
+                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                imageUrls.push(downloadURL);
+                resolve();
+              }
+            );
+          });
+        }
         
         const ownerName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
         const selectedCurrency = currencies.find(c => c.code === data.currency);
@@ -240,6 +262,7 @@ export default function ListRoomPage() {
         })
     } finally {
         setIsLoading(false);
+        setUploadProgress(null);
     }
   };
 
@@ -582,7 +605,21 @@ export default function ListRoomPage() {
                   />
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'List My Space'}
+                  {isLoading ? (
+                    <div className="flex items-center w-full justify-center">
+                      {uploadProgress !== null ? (
+                        <div className="flex items-center gap-2">
+                          <Progress value={uploadProgress} className="w-24 h-2" />
+                          <span className="text-xs">{Math.round(uploadProgress)}%</span>
+                        </div>
+                      ) : (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <span>Processing...</span>
+                        </>
+                      )}
+                    </div>
+                  ) : 'List My Space'}
                 </Button>
               </form>
             </Form>
@@ -592,3 +629,5 @@ export default function ListRoomPage() {
     </div>
   );
 }
+
+    
