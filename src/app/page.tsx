@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from "next/image";
@@ -14,6 +13,7 @@ import {
   MapPin,
   BedDouble,
   Loader2,
+  Bot,
 } from "lucide-react";
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, limit } from 'firebase/firestore';
@@ -331,6 +331,17 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <Link
+        href="/support"
+        className={cn(
+          buttonVariants({ size: 'icon', className: 'rounded-full' }),
+          'fixed bottom-8 right-8 h-16 w-16 shadow-lg'
+        )}
+      >
+        <Bot className="h-8 w-8" />
+        <span className="sr-only">Chat with AI Support</span>
+      </Link>
     </div>
   );
 }
