@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -48,12 +47,13 @@ const profileSchema = z.object({
   preferredName: z.string().optional(),
 });
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const FIRESTORE_STRING_LIMIT = 1048487; // Approx 1MB, Firestore's limit for a single field
 
 const fileToDataUri = (file: File): Promise<string> => new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(new Error('Failed to read file: ' + (error as any)?.message));
+    reader.onerror = (error) => reject(new Error('Failed to read file: ' + (error.target?.error?.message || 'Unknown error')));
     reader.readAsDataURL(file);
 });
 
@@ -115,6 +115,15 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file || !user || !userDocRef) return;
 
+    if (file.size > MAX_FILE_SIZE) {
+        toast({
+            variant: 'destructive',
+            title: 'File Too Large',
+            description: `The selected image must be smaller than 5MB.`,
+        });
+        return;
+    }
+
     if (!file.type.startsWith('image/')) {
         toast({
             variant: 'destructive',
@@ -132,7 +141,7 @@ export default function ProfilePage() {
         toast({
           variant: 'destructive',
           title: 'Image Data Too Large',
-          description: 'This image is too large to save. Please choose a smaller or lower-quality image.',
+          description: 'This image is too large to save in the database, even after compression. Please choose a smaller image.',
         });
         setUploading(false);
         return;
@@ -153,6 +162,15 @@ export default function ProfilePage() {
   const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user || !userDocRef) return;
+
+    if (file.size > MAX_FILE_SIZE) {
+        toast({
+            variant: 'destructive',
+            title: 'File Too Large',
+            description: `The selected resume file must be smaller than 5MB.`,
+        });
+        return;
+    }
 
     const allowedResumeTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!allowedResumeTypes.includes(file.type)) {

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -35,12 +34,13 @@ import { useDoc } from '@/firebase';
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
 const MAX_IMAGES = 12;
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const FIRESTORE_DOC_LIMIT = 1048576; // 1MiB Firestore document limit
 
 const fileToDataUri = (file: File): Promise<string> => new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(new Error('Failed to read file: ' + (error as any)?.message));
+    reader.onerror = (error) => reject(new Error('Failed to read file: ' + (error.target?.error?.message || 'Unknown error')));
     reader.readAsDataURL(file);
 });
 
@@ -161,6 +161,17 @@ export default function ListRoomPage() {
     const currentImages = form.getValues('images') || [];
     if (currentImages.length + files.length > MAX_IMAGES) {
         toast({ variant: 'destructive', title: 'Too many images', description: `You can only upload up to ${MAX_IMAGES} images.` });
+        return;
+    }
+
+    const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE);
+    if (oversizedFiles.length > 0) {
+        toast({
+            variant: 'destructive',
+            title: 'Image Too Large',
+            description: `One or more images are larger than 5MB. Please choose smaller files.`
+        });
+        // We don't add any files if some are oversized to avoid confusion
         return;
     }
 
@@ -497,7 +508,7 @@ export default function ListRoomPage() {
                           </div>
                       </label>
                       <FormDescription>
-                          Up to {MAX_IMAGES} images.
+                          Up to {MAX_IMAGES} images. Each image must be less than 5MB.
                       </FormDescription>
                       {fieldState.error && <FormMessage />}
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
