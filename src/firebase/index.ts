@@ -21,7 +21,20 @@ export * from './non-blocking-updates';
 
 // Firebase SDK re-exports for convenience
 // AUTH
-export * from 'firebase/auth';
+export {
+  getAuth,
+  onAuthStateChanged,
+  signOut,
+  GoogleAuthProvider,
+  signInWithPopup,
+  sendPasswordResetEmail,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInAnonymously,
+  type Auth,
+  type User,
+  type UserCredential,
+} from 'firebase/auth';
 
 // FIRESTORE
 export {
@@ -46,7 +59,18 @@ export {
 } from 'firebase/firestore';
 
 // STORAGE
-export * from 'firebase/storage';
+export {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  uploadBytesResumable,
+  type FirebaseStorage,
+} from 'firebase/storage';
 
 // FUNCTIONS
-export * from 'firebase/functions';
+export {
+  getFunctions,
+  httpsCallable,
+  type Functions,
+} from 'firebase/functions';
