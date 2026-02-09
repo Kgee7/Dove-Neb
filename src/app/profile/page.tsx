@@ -4,12 +4,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useDoc, useFirestore, useStorage, setDoc } from '@/firebase';
+import { useUser, useDoc, useFirestore, setDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { ref as storageRef, getDownloadURL, uploadBytes } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
 
 
 import { Button } from '@/components/ui/button';
@@ -49,12 +47,20 @@ const profileSchema = z.object({
   preferredName: z.string().optional(),
 });
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
+const FIRESTORE_STRING_LIMIT = 1048487; // Approx 1MB, Firestore's limit for a single field
+
+const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('Failed to read file.'));
+    reader.readAsDataURL(file);
+});
+
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
-  const storage = useStorage();
   const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -106,13 +112,13 @@ export default function ProfilePage() {
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user || !userDocRef || !storage) return;
+    if (!file || !user || !userDocRef) return;
 
-    if (file.size > MAX_FILE_SIZE) { 
+    if (file.size > MAX_FILE_SIZE_BYTES) { 
         toast({
             variant: 'destructive',
             title: 'File Too Large',
-            description: `Profile picture must be less than ${MAX_FILE_SIZE / (1024 * 1024)}MB.`,
+            description: `Profile picture must be less than ${MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB.`,
         });
         return;
     }
@@ -126,14 +132,19 @@ export default function ProfilePage() {
     }
 
     setUploading(true);
-
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `${uuidv4()}.${fileExtension}`;
-    const imageRef = storageRef(storage, `users/${user.uid}/profilePicture/${fileName}`);
-    
     try {
-      await uploadBytes(imageRef, file);
-      const photoURL = await getDownloadURL(imageRef);
+      const photoURL = await fileToDataUri(file);
+
+      if (photoURL.length > FIRESTORE_STRING_LIMIT) {
+        toast({
+          variant: 'destructive',
+          title: 'Image Data Too Large',
+          description: 'This image is too large to save. Please choose a smaller or lower-quality image.',
+        });
+        setUploading(false);
+        return;
+      }
+      
       await setDoc(userDocRef, { photoURL }, { merge: true });
       toast({
         title: 'Profile Picture Updated',
@@ -148,7 +159,7 @@ export default function ProfilePage() {
       
   const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user || !userDocRef || !storage) return;
+    if (!file || !user || !userDocRef) return;
 
     const allowedResumeTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!allowedResumeTypes.includes(file.type)) {
@@ -160,24 +171,29 @@ export default function ProfilePage() {
         return;
     }
 
-    if (file.size > MAX_FILE_SIZE) {
+    if (file.size > MAX_FILE_SIZE_BYTES) {
         toast({
             variant: 'destructive',
             title: 'File Too Large',
-            description: `Resume file must be less than ${MAX_FILE_SIZE / (1024 * 1024)}MB.`,
+            description: `Resume file must be less than ${MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB.`,
         });
         return;
     }
 
     setUploadingResume(true);
-
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `resume-${uuidv4()}.${fileExtension}`;
-    const resumeRef = storageRef(storage, `users/${user.uid}/resumes/${fileName}`);
-    
     try {
-      await uploadBytes(resumeRef, file);
-      const resumeURL = await getDownloadURL(resumeRef);
+      const resumeURL = await fileToDataUri(file);
+      
+      if (resumeURL.length > FIRESTORE_STRING_LIMIT) {
+        toast({
+          variant: 'destructive',
+          title: 'Resume Data Too Large',
+          description: 'This resume file is too large to save. Please choose a smaller file.',
+        });
+        setUploadingResume(false);
+        return;
+      }
+
       await setDoc(userDocRef, { resumeURL }, { merge: true });
       toast({
         title: 'Resume Uploaded',

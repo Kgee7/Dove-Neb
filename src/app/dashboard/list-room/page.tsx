@@ -4,13 +4,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser, useStorage } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
-import { ref as storageRef, getDownloadURL, uploadBytes } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { currencies } from '@/lib/currencies';
-import { v4 as uuidv4 } from 'uuid';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -35,8 +33,16 @@ import { useDoc } from '@/firebase';
 
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
-const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB per image
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB per image
 const MAX_IMAGES = 12;
+const FIRESTORE_DOC_LIMIT = 1048576; // 1MiB Firestore document limit
+
+const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('Failed to read file.'));
+    reader.readAsDataURL(file);
+});
 
 const formSchema = z.object({
   listingType: z.enum(['rent', 'sale'], { required_error: 'Please select a listing type.' }),
@@ -76,7 +82,6 @@ type UserProfile = {
 
 export default function ListRoomPage() {
   const firestore = useFirestore();
-  const storage = useStorage();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
@@ -178,7 +183,7 @@ export default function ListRoomPage() {
   };
 
   const onSubmit = async (data: ListRoomFormValues) => {
-    if (!user || !firestore || !storage || !userProfile) {
+    if (!user || !firestore || !userProfile) {
       toast({
         variant: 'destructive',
         title: 'Authentication Error',
@@ -189,19 +194,13 @@ export default function ListRoomPage() {
     setIsLoading(true);
 
     try {
-        const newRoomRef = doc(collection(firestore, "rooms"));
-        const roomId = newRoomRef.id;
-
         const imageUrls: string[] = [];
         
         for (const file of data.images) {
-            const fileExtension = (file as File).name.split('.').pop();
-            const fileName = `${uuidv4()}.${fileExtension}`;
-            const imageStorageRef = storageRef(storage, `rooms/${roomId}/${fileName}`);
-            
-            await uploadBytes(imageStorageRef, file as File);
-            const downloadURL = await getDownloadURL(imageStorageRef);
-            imageUrls.push(downloadURL);
+            if (file instanceof File) {
+                 const dataUri = await fileToDataUri(file);
+                 imageUrls.push(dataUri);
+            }
         }
         
         const ownerName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
@@ -209,8 +208,9 @@ export default function ListRoomPage() {
         const currency = selectedCurrency?.code || 'USD';
         const currencySymbol = selectedCurrency?.symbol || '$';
 
+        const newRoomRef = doc(collection(firestore, "rooms"));
         const roomData = {
-          id: roomId,
+          id: newRoomRef.id,
           ownerId: user.uid,
           ownerName: ownerName,
           listingType: data.listingType,
@@ -229,6 +229,17 @@ export default function ListRoomPage() {
           amenities: data.amenities || [],
           createdAt: new Date(),
         };
+
+        const estimatedDocSize = JSON.stringify(roomData).length;
+        if (estimatedDocSize > FIRESTORE_DOC_LIMIT) {
+            toast({
+                variant: "destructive",
+                title: "Data Too Large",
+                description: "The total size of the images and listing data exceeds the database limit. Please remove some images or use smaller ones."
+            });
+            setIsLoading(false);
+            return;
+        }
         
         await setDoc(newRoomRef, roomData);
 
