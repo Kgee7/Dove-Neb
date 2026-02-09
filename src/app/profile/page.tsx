@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -139,10 +138,16 @@ export default function ProfilePage() {
         description: 'Your new avatar has been saved.',
       });
     } catch (error: any) {
+      let description = 'Could not update profile picture.';
+      if (error.message && error.message.includes('longer than 1048487 bytes')) {
+        description = 'Your image exceed the limit';
+      } else {
+        description = error.message || description;
+      }
       toast({
         variant: 'destructive',
         title: 'Upload Failed',
-        description: error.message || 'Could not update profile picture.',
+        description: description,
       });
     } finally {
       setUploading(false);
@@ -181,10 +186,16 @@ export default function ProfilePage() {
         description: 'Your resume has been saved successfully.',
       });
     } catch (error: any) {
+      let description = 'Could not upload resume.';
+      if (error.message && error.message.includes('longer than 1048487 bytes')) {
+        description = 'Your resume file exceeds the size limit.';
+      } else {
+        description = error.message || description;
+      }
       toast({
         variant: 'destructive',
         title: 'Upload Failed',
-        description: error.message || 'Could not upload resume.',
+        description: description,
       });
     } finally {
       setUploadingResume(false);
@@ -389,5 +400,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
