@@ -4,8 +4,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, useStorage } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { currencies } from '@/lib/currencies';
@@ -34,16 +36,7 @@ import { useDoc } from '@/firebase';
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
 const MAX_IMAGES = 12;
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const FIRESTORE_DOC_LIMIT = 1048576; // 1MiB Firestore document limit
-
-const fileToDataUri = (file: File): Promise<string> => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(new Error('Failed to read file: ' + (error.target?.error?.message || 'Unknown error')));
-    reader.readAsDataURL(file);
-});
-
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const formSchema = z.object({
   listingType: z.enum(['rent', 'sale'], { required_error: 'Please select a listing type.' }),
@@ -83,6 +76,7 @@ type UserProfile = {
 
 export default function ListRoomPage() {
   const firestore = useFirestore();
+  const storage = useStorage();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
@@ -131,7 +125,7 @@ export default function ListRoomPage() {
         if (file instanceof File) {
           return URL.createObjectURL(file);
         }
-        return ''; // Should not happen with current logic
+        return '';
       }).filter(Boolean);
       setImagePreviews(urls);
       
@@ -164,17 +158,6 @@ export default function ListRoomPage() {
         return;
     }
 
-    const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE);
-    if (oversizedFiles.length > 0) {
-        toast({
-            variant: 'destructive',
-            title: 'Image Too Large',
-            description: `One or more images are larger than 5MB. Please choose smaller files.`
-        });
-        // We don't add any files if some are oversized to avoid confusion
-        return;
-    }
-
     form.setValue('images', [...currentImages, ...files], { shouldValidate: true });
   };
   
@@ -185,7 +168,7 @@ export default function ListRoomPage() {
   };
 
   const onSubmit = async (data: ListRoomFormValues) => {
-    if (!user || !firestore || !userProfile) {
+    if (!user || !firestore || !userProfile || !storage) {
       toast({
         variant: 'destructive',
         title: 'Authentication Error',
@@ -196,12 +179,15 @@ export default function ListRoomPage() {
     setIsLoading(true);
 
     try {
+        const newRoomRef = doc(collection(firestore, "rooms"));
         const imageUrls: string[] = [];
         
         for (const file of data.images) {
             if (file instanceof File) {
-                 const dataUri = await fileToDataUri(file);
-                 imageUrls.push(dataUri);
+                 const imageRef = ref(storage, `rooms/${newRoomRef.id}/${uuidv4()}`);
+                 await uploadBytes(imageRef, file);
+                 const url = await getDownloadURL(imageRef);
+                 imageUrls.push(url);
             }
         }
         
@@ -210,7 +196,6 @@ export default function ListRoomPage() {
         const currency = selectedCurrency?.code || 'USD';
         const currencySymbol = selectedCurrency?.symbol || '$';
 
-        const newRoomRef = doc(collection(firestore, "rooms"));
         const roomData = {
           id: newRoomRef.id,
           ownerId: user.uid,
@@ -231,17 +216,6 @@ export default function ListRoomPage() {
           amenities: data.amenities || [],
           createdAt: new Date(),
         };
-
-        const estimatedDocSize = JSON.stringify(roomData).length;
-        if (estimatedDocSize > FIRESTORE_DOC_LIMIT) {
-            toast({
-                variant: "destructive",
-                title: "Data Too Large",
-                description: "The total size of the images and listing data exceeds the database limit. Please remove some images or use smaller ones."
-            });
-            setIsLoading(false);
-            return;
-        }
         
         await setDoc(newRoomRef, roomData);
 
@@ -508,7 +482,7 @@ export default function ListRoomPage() {
                           </div>
                       </label>
                       <FormDescription>
-                          Up to {MAX_IMAGES} images. Each image must be less than 5MB.
+                          Up to {MAX_IMAGES} images.
                       </FormDescription>
                       {fieldState.error && <FormMessage />}
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
