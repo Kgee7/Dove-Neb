@@ -5,12 +5,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser, getStorage, ref, uploadBytes, getDownloadURL } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { currencies } from '@/lib/currencies';
-import { v4 as uuidv4 } from 'uuid';
+
 
 import { Button } from '@/components/ui/button';
 import {
@@ -37,6 +37,14 @@ const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "
 
 const MAX_IMAGES = 12;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB per image
+const FIRESTORE_MAX_DOC_SIZE = 1048576; // 1MB
+
+const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(new Error('Failed to read file: ' + (error.target?.error?.message || 'Unknown error')));
+    reader.readAsDataURL(file);
+});
 
 const formSchema = z.object({
   listingType: z.enum(['rent', 'sale'], { required_error: 'Please select a listing type.' }),
@@ -76,7 +84,6 @@ type UserProfile = {
 
 export default function ListRoomPage() {
   const firestore = useFirestore();
-  const storage = getStorage();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
@@ -178,7 +185,7 @@ export default function ListRoomPage() {
   };
 
   const onSubmit = async (data: ListRoomFormValues) => {
-    if (!user || !firestore || !storage || !userProfile) {
+    if (!user || !firestore || !userProfile) {
       toast({
         variant: 'destructive',
         title: 'Authentication Error',
@@ -196,6 +203,14 @@ export default function ListRoomPage() {
         const selectedCurrency = currencies.find(c => c.code === data.currency);
         const currency = selectedCurrency?.code || 'USD';
         const currencySymbol = selectedCurrency?.symbol || '$';
+        
+        const imageBase64s: string[] = [];
+        for (const file of data.images) {
+            if (file instanceof File) {
+                const base64 = await fileToBase64(file);
+                imageBase64s.push(base64);
+            }
+        }
 
         const roomData = {
           id: newRoomId,
@@ -213,25 +228,25 @@ export default function ListRoomPage() {
           currencySymbol,
           contactEmail: data.contactEmail || null,
           contactWhatsapp: data.contactWhatsapp || null,
-          images: [],
+          images: imageBase64s,
           amenities: data.amenities || [],
           createdAt: new Date(),
         };
+        
+        // Firestore document size check
+        const estimatedSize = new TextEncoder().encode(JSON.stringify(roomData)).length;
+        if (estimatedSize >= FIRESTORE_MAX_DOC_SIZE) {
+            toast({
+                variant: 'destructive',
+                title: 'Listing Too Large',
+                description: 'The combined size of your listing details and images is too large for the database. Please use fewer or smaller images.'
+            });
+            setIsLoading(false);
+            return;
+        }
 
         await setDoc(newRoomRef, roomData);
         
-        const imageUrls: string[] = [];
-        for (const file of data.images) {
-            if (file instanceof File) {
-                 const imageRef = ref(storage, `rooms/${newRoomId}/${uuidv4()}`);
-                 await uploadBytes(imageRef, file);
-                 const downloadURL = await getDownloadURL(imageRef);
-                 imageUrls.push(downloadURL);
-            }
-        }
-        
-        await setDoc(newRoomRef, { images: imageUrls }, { merge: true });
-
         toast({
             title: 'Room Listed!',
             description: 'Your room is now available.',
@@ -603,3 +618,5 @@ export default function ListRoomPage() {
     </div>
   );
 }
+
+    

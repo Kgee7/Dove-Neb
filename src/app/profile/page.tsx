@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useDoc, useFirestore, setDoc, getStorage, ref, uploadBytes, getDownloadURL } from '@/firebase';
+import { useUser, useDoc, useFirestore, setDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -30,7 +30,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Loader2, Edit, Upload, ArrowLeft } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { handleFirebaseError } from '@/firebase/error-handler';
 
 type UserProfile = {
     userType: 'seeker' | 'employer' | 'renter' | 'owner';
@@ -50,10 +49,16 @@ const profileSchema = z.object({
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
+const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(new Error('Failed to read file: ' + (error.target?.error?.message || 'Unknown error')));
+    reader.readAsDataURL(file);
+});
+
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
-  const storage = getStorage();
   const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -105,7 +110,7 @@ export default function ProfilePage() {
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user || !userDocRef || !storage) return;
+    if (!file || !user || !userDocRef) return;
     
     if (file.size > MAX_FILE_SIZE) {
         toast({
@@ -127,16 +132,18 @@ export default function ProfilePage() {
 
     setUploading(true);
     try {
-      const storageRef = ref(storage, `users/${user.uid}/profilePicture`);
-      await uploadBytes(storageRef, file);
-      const photoURL = await getDownloadURL(storageRef);
+      const photoURL = await fileToBase64(file);
       await setDoc(userDocRef, { photoURL }, { merge: true });
       toast({
         title: 'Profile Picture Updated',
         description: 'Your new avatar has been saved.',
       });
-    } catch (error) {
-      handleFirebaseError(error, toast);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Upload Failed',
+        description: error.message || 'Could not update profile picture.',
+      });
     } finally {
       setUploading(false);
     }
@@ -144,7 +151,7 @@ export default function ProfilePage() {
       
   const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user || !userDocRef || !storage) return;
+    if (!file || !user || !userDocRef) return;
 
     if (file.size > MAX_FILE_SIZE) {
         toast({
@@ -167,16 +174,18 @@ export default function ProfilePage() {
 
     setUploadingResume(true);
     try {
-      const storageRef = ref(storage, `users/${user.uid}/resume/${file.name}`);
-      await uploadBytes(storageRef, file);
-      const resumeURL = await getDownloadURL(storageRef);
+      const resumeURL = await fileToBase64(file);
       await setDoc(userDocRef, { resumeURL }, { merge: true });
       toast({
         title: 'Resume Uploaded',
         description: 'Your resume has been saved successfully.',
       });
-    } catch (error) {
-      handleFirebaseError(error, toast);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Upload Failed',
+        description: error.message || 'Could not upload resume.',
+      });
     } finally {
       setUploadingResume(false);
     }
@@ -380,3 +389,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
