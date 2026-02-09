@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -47,15 +48,15 @@ const profileSchema = z.object({
   preferredName: z.string().optional(),
 });
 
-const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
 const FIRESTORE_STRING_LIMIT = 1048487; // Approx 1MB, Firestore's limit for a single field
 
-const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
+const fileToDataUri = (file: File): Promise<string> => new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error('Failed to read file.'));
+    reader.onerror = (error) => reject(new Error('Failed to read file: ' + (error as any)?.message));
     reader.readAsDataURL(file);
 });
+
 
 
 export default function ProfilePage() {
@@ -114,14 +115,6 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file || !user || !userDocRef) return;
 
-    if (file.size > MAX_FILE_SIZE_BYTES) { 
-        toast({
-            variant: 'destructive',
-            title: 'File Too Large',
-            description: `Profile picture must be less than ${MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB.`,
-        });
-        return;
-    }
     if (!file.type.startsWith('image/')) {
         toast({
             variant: 'destructive',
@@ -167,15 +160,6 @@ export default function ProfilePage() {
             variant: 'destructive',
             title: 'Invalid File Type',
             description: 'Resume must be a PDF or Word document (DOC, DOCX).',
-        });
-        return;
-    }
-
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-        toast({
-            variant: 'destructive',
-            title: 'File Too Large',
-            description: `Resume file must be less than ${MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB.`,
         });
         return;
     }

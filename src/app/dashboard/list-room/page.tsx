@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -33,16 +34,16 @@ import { useDoc } from '@/firebase';
 
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
-const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB per image
 const MAX_IMAGES = 12;
 const FIRESTORE_DOC_LIMIT = 1048576; // 1MiB Firestore document limit
 
-const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
+const fileToDataUri = (file: File): Promise<string> => new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error('Failed to read file.'));
+    reader.onerror = (error) => reject(new Error('Failed to read file: ' + (error as any)?.message));
     reader.readAsDataURL(file);
 });
+
 
 const formSchema = z.object({
   listingType: z.enum(['rent', 'sale'], { required_error: 'Please select a listing type.' }),
@@ -160,16 +161,6 @@ export default function ListRoomPage() {
     const currentImages = form.getValues('images') || [];
     if (currentImages.length + files.length > MAX_IMAGES) {
         toast({ variant: 'destructive', title: 'Too many images', description: `You can only upload up to ${MAX_IMAGES} images.` });
-        return;
-    }
-
-    const oversizedFiles = files.filter(file => file.size > MAX_IMAGE_SIZE);
-    if (oversizedFiles.length > 0) {
-        toast({
-            variant: 'destructive',
-            title: 'Image too large',
-            description: `Each image must be less than ${MAX_IMAGE_SIZE / (1024*1024)}MB.`
-        });
         return;
     }
 
@@ -506,7 +497,7 @@ export default function ListRoomPage() {
                           </div>
                       </label>
                       <FormDescription>
-                          Up to {MAX_IMAGES} images. Each under {MAX_IMAGE_SIZE / (1024*1024)}MB.
+                          Up to {MAX_IMAGES} images.
                       </FormDescription>
                       {fieldState.error && <FormMessage />}
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
