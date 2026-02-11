@@ -1,23 +1,43 @@
-
 'use client';
 
 // Core Provider and Initialization
-export * from './provider';
-export * from './init';
-export * from './config';
-export * from './client-provider';
+export {
+  FirebaseProvider,
+  useFirebaseApp,
+  useAuth,
+  useFirestore,
+  useStorage,
+  useFunctions,
+  useUser,
+} from './provider';
+export type { FirebaseContextValue } from './provider';
+export { initializeFirebase } from './init';
+export { firebaseConfig } from './config';
+export { FirebaseClientProvider } from './client-provider';
 
 // Custom Hooks
-export * from './firestore/use-doc';
-export * from './firestore/use-collection';
+export { useDoc } from './firestore/use-doc';
+export type { UseDocResult } from './firestore/use-doc';
+export { useCollection } from './firestore/use-collection';
+export type { UseCollectionResult } from './firestore/use-collection';
 
 // Error Handling
-export * from './errors';
-export * from './error-emitter';
+export { FirestorePermissionError } from './errors';
+export { errorEmitter } from './error-emitter';
+export type { AppEvents } from './error-emitter';
 
 // Non-blocking operations
-export * from './non-blocking-login';
-export * from './non-blocking-updates';
+export {
+  initiateAnonymousSignIn,
+  initiateEmailSignUp,
+  initiateEmailSignIn,
+} from './non-blocking-login';
+export {
+  setDocumentNonBlocking,
+  addDocumentNonBlocking,
+  updateDocumentNonBlocking,
+  deleteDocumentNonBlocking,
+} from './non-blocking-updates';
 
 // Firebase SDK re-exports for convenience
 // AUTH
