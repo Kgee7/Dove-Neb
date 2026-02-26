@@ -1,44 +1,30 @@
 
-
 'use client';
 
 import React, { useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { useDoc, useFirestore, useUser } from '@/firebase';
 import { Room } from '@/lib/data';
 import Image from 'next/image';
 import Link from 'next/link';
-import { DateRange } from "react-day-picker";
-import { addDays, format, differenceInDays } from "date-fns";
 import FavoriteButton from '@/components/favorite-button';
 import ShareButton from '@/components/share-button';
 
-import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Loader2, Wifi, Tv, Utensils, Wind, Star, CalendarIcon, Phone, MessageSquare, Maximize, Mail } from 'lucide-react';
+import { ArrowLeft, Loader2, Wifi, Tv, Utensils, Wind, Star, Phone, MessageSquare, Maximize, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Calendar } from "@/components/ui/calendar"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import { useToast } from "@/hooks/use-toast";
-import { cn } from '@/lib/utils';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
 
 const amenityIcons: { [key: string]: React.ReactNode } = {
     'Wifi': <Wifi className="h-4 w-4" />,
@@ -50,7 +36,6 @@ const amenityIcons: { [key: string]: React.ReactNode } = {
     'Dryer': <Star className="h-4 w-4" />,
 };
 
-
 export default function RoomDetailsPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -59,11 +44,6 @@ export default function RoomDetailsPage() {
   const { toast } = useToast();
   const id = params.id as string;
 
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: new Date(),
-    to: addDays(new Date(), 7),
-  });
-  const [bookingLoading, setBookingLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
   const roomDocRef = useMemo(() => {
@@ -72,58 +52,6 @@ export default function RoomDetailsPage() {
   }, [firestore, id]);
 
   const { data: room, isLoading } = useDoc<Room>(roomDocRef);
-
-  const handleBooking = async () => {
-    if (!user || !room || !date?.from || !date?.to) {
-        toast({
-            variant: "destructive",
-            title: "Booking Failed",
-            description: "You must be logged in and select a valid date range to book a room.",
-        });
-        return;
-    }
-    setBookingLoading(true);
-    try {
-        const bookingsCollectionRef = collection(firestore, 'users', user.uid, 'bookings');
-        const nights = differenceInDays(date.to, date.from);
-        if (nights <= 0) {
-            toast({
-                variant: "destructive",
-                title: "Invalid Date Range",
-                description: "Check-out date must be after the check-in date.",
-            });
-            setBookingLoading(false);
-            return;
-        }
-
-        await addDoc(bookingsCollectionRef, {
-            roomId: room.id,
-            renterId: user.uid,
-            checkInDate: date.from,
-            checkOutDate: date.to,
-            totalPrice: (room.priceNight || 0) * nights,
-            status: 'confirmed', // Or 'pending' if you want a confirmation step
-            createdAt: serverTimestamp(),
-            roomTitle: room.title,
-            roomLocation: room.location,
-            roomImage: room.images[0] || '',
-        });
-
-        toast({
-            title: "Booking Successful!",
-            description: `You have booked ${room.title}.`,
-        });
-        router.push('/dashboard');
-    } catch (error: any) {
-         toast({
-            variant: "destructive",
-            title: "Booking Failed",
-            description: error.message || "An unexpected error occurred.",
-        });
-    } finally {
-        setBookingLoading(false);
-    }
-  }
 
   if (isLoading || isUserLoading) {
     return (
@@ -145,8 +73,6 @@ export default function RoomDetailsPage() {
     );
   }
 
-  const nights = date?.from && date?.to ? differenceInDays(date.to, date.from) : 0;
-  const totalCost = nights > 0 && room.priceNight ? room.priceNight * nights : 0;
   const ownerDisplayName = room.ownerName && room.ownerName.trim() && !room.ownerName.includes('undefined')
     ? `Hosted by ${room.ownerName}` 
     : 'Hosted by a verified owner';
@@ -241,86 +167,28 @@ export default function RoomDetailsPage() {
                                 )}
                             </CardHeader>
                             <CardContent className="grid gap-4">
-                                {room.listingType === 'rent' && room.priceNight ? (
-                                    <>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                            <Button
-                                                id="date"
-                                                variant={"outline"}
-                                                className={cn(
-                                                "w-full justify-start text-left font-normal",
-                                                !date && "text-muted-foreground"
-                                                )}
-                                            >
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {date?.from ? (
-                                                date.to ? (
-                                                    <>
-                                                    {format(date.from, "LLL dd, y")} -{" "}
-                                                    {format(date.to, "LLL dd, y")}
-                                                    </>
-                                                ) : (
-                                                    format(date.from, "LLL dd, y")
-                                                )
-                                                ) : (
-                                                <span>Pick a date</span>
-                                                )}
+                                <div className="space-y-3">
+                                    <h3 className='font-semibold text-sm text-muted-foreground uppercase tracking-wider'>Contact the Owner</h3>
+                                    <p className="text-xs text-muted-foreground mb-4">Interested in this space? Reach out directly to discuss availability and details.</p>
+                                    
+                                    {room.contactEmail && (
+                                        <a href={`mailto:${room.contactEmail}`} className='w-full'>
+                                            <Button variant="outline" className='w-full group'>
+                                                <Mail className='mr-2 h-4 w-4 group-hover:text-primary transition-colors' /> Email Owner
                                             </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                initialFocus
-                                                mode="range"
-                                                defaultMonth={date?.from}
-                                                selected={date}
-                                                onSelect={setDate}
-                                                numberOfMonths={1}
-                                                disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
-                                            />
-                                            </PopoverContent>
-                                        </Popover>
-                                        {nights > 0 && totalCost > 0 && (
-                                            <div className="space-y-2">
-                                                <div className="flex justify-between">
-                                                    <span>{room.currencySymbol}{room.priceNight} x {nights} nights</span>
-                                                    <span>{room.currencySymbol}{totalCost}</span>
-                                                </div>
-                                                <Separator />
-                                                <div className="flex justify-between font-bold">
-                                                    <span>Total</span>
-                                                    <span>{room.currencySymbol}{totalCost}</span>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <Button onClick={handleBooking} className="w-full" size="lg" disabled={bookingLoading}>
-                                            {bookingLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Book Now"}
-                                        </Button>
-                                        <p className="text-xs text-muted-foreground text-center mt-2">You won't be charged yet</p>
-                                    </>
-                                ) : (
-                                    <div className="space-y-3">
-                                        <h3 className='font-semibold'>Contact Information</h3>
-                                        {room.contactEmail && (
-                                            <a href={`mailto:${room.contactEmail}`} className='w-full'>
-                                                <Button variant="outline" className='w-full'>
-                                                    <Mail className='mr-2 h-4 w-4' /> Email
-                                                </Button>
-                                            </a>
-                                        )}
-                                        {room.contactWhatsapp && (
-                                            <a href={`https://wa.me/${room.contactWhatsapp.replace(/\D/g, '')}`} target='_blank' rel='noopener noreferrer' className='w-full'>
-                                                <Button variant="outline" className='w-full'>
-                                                    <MessageSquare className='mr-2 h-4 w-4' /> WhatsApp
-                                                </Button>
-                                            </a>
-                                        )}
-                                        {!room.contactEmail && !room.contactWhatsapp && (
-                                            <p className="text-sm text-muted-foreground">Contact information not provided.</p>
-                                        )}
-                                    </div>
-                                )}
+                                        </a>
+                                    )}
+                                    {room.contactWhatsapp && (
+                                        <a href={`https://wa.me/${room.contactWhatsapp.replace(/\D/g, '')}`} target='_blank' rel='noopener noreferrer' className='w-full'>
+                                            <Button variant="outline" className='w-full group border-green-200 hover:bg-green-50 hover:border-green-300'>
+                                                <MessageSquare className='mr-2 h-4 w-4 text-green-600' /> WhatsApp Owner
+                                            </Button>
+                                        </a>
+                                    )}
+                                    {!room.contactEmail && !room.contactWhatsapp && (
+                                        <p className="text-sm text-muted-foreground italic">Contact information not provided for this listing.</p>
+                                    )}
+                                </div>
                             </CardContent>
                          </Card>
                     </div>
@@ -328,10 +196,6 @@ export default function RoomDetailsPage() {
 
             </div>
             <DialogContent className="max-w-4xl max-h-[80vh]">
-                <DialogHeader>
-                    <DialogTitle className="sr-only">{room.title}</DialogTitle>
-                    <DialogDescription className="sr-only">Full screen image of the room.</DialogDescription>
-                </DialogHeader>
                 <div className="relative aspect-video">
                     {selectedImage && (
                         <Image
