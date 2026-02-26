@@ -1,9 +1,8 @@
-
 'use client';
 
 import React, { useState, FormEvent, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Mail, MessageCircle, Send, Bot, User, Loader2, ImagePlus, Download, X, ImageIcon } from 'lucide-react';
+import { Mail, MessageCircle, Send, Bot, User, Loader2, ImagePlus, Download, X, ImageIcon, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supportAgent } from '@/ai/flows/support-agent-flow';
@@ -24,10 +23,46 @@ const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reje
     reader.readAsDataURL(file);
 });
 
+/**
+ * Compresses a base64 image string to a target size by resizing and adjusting JPEG quality.
+ */
+const compressBase64Image = async (base64: string, maxWidth = 1200, maxHeight = 800, quality = 0.7): Promise<string> => {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.src = base64;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+                if (width > maxWidth) {
+                    height *= maxWidth / width;
+                    width = maxWidth;
+                }
+            } else {
+                if (height > maxHeight) {
+                    width *= maxHeight / height;
+                    height = maxHeight;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            
+            // Output as JPEG for better compression
+            resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+    });
+};
+
 export default function SupportPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   
@@ -67,7 +102,7 @@ export default function SupportPage() {
   const handleDownload = (dataUri: string) => {
     const link = document.createElement('a');
     link.href = dataUri;
-    link.download = 'optimized-room-image.png';
+    link.download = 'optimized-room-image.jpg';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -79,7 +114,7 @@ export default function SupportPage() {
 
     const userMessage: Message = { 
         sender: 'user', 
-        text: input || (selectedImage ? "Please process this image for me." : ""),
+        text: input || (selectedImage ? "Please optimize this image for my room listing." : ""),
         image: selectedImage || undefined
     };
     
@@ -93,14 +128,29 @@ export default function SupportPage() {
 
     try {
       const result = await supportAgent({ 
-        query: currentQuery || "Please recreate this image.", 
+        query: currentQuery || "Please recreate and optimize this image for a room listing.", 
         imageDataUri: currentImage || undefined 
       });
       
+      let finalRecreatedImage = result.recreatedImage;
+
+      // If AI returned an image, perform a second pass of client-side compression to ensure it fits the limits
+      if (finalRecreatedImage) {
+          setIsCompressing(true);
+          try {
+              // Target around 400KB - 500KB to ensure it fits comfortably in Firestore
+              finalRecreatedImage = await compressBase64Image(finalRecreatedImage, 1000, 750, 0.6);
+          } catch (compErr) {
+              console.error("Compression error:", compErr);
+          } finally {
+              setIsCompressing(false);
+          }
+      }
+
       const botMessage: Message = { 
         sender: 'bot', 
         text: result.response,
-        recreatedImage: result.recreatedImage
+        recreatedImage: finalRecreatedImage
       };
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
@@ -134,7 +184,7 @@ export default function SupportPage() {
         <CardContent className="flex-1 overflow-y-auto p-4 space-y-6">
           <div className="bg-primary/5 border rounded-lg p-4 mb-4">
             <p className="text-sm text-muted-foreground text-center">
-                Need to optimize images for your room listing? Just upload them here and ask me to "recreate" them to fit our 1-2MB limit!
+                Neb can optimize images for you! Upload a large image and ask me to "recreate" it. I will provide a version specifically compressed to fit your listings.
             </p>
           </div>
           
@@ -176,17 +226,20 @@ export default function SupportPage() {
                 {message.recreatedImage && (
                     <div className="mt-3 pt-3 border-t border-muted-foreground/20">
                         <p className="text-xs font-semibold mb-2 flex items-center gap-1">
-                            <ImageIcon className="h-3 w-3" /> Optimized Image:
+                            <ImageIcon className="h-3 w-3" /> Optimized for Listings:
                         </p>
                         <img src={message.recreatedImage} alt="Recreated" className="rounded-lg max-h-64 object-cover border shadow-md bg-background" />
-                        <Button 
-                            size="sm" 
-                            variant="secondary" 
-                            className="w-full mt-2 h-8 text-xs" 
-                            onClick={() => handleDownload(message.recreatedImage!)}
-                        >
-                            <Download className="h-3 w-3 mr-2" /> Download for Listing
-                        </Button>
+                        <div className="flex items-center gap-2 mt-2">
+                            <Button 
+                                size="sm" 
+                                variant="secondary" 
+                                className="w-full h-8 text-xs" 
+                                onClick={() => handleDownload(message.recreatedImage!)}
+                            >
+                                <Download className="h-3 w-3 mr-2" /> Download Optimized Image
+                            </Button>
+                        </div>
+                        <p className="text-[9px] mt-1 text-center opacity-60">This image has been compressed to fit under the platform's limit.</p>
                     </div>
                 )}
               </div>
@@ -197,13 +250,16 @@ export default function SupportPage() {
               )}
             </div>
           ))}
-          {isLoading && (
+          {(isLoading || isCompressing) && (
              <div className="flex items-start gap-3">
                 <Avatar className="h-8 w-8 border">
                   <AvatarFallback className="bg-primary/10 text-primary"><Bot className="h-4 w-4" /></AvatarFallback>
                 </Avatar>
-                <div className="bg-muted rounded-2xl px-4 py-2 rounded-tl-none">
+                <div className="bg-muted rounded-2xl px-4 py-2 rounded-tl-none flex items-center gap-2">
                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                   <span className="text-xs text-muted-foreground">
+                       {isCompressing ? 'Finalizing optimization...' : 'Neb is thinking...'}
+                   </span>
                 </div>
             </div>
           )}
@@ -236,7 +292,7 @@ export default function SupportPage() {
                 variant="ghost" 
                 size="icon" 
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading || isUploadingImage}
+                disabled={isLoading || isUploadingImage || isCompressing}
                 className="rounded-full shrink-0"
             >
               {isUploadingImage ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
@@ -245,10 +301,10 @@ export default function SupportPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask a question or upload an image to optimize..."
-              disabled={isLoading}
+              disabled={isLoading || isCompressing}
               className="rounded-full focus-visible:ring-primary"
             />
-            <Button type="submit" disabled={isLoading || (!input.trim() && !selectedImage)} className="rounded-full shrink-0">
+            <Button type="submit" disabled={isLoading || isCompressing || (!input.trim() && !selectedImage)} className="rounded-full shrink-0">
               <Send className="h-4 w-4" />
             </Button>
           </form>

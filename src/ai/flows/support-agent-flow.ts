@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A simple AI support agent for the Dove Neb platform.
@@ -36,7 +35,8 @@ const prompt = ai.definePrompt({
 The platform helps users find jobs and book rooms for lodging.
 
 **Special Feature: Image Optimization**
-If a user provides an image and asks to "recreate" or "optimize" it for a room listing (usually because the original is too large), you must help them. You will explain that you are processing the image to fit the 1-2MB limit while maintaining high quality.
+If a user provides an image and asks to "recreate" or "optimize" it for a room listing, you must help them. 
+Explain that you are generating a version of the image optimized for the platform's database limits.
 
 When a user asks a question, do your best to provide a clear and concise answer.
 
@@ -69,9 +69,9 @@ const supportAgentFlow = ai.defineFlow(
         prompt: [
           { media: { url: input.imageDataUri } },
           { text: `User query: "${input.query}". 
-          The user has provided an image. If they want to recreate or optimize it for a room listing, please do so. 
-          The output image should be a high-quality recreation of the original but optimized for size.
-          Provide a friendly text response along with the image.` }
+          The user wants to recreate or optimize this image for a room listing. 
+          Please recreate the image. The goal is to reduce its footprint while keeping it professional. 
+          Respond with a friendly message and the generated image.` }
         ],
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
@@ -79,7 +79,7 @@ const supportAgentFlow = ai.defineFlow(
       });
 
       return {
-        response: result.text || "I've processed your image. You can find the optimized version below.",
+        response: result.text || "I've processed your image to be better suited for our platform. You can find the optimized version below.",
         recreatedImage: result.media?.url
       };
     }
