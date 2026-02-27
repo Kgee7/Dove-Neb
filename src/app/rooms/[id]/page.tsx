@@ -228,14 +228,12 @@ export default function RoomDetailsPage() {
                                             </div>
                                         </div>
                                         <div>
-                                            <h3 className='font-semibold text-base mb-1'>Contact details hidden</h3>
-                                            <p className="text-sm text-muted-foreground">Click the button below to show how job seekers or renters can reach the owner.</p>
+                                            <p className="text-sm text-muted-foreground">click the button to contact the owner</p>
                                         </div>
                                         <Button onClick={handleInterestClick} className="w-full h-12 text-lg font-semibold" disabled={isRating}>
                                             {isRating && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                                             I am Interested
                                         </Button>
-                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Requires sign in</p>
                                     </div>
                                 ) : (
                                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
