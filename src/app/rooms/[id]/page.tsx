@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -162,7 +163,7 @@ export default function RoomDetailsPage() {
                                 <p>{room.location}, {room.country}</p>
                             </div>
                         </div>
-                        {(room.interestCount && room.interestCount > 0) ? (
+                        {(room.interestCount !== undefined && room.interestCount > 0) ? (
                             <div className="flex flex-col items-end">
                                 <div className="flex items-center gap-1 text-lg font-bold">
                                     <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />

@@ -84,7 +84,7 @@ export const roomConverter: FirestoreDataConverter<Room> = {
             ownerId: data.ownerId,
             contactEmail: data.contactEmail,
             contactWhatsapp: data.contactWhatsapp,
-            interestCount: data.interestCount || 0,
+            interestCount: typeof data.interestCount === 'number' ? data.interestCount : 0,
         };
     },
 };

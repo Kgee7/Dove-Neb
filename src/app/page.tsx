@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from "next/image";
@@ -294,7 +295,7 @@ export default function HomePage() {
                             {room.title}
                             </Link>
                         </CardTitle>
-                        {(room.interestCount && room.interestCount > 0) ? (
+                        {(room.interestCount !== undefined && room.interestCount > 0) ? (
                             <div className="flex items-center gap-1 text-sm font-bold">
                                 <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                                 <span>5.0</span>

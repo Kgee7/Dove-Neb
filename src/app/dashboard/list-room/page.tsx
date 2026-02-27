@@ -230,6 +230,7 @@ export default function ListRoomPage() {
           contactWhatsapp: data.contactWhatsapp || null,
           images: imageBase64s,
           amenities: data.amenities || [],
+          interestCount: 0,
           createdAt: new Date(),
         };
         
@@ -618,5 +619,3 @@ export default function ListRoomPage() {
     </div>
   );
 }
-
-    
