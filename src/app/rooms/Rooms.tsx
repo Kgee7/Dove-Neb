@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -12,7 +11,7 @@ import FavoriteButton from '@/components/favorite-button';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Loader2, Search } from 'lucide-react';
+import { MapPin, Loader2, Search, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -148,11 +147,20 @@ export default function Rooms() {
                     </Link>
                 </CardHeader>
                 <CardContent className="flex flex-1 flex-col p-4">
-                    <CardTitle className="text-lg">
-                        <Link href={`/rooms/${room.id}`} className="hover:underline">
-                            {room.title}
-                        </Link>
-                    </CardTitle>
+                    <div className="flex justify-between items-start mb-1">
+                        <CardTitle className="text-lg">
+                            <Link href={`/rooms/${room.id}`} className="hover:underline">
+                                {room.title}
+                            </Link>
+                        </CardTitle>
+                        {(room.interestCount && room.interestCount > 0) ? (
+                            <div className="flex items-center gap-1 text-sm font-bold shrink-0">
+                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                <span>5.0</span>
+                                <span className="text-muted-foreground font-normal text-xs">({room.interestCount})</span>
+                            </div>
+                        ) : null}
+                    </div>
                     <p className="text-sm text-muted-foreground mt-1 flex items-center">
                         <MapPin className="h-4 w-4 mr-1" />
                         {room.location}, {room.country}

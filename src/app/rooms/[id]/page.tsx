@@ -154,10 +154,27 @@ export default function RoomDetailsPage() {
                 </div>
 
                 <div className="mb-6">
-                    <h1 className="text-3xl font-bold font-headline mb-1">{room.title}</h1>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4" />
-                        <p>{room.location}, {room.country}</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h1 className="text-3xl font-bold font-headline mb-1">{room.title}</h1>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <MapPin className="h-4 w-4" />
+                                <p>{room.location}, {room.country}</p>
+                            </div>
+                        </div>
+                        {(room.interestCount && room.interestCount > 0) ? (
+                            <div className="flex flex-col items-end">
+                                <div className="flex items-center gap-1 text-lg font-bold">
+                                    <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                                    <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                                    <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                                    <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                                    <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                                    <span className="ml-2">5.0</span>
+                                </div>
+                                <p className="text-sm text-muted-foreground">{room.interestCount} verified ratings</p>
+                            </div>
+                        ) : null}
                     </div>
                 </div>
 

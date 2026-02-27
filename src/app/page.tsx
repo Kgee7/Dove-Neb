@@ -14,6 +14,7 @@ import {
   BedDouble,
   Loader2,
   Bot,
+  Star,
 } from "lucide-react";
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, limit } from 'firebase/firestore';
@@ -287,11 +288,20 @@ export default function HomePage() {
                     </Link>
                   </CardHeader>
                   <CardContent className="flex flex-1 flex-col p-4">
-                    <CardTitle className="text-xl">
-                        <Link href={`/rooms/${room.id}`} className="hover:underline">
-                          {room.title}
-                        </Link>
-                    </CardTitle>
+                    <div className="flex justify-between items-start mb-1">
+                        <CardTitle className="text-xl">
+                            <Link href={`/rooms/${room.id}`} className="hover:underline">
+                            {room.title}
+                            </Link>
+                        </CardTitle>
+                        {(room.interestCount && room.interestCount > 0) ? (
+                            <div className="flex items-center gap-1 text-sm font-bold">
+                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                <span>5.0</span>
+                                <span className="text-muted-foreground font-normal">({room.interestCount})</span>
+                            </div>
+                        ) : null}
+                    </div>
                     <p className="text-sm text-muted-foreground mt-1 flex items-center">
                         <MapPin className="h-4 w-4 mr-1" />
                         {room.location}, {room.country}
