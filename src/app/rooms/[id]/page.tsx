@@ -2,13 +2,14 @@
 
 import React, { useMemo, useState } from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
-import { doc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { useDoc, useFirestore, useUser } from '@/firebase';
 import { Room } from '@/lib/data';
 import Image from 'next/image';
 import Link from 'next/link';
 import FavoriteButton from '@/components/favorite-button';
 import ShareButton from '@/components/share-button';
+import { v4 as uuidv4 } from 'uuid';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Loader2, Wifi, Tv, Utensils, Wind, Star, Phone, MessageSquare, Maximize, Mail, Lock, MapPin } from 'lucide-react';
@@ -56,10 +57,39 @@ export default function RoomDetailsPage() {
         return;
     }
 
+    if (!firestore || !room) return;
+
+    // Create a booking record for the user's dashboard
+    const bookingId = uuidv4();
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const bookingData = {
+        id: bookingId,
+        roomId: room.id,
+        roomTitle: room.title,
+        roomLocation: `${room.location}, ${room.country}`,
+        roomImage: room.images[0] || '',
+        checkInDate: today,
+        checkOutDate: tomorrow,
+        totalPrice: room.priceNight || room.priceMonth || room.salePrice || 0,
+        status: 'pending',
+        renterId: user.uid,
+        createdAt: new Date(),
+    };
+
+    const bookingRef = doc(firestore, 'users', user.uid, 'bookings', bookingId);
+    
+    // Save the record - non-blocking
+    setDoc(bookingRef, bookingData).catch(err => {
+        console.error("Error creating interest booking:", err);
+    });
+
     setShowContact(true);
     toast({
         title: "Interest Noted!",
-        description: "Owner contact information revealed. You can now reach out.",
+        description: "Owner contact information revealed and space added to your dashboard bookings.",
     });
   };
 
@@ -98,7 +128,7 @@ export default function RoomDetailsPage() {
                     </Link>
                 </div>
 
-                <div>
+                <div className="mb-6">
                     <h1 className="text-3xl font-bold font-headline mb-1">{room.title}</h1>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <MapPin className="h-4 w-4" />
@@ -106,7 +136,7 @@ export default function RoomDetailsPage() {
                     </div>
                 </div>
 
-                <Carousel className="w-full mt-6 relative">
+                <Carousel className="w-full relative">
                     {room && <FavoriteButton item={room} itemType="room" />}
                     {room && <ShareButton title={room.title} text={`Check out this space: ${room.title}`} className="absolute top-2 right-12 z-10 h-8 w-8 rounded-full bg-black/30 hover:bg-black/50 border-none text-white hover:text-white" />}
                     <CarouselContent>
