@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -17,7 +16,6 @@ import FavoriteButton from '@/components/favorite-button';
 
 export default function JobsPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [locationFilter, setLocationFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [isClient, setIsClient] = useState(false);
 
@@ -36,7 +34,6 @@ export default function JobsPage() {
   const { data: jobs, isLoading: jobsLoading } = useCollection<Job>(jobsQuery);
   
   const allJobs = jobs || [];
-  const locations = useMemo(() => [...new Set(allJobs.map(j => j.location).filter(Boolean))], [allJobs]);
   const jobTypes = useMemo(() => [...new Set(allJobs.map(j => j.type).filter(Boolean))], [allJobs]);
 
   const suggestedJobsQuery = useMemo(() => {
@@ -52,13 +49,11 @@ export default function JobsPage() {
       const term = searchTerm.toLowerCase();
       const titleMatch = job.title && job.title.toLowerCase().includes(term);
       const companyMatch = job.companyName && job.companyName.toLowerCase().includes(term);
-      const locationMatch = locationFilter === 'all' || (job.location && job.location === locationFilter);
+      const locationMatch = job.location && job.location.toLowerCase().includes(term);
       const typeMatch = typeFilter === 'all' || (job.type && job.type === typeFilter);
-      return (titleMatch || companyMatch) && locationMatch && typeMatch;
+      return (titleMatch || companyMatch || locationMatch) && typeMatch;
     });
-  }, [allJobs, searchTerm, locationFilter, typeFilter]);
-
-  const displayedJobs = searchTerm || locationFilter !== 'all' || typeFilter !== 'all' ? filteredJobs : allJobs;
+  }, [allJobs, searchTerm, typeFilter]);
 
   return (
     <div className="container mx-auto py-8 sm:py-12 px-4">
@@ -67,32 +62,20 @@ export default function JobsPage() {
         <p className="mt-3 text-sm sm:text-lg text-muted-foreground max-w-2xl mx-auto">Search through thousands of open positions. Your dream job is just a click away.</p>
       </header>
 
-      <Card className="p-4 sm:p-6 mb-8 sm:mb-12 shadow-md">
+      <Card className="p-4 sm:p-6 mb-8 sm:mb-12 shadow-md max-w-4xl mx-auto">
         {isClient && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-center">
-          <div className="sm:col-span-2 relative">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+          <div className="md:col-span-2 relative">
              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder='Search for jobs or company...'
+              placeholder='Search job, company or location...'
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 w-full h-10 text-sm"
+              className="pl-10 w-full h-11 text-sm rounded-full"
             />
           </div>
-          <Select value={locationFilter} onValueChange={setLocationFilter}>
-            <SelectTrigger className="h-10">
-              <div className='flex items-center overflow-hidden'>
-                <MapPin className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
-                <SelectValue placeholder="Location" />
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Locations</SelectItem>
-              {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
-            </SelectContent>
-          </Select>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="h-10">
+            <SelectTrigger className="h-11 rounded-full px-4">
                <div className='flex items-center overflow-hidden'>
                 <Briefcase className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
                 <SelectValue placeholder="Job Type" />
@@ -126,22 +109,17 @@ export default function JobsPage() {
         <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">All Jobs</h2>
         {jobsLoading ? (
            <div className="flex justify-center items-center h-64"><Loader2 className="h-12 w-12 animate-spin" /></div>
-        ) : displayedJobs.length > 0 ? (
+        ) : filteredJobs.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {displayedJobs.map(job => (
+            {filteredJobs.map(job => (
               <JobCard key={job.id} job={job} />
             ))}
           </div>
         ) : (
            <div className='text-center py-16 border-2 border-dashed rounded-lg'>
               <h3 className="mt-2 text-lg font-medium">No jobs found.</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Try adjusting your filters.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Try adjusting your search terms.</p>
           </div>
-        )}
-        {displayedJobs.length > 0 && (searchTerm || locationFilter !== 'all' || typeFilter !== 'all') && (
-           <div className="text-center mt-8 sm:mt-12">
-              <p className="text-xs sm:text-sm text-muted-foreground">Showing {filteredJobs.length} of {allJobs.length} jobs.</p>
-           </div>
         )}
       </section>
     </div>

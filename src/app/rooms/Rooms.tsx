@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -22,8 +21,7 @@ export default function Rooms() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-  const [locationQuery, setLocationQuery] = useState(searchParams.get('loc') || '');
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
   const [listingTypeFilter, setListingTypeFilter] = useState(searchParams.get('type') || 'all');
   const [isClient, setIsClient] = useState(false);
 
@@ -45,26 +43,22 @@ export default function Rooms() {
   const filteredRooms = useMemo(() => {
     if (!rooms) return [];
     return rooms.filter(room => {
-      const searchLower = searchQuery.toLowerCase();
-      const locationLower = locationQuery.toLowerCase();
+      const searchLower = searchTerm.toLowerCase();
       
-      const matchesSearch = searchQuery === '' || 
+      const matchesSearch = searchTerm === '' || 
         (room.title && room.title.toLowerCase().includes(searchLower)) ||
-        (room.description && room.description.toLowerCase().includes(searchLower));
+        (room.description && room.description.toLowerCase().includes(searchLower)) ||
+        (room.location && room.location.toLowerCase().includes(searchLower)) ||
+        (room.country && room.country.toLowerCase().includes(searchLower));
 
-      const matchesLocation = locationQuery === '' ||
-        (room.location && room.location.toLowerCase().includes(locationLower)) ||
-        (room.country && room.country.toLowerCase().includes(locationLower));
-
-      return matchesSearch && matchesLocation;
+      return matchesSearch;
     });
-  }, [rooms, searchQuery, locationQuery]);
+  }, [rooms, searchTerm]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams(searchParams);
-    if (searchQuery) params.set('q', searchQuery); else params.delete('q');
-    if (locationQuery) params.set('loc', locationQuery); else params.delete('loc');
+    if (searchTerm) params.set('q', searchTerm); else params.delete('q');
     if (listingTypeFilter !== 'all') params.set('type', listingTypeFilter); else params.delete('type');
     router.push(`/rooms?${params.toString()}`);
   };
@@ -83,28 +77,19 @@ export default function Rooms() {
        <Card className="mx-auto mb-8 sm:mb-12 max-w-4xl shadow-md">
           <CardContent className="p-3 sm:p-4">
             {isClient && (
-              <form className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" onSubmit={handleSearch}>
-                <div className="relative">
+              <form className="grid grid-cols-1 md:grid-cols-3 gap-3" onSubmit={handleSearch}>
+                <div className="md:col-span-2 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search destination..."
-                    className="pl-9 h-10 text-sm"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="City or country..." 
-                    className="pl-9 h-10 text-sm"
-                    value={locationQuery}
-                    onChange={(e) => setLocationQuery(e.target.value)}
+                    placeholder="Search destination or city..."
+                    className="pl-10 h-11 text-sm rounded-full"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <Select value={listingTypeFilter} onValueChange={setListingTypeFilter}>
-                      <SelectTrigger className="h-10 text-sm">
+                      <SelectTrigger className="h-11 text-sm rounded-full px-4">
                           <SelectValue placeholder="Type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -113,7 +98,7 @@ export default function Rooms() {
                           <SelectItem value="sale">For Sale</SelectItem>
                       </SelectContent>
                   </Select>
-                  <Button type="submit" className='w-full h-10 text-sm'>
+                  <Button type="submit" className='w-full h-11 text-sm rounded-full font-bold'>
                       Search
                   </Button>
                 </div>
@@ -195,8 +180,7 @@ export default function Rooms() {
             <div className="col-span-full text-center py-20 border-2 border-dashed rounded-xl">
               <p className="text-muted-foreground text-sm sm:text-base">No spaces found matching your criteria.</p>
               <Button variant="link" onClick={() => {
-                  setSearchQuery('');
-                  setLocationQuery('');
+                  setSearchTerm('');
                   setListingTypeFilter('all');
                   router.push('/rooms');
               }}>Clear all filters</Button>

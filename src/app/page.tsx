@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from "next/image";
@@ -46,9 +45,7 @@ export default function HomePage() {
   const router = useRouter();
 
   const [jobSearchQuery, setJobSearchQuery] = useState('');
-  const [jobLocationQuery, setJobLocationQuery] = useState('');
   const [roomSearchQuery, setRoomSearchQuery] = useState('');
-  const [roomLocationQuery, setRoomLocationQuery] = useState('');
   const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
@@ -77,7 +74,6 @@ export default function HomePage() {
     e.preventDefault();
     const params = new URLSearchParams();
     if (jobSearchQuery) params.set('q', jobSearchQuery);
-    if (jobLocationQuery) params.set('loc', jobLocationQuery);
     router.push(`/jobs?${params.toString()}`);
   };
 
@@ -85,7 +81,6 @@ export default function HomePage() {
     e.preventDefault();
     const params = new URLSearchParams();
     if (roomSearchQuery) params.set('q', roomSearchQuery);
-    if (roomLocationQuery) params.set('loc', roomLocationQuery);
     router.push(`/rooms?${params.toString()}`);
   };
 
@@ -107,13 +102,13 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 flex h-full flex-col items-center justify-center text-center px-4">
           <div className="container max-w-2xl">
-            <h1 className="text-xl font-bold tracking-tight text-white sm:text-3xl md:text-4xl lg:text-5xl font-headline transition-all">
+            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl md:text-4xl lg:text-5xl font-headline transition-all">
               Where Opportunities Take Flight
             </h1>
-            <p className="mt-2 text-xs text-white/80 sm:text-base md:text-lg lg:text-xl">
+            <p className="mt-2 text-sm text-white/80 sm:text-base md:text-lg lg:text-xl">
               Find your dream job and the perfect place to stay.
             </p>
-            <Card className="mx-auto mt-6 max-w-lg shadow-2xl overflow-hidden border-none bg-background/95 backdrop-blur-sm">
+            <Card className="mx-auto mt-8 max-w-md shadow-2xl overflow-hidden border-none bg-background/95 backdrop-blur-sm">
               {isClient && 
                <Tabs defaultValue="jobs" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-none h-10">
@@ -121,57 +116,37 @@ export default function HomePage() {
                   <TabsTrigger value="rooms" className="text-xs sm:text-sm">Find a Space</TabsTrigger>
                 </TabsList>
                 <TabsContent value="jobs">
-                  <CardContent className="p-3">
+                  <CardContent className="p-4">
                     <form className="flex flex-col sm:flex-row gap-2" onSubmit={handleJobSearch}>
                       <div className="relative flex-1">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
-                          placeholder="Job title..."
-                          className="pl-8 h-9 text-xs sm:text-sm focus-visible:ring-primary"
+                          placeholder="Search job, company or location..."
+                          className="pl-10 h-11 text-sm focus-visible:ring-primary rounded-full"
                           value={jobSearchQuery}
                           onChange={(e) => setJobSearchQuery(e.target.value)}
                         />
                       </div>
-                      <div className="relative flex-1">
-                        <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                        <Input 
-                          placeholder="Location" 
-                          className="pl-8 h-9 text-xs sm:text-sm focus-visible:ring-primary"
-                          value={jobLocationQuery}
-                          onChange={(e) => setJobLocationQuery(e.target.value)}
-                        />
-                      </div>
-                      <Button type="submit" className="h-9 px-4 text-xs sm:text-sm shrink-0 font-semibold">
-                        <Search className="h-3.5 w-3.5 sm:mr-2" />
-                        <span className="sm:inline">Search</span>
+                      <Button type="submit" className="h-11 px-6 rounded-full font-bold">
+                        Search
                       </Button>
                     </form>
                   </CardContent>
                 </TabsContent>
                 <TabsContent value="rooms">
-                   <CardContent className="p-3">
+                   <CardContent className="p-4">
                     <form className="flex flex-col sm:flex-row gap-2" onSubmit={handleRoomSearch}>
                       <div className="relative flex-1">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
-                          placeholder="Destination..."
-                          className="pl-8 h-9 text-xs sm:text-sm focus-visible:ring-primary"
+                          placeholder="Search destination or city..."
+                          className="pl-10 h-11 text-sm focus-visible:ring-primary rounded-full"
                           value={roomSearchQuery}
                           onChange={(e) => setRoomSearchQuery(e.target.value)}
                         />
                       </div>
-                      <div className="relative flex-1">
-                        <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                        <Input 
-                          placeholder="Location" 
-                          className="pl-8 h-9 text-xs sm:text-sm focus-visible:ring-primary"
-                          value={roomLocationQuery}
-                          onChange={(e) => setRoomLocationQuery(e.target.value)}
-                        />
-                      </div>
-                      <Button type="submit" className="h-9 px-4 text-xs sm:text-sm shrink-0 font-semibold">
-                        <Search className="h-3.5 w-3.5 sm:mr-2" />
-                        <span className="sm:inline">Search</span>
+                      <Button type="submit" className="h-11 px-6 rounded-full font-bold">
+                        Search
                       </Button>
                     </form>
                   </CardContent>
