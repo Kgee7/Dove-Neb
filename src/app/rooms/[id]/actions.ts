@@ -33,12 +33,11 @@ export async function incrementRoomRating(roomId: string) {
       interestCount: FieldValue.increment(1)
     });
 
-    console.log(`Successfully incremented rating for room: ${roomId}`);
     return { success: true };
   } catch (error: any) {
-    // Log only the message to avoid serialization errors in some environments
-    console.error("Error incrementing room rating on server:", error?.message || "Unknown error");
-    return { success: false, error: error?.message || 'Update failed' };
+    // Log only the message to avoid serialization errors during Next.js server-client handoff
+    console.error("Server Action Error (incrementRoomRating):", error?.message || "Unknown error");
+    return { success: false, error: 'Failed to record rating' };
   }
 }
 
@@ -57,9 +56,8 @@ export async function getRoom(id: string) {
     if (!doc.exists) return null;
     return { id: doc.id, ...doc.data() } as any;
   } catch (error: any) {
-    // If Admin SDK fails (e.g. auth issues in dev/prototype), return null to fallback to default metadata.
-    // We log only the message to prevent secondary errors during serialization.
-    console.log("Metadata fetch (Room) skipped due to environment restrictions:", error?.message || "Auth error");
+    // Gracefully fallback to default metadata if credentials are unavailable on the server
+    console.log("Metadata Fetch Warning (getRoom):", error?.message || "Credentials not available");
     return null;
   }
 }
@@ -79,8 +77,8 @@ export async function getJob(id: string) {
     if (!doc.exists) return null;
     return { id: doc.id, ...doc.data() } as any;
   } catch (error: any) {
-    // If Admin SDK fails (e.g. auth issues in dev/prototype), return null to fallback to default metadata
-    console.log("Metadata fetch (Job) skipped due to environment restrictions:", error?.message || "Auth error");
+    // Gracefully fallback to default metadata if credentials are unavailable on the server
+    console.log("Metadata Fetch Warning (getJob):", error?.message || "Credentials not available");
     return null;
   }
 }
