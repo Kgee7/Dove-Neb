@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -94,7 +93,7 @@ export default function RoomDetailsPage() {
             createdAt: new Date()
         });
 
-        // 3. Create a survey notification (Simulating an "automatic" prompt)
+        // 3. Create a survey notification
         setTimeout(async () => {
             await addDoc(collection(firestore, 'users', user.uid, 'notifications'), {
                 title: 'Quick Feedback',
@@ -102,6 +101,7 @@ export default function RoomDetailsPage() {
                 type: 'survey',
                 surveyQuestion: `How was the lodge today at "${room.title}"?`,
                 surveyAnswer: null,
+                roomId: room.id, // Store room ID for rating later
                 read: false,
                 createdAt: new Date()
             });

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo } from 'react';
@@ -18,6 +17,8 @@ import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { incrementRoomRating } from '@/app/rooms/[id]/actions';
+import { useToast } from '@/hooks/use-toast';
 
 export type Notification = {
   id: string;
@@ -26,6 +27,7 @@ export type Notification = {
   type: 'info' | 'survey';
   surveyQuestion?: string;
   surveyAnswer?: 'yes' | 'no' | null;
+  roomId?: string; // Optional reference to a room for rating
   read: boolean;
   createdAt: { toDate: () => Date };
 };
@@ -33,6 +35,7 @@ export type Notification = {
 export default function NotificationsDropdown() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const notificationsQuery = useMemo(() => {
     if (!user || !firestore) return null;
@@ -70,7 +73,7 @@ export default function NotificationsDropdown() {
     }
   };
 
-  const handleSurvey = async (e: React.MouseEvent, id: string, answer: 'yes' | 'no') => {
+  const handleSurvey = async (e: React.MouseEvent, id: string, answer: 'yes' | 'no', roomId?: string) => {
     e.stopPropagation();
     if (!user || !firestore) return;
     try {
@@ -79,6 +82,13 @@ export default function NotificationsDropdown() {
         read: true,
         message: `You answered "${answer}" to the survey.`
       });
+
+      if (answer === 'yes' && roomId) {
+          const result = await incrementRoomRating(roomId);
+          if (result.success) {
+              toast({ title: 'Feedback Noted', description: 'Your high rating for this room has been recorded!' });
+          }
+      }
     } catch (error) {
       console.error('Error answering survey:', error);
     }
@@ -132,7 +142,7 @@ export default function NotificationsDropdown() {
                 </p>
                 {n.type === 'survey' && !n.surveyAnswer && (
                   <div className="flex gap-2 mt-2 w-full">
-                    <Button size="sm" className="h-7 px-2 text-[10px] flex-1" onClick={(e) => handleSurvey(e, n.id, 'yes')}>Yes</Button>
+                    <Button size="sm" className="h-7 px-2 text-[10px] flex-1" onClick={(e) => handleSurvey(e, n.id, 'yes', n.roomId)}>Yes</Button>
                     <Button size="sm" variant="outline" className="h-7 px-2 text-[10px] flex-1" onClick={(e) => handleSurvey(e, n.id, 'no')}>No</Button>
                   </div>
                 )}

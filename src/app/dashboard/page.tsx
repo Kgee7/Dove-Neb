@@ -1,4 +1,3 @@
-
 'use client';
 import { useRouter } from 'next/navigation';
 import React, { useMemo, useState, useEffect } from 'react';
@@ -31,6 +30,8 @@ import { Room } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Notification } from '@/components/notifications-dropdown';
+import { cn } from '@/lib/utils';
+import { incrementRoomRating } from '@/app/rooms/[id]/actions';
 
 type UserProfile = {
   userType: 'seeker' | 'employer' | 'renter' | 'owner';
@@ -149,7 +150,7 @@ export default function DashboardPage() {
     }
   }, [user, isUserLoading, router]);
   
-  const handleSurveyAnswer = async (notifId: string, answer: 'yes' | 'no') => {
+  const handleSurveyAnswer = async (notifId: string, answer: 'yes' | 'no', roomId?: string) => {
     if (!firestore || !user) return;
     try {
         await updateDoc(doc(firestore, 'users', user.uid, 'notifications', notifId), {
@@ -157,7 +158,18 @@ export default function DashboardPage() {
             read: true,
             message: `Survey complete: You answered "${answer}".`
         });
-        toast({ title: 'Feedback Recorded', description: 'Thank you for your response!' });
+
+        // If the answer is "yes" and there is a roomId, increment the room rating
+        if (answer === 'yes' && roomId) {
+            const result = await incrementRoomRating(roomId);
+            if (result.success) {
+                toast({ title: 'Feedback Recorded', description: 'Thank you! Your positive feedback has improved this space\'s rating.' });
+            } else {
+                toast({ title: 'Saved', description: 'Thank you for your response!' });
+            }
+        } else {
+            toast({ title: 'Feedback Recorded', description: 'Thank you for your response!' });
+        }
     } catch (error) {
         console.error(error);
     }
@@ -632,7 +644,7 @@ export default function DashboardPage() {
                                         
                                         {notif.type === 'survey' && !notif.surveyAnswer && (
                                             <div className="flex gap-2 pt-1">
-                                                <Button size="sm" className="h-7 px-3 text-[10px] flex-1" onClick={() => handleSurveyAnswer(notif.id, 'yes')}>
+                                                <Button size="sm" className="h-7 px-3 text-[10px] flex-1" onClick={() => handleSurveyAnswer(notif.id, 'yes', notif.roomId)}>
                                                     <Check className="mr-1 h-3 w-3" /> Yes
                                                 </Button>
                                                 <Button size="sm" variant="outline" className="h-7 px-3 text-[10px] flex-1" onClick={() => handleSurveyAnswer(notif.id, 'no')}>
