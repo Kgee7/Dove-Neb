@@ -3,8 +3,8 @@
 import { useRouter } from 'next/navigation';
 import React, { useMemo, useState, useEffect } from 'react';
 import { useUser, useFirestore, useDoc, useCollection, where, deleteDoc } from '@/firebase';
-import { doc, collection, query, orderBy, limit, updateDoc, getDocs } from 'firebase/firestore';
-import { Loader2, PlusCircle, Home, BedDouble, Briefcase, Building2, Users, Edit, Trash2, Heart } from "lucide-react";
+import { doc, collection, query, orderBy, limit, updateDoc, getDocs, setDoc } from 'firebase/firestore';
+import { Loader2, PlusCircle, Home, BedDouble, Briefcase, Building2, Users, Edit, Trash2, Heart, Bell, HelpCircle, Check, X } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -30,6 +30,7 @@ import { Job } from '@/lib/job-data';
 import { Room } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { Notification } from '@/components/notifications-dropdown';
 
 type UserProfile = {
   userType: 'seeker' | 'employer' | 'renter' | 'owner';
@@ -78,8 +79,6 @@ type FavoriteRoom = {
     image: string;
 }
 
-type ApplicantStatus = 'pending' | 'reviewed' | 'rejected' | 'hired';
-
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -97,6 +96,13 @@ export default function DashboardPage() {
   }, [firestore, user?.uid]);
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
+
+  // Notifications
+  const notificationsQuery = useMemo(() => {
+    if (!firestore || !user?.uid) return null;
+    return query(collection(firestore, 'users', user.uid, 'notifications'), orderBy('createdAt', 'desc'), limit(10));
+  }, [firestore, user?.uid]);
+  const { data: notifications, isLoading: notificationsLoading } = useCollection<Notification>(notificationsQuery);
 
   // Queries for Room related data
   const bookingsQuery = useMemo(() => {
@@ -143,6 +149,30 @@ export default function DashboardPage() {
     }
   }, [user, isUserLoading, router]);
   
+  const handleSurveyAnswer = async (notifId: string, answer: 'yes' | 'no') => {
+    if (!firestore || !user) return;
+    try {
+        await updateDoc(doc(firestore, 'users', user.uid, 'notifications', notifId), {
+            surveyAnswer: answer,
+            read: true,
+            message: `Survey complete: You answered "${answer}".`
+        });
+        toast({ title: 'Feedback Recorded', description: 'Thank you for your response!' });
+    } catch (error) {
+        console.error(error);
+    }
+  };
+
+  const handleMarkAsRead = async (id: string) => {
+    if (!firestore || !user) return;
+    await updateDoc(doc(firestore, 'users', user.uid, 'notifications', id), { read: true });
+  };
+
+  const handleDeleteNotification = async (id: string) => {
+    if (!firestore || !user) return;
+    await deleteDoc(doc(firestore, 'users', user.uid, 'notifications', id));
+  };
+
   const handleDeleteJob = async () => {
     if (!firestore || !jobToDelete) return;
     try {
@@ -234,7 +264,7 @@ export default function DashboardPage() {
   };
 
 
-  const isLoading = isUserLoading || isProfileLoading || bookingsLoading || roomListingsLoading || applicationsLoading || jobListingsLoading || favoriteJobsLoading || favoriteRoomsLoading;
+  const isLoading = isUserLoading || isProfileLoading || bookingsLoading || roomListingsLoading || applicationsLoading || jobListingsLoading || favoriteJobsLoading || favoriteRoomsLoading || notificationsLoading;
 
   if (isLoading || !user) {
     return (
@@ -273,295 +303,361 @@ export default function DashboardPage() {
             )}
         </div>
       </div>
-        <div className="grid gap-8">
-
-            {/* My Favorites Section */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>My Favorites</CardTitle>
-                    <CardDescription>Your saved jobs and spaces.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid gap-8 md:grid-cols-2">
-                        <div>
-                            <h3 className="font-semibold mb-4 flex items-center gap-2"><Briefcase className="h-5 w-5" />Favorite Jobs</h3>
-                            {favoriteJobs && favoriteJobs.length > 0 ? (
-                                <div className="space-y-4">
-                                    {favoriteJobs.map(job => (
-                                        <Link key={job.id} href={`/jobs/${job.jobId}`}>
-                                        <div className="p-3 rounded-lg border hover:bg-muted cursor-pointer">
-                                            <p className="font-medium">{job.title}</p>
-                                            <p className="text-sm text-muted-foreground">{job.companyName} - {job.location}, {job.country}</p>
-                                        </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            ) : (
-                                <p className="text-sm text-muted-foreground">No favorite jobs yet.</p>
-                            )}
-                        </div>
-                        <div>
-                            <h3 className="font-semibold mb-4 flex items-center gap-2"><BedDouble className="h-5 w-5" />Favorite Spaces</h3>
-                            {favoriteRooms && favoriteRooms.length > 0 ? (
-                                <div className="space-y-4">
-                                    {favoriteRooms.map(room => (
-                                        <Link key={room.id} href={`/rooms/${room.roomId}`}>
-                                        <div className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted cursor-pointer">
-                                            <Image src={room.image} alt={room.title} width={64} height={64} className="rounded-md object-cover aspect-square" />
-                                            <div>
-                                                <p className="font-medium">{room.title}</p>
-                                                <p className="text-sm text-muted-foreground">{room.location}, {room.country}</p>
-                                            </div>
-                                        </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            ) : (
-                                <p className="text-sm text-muted-foreground">No favorite spaces yet.</p>
-                            )}
-                        </div>
-                    </div>
-                     {(favoriteJobs?.length === 0 && favoriteRooms?.length === 0) && (
-                         <div className='text-center py-12 border-2 border-dashed rounded-lg'>
-                            <Heart className="mx-auto h-12 w-12 text-muted-foreground" />
-                            <h3 className="mt-4 text-lg font-medium">Nothing in your favorites yet</h3>
-                            <p className="mt-1 text-sm text-muted-foreground">Click the heart icon on any listing to save it here.</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-
-
-            {/* Job Seeker View */}
-            {isSeeker && (
+        <div className="grid gap-8 lg:grid-cols-3">
+            
+            <div className="lg:col-span-2 space-y-8">
+                {/* My Favorites Section */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>My Job Applications</CardTitle>
-                        <CardDescription>Track your job applications.</CardDescription>
+                        <CardTitle>My Favorites</CardTitle>
+                        <CardDescription>Your saved jobs and spaces.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                         {applicationsLoading ? (
-                            <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin" /></div>
-                         ) : jobApplications && jobApplications.length > 0 ? (
-                            <div className="grid gap-6 md:grid-cols-2">
-                                {jobApplications.map(app => (
-                                    <Card key={app.id}>
-                                      <CardHeader>
-                                        <CardTitle className="text-lg">{app.jobTitle}</CardTitle>
-                                        <CardDescription>{app.companyName}</CardDescription>
-                                      </CardHeader>
-                                      <CardContent>
-                                        <p className="text-sm text-muted-foreground">Applied: {format(app.appliedAt.toDate(), 'MMM d, yyyy')}</p>
-                                        {(() => {
-                                            const status = app.status;
-                                            const jobTitle = app.jobTitle;
-
-                                            switch (status) {
-                                                case 'hired':
-                                                    return <p className="text-sm text-green-600 font-semibold mt-2">Congratulations, you have been hired as a {jobTitle}.</p>;
-                                                case 'rejected':
-                                                    return <p className="text-sm text-red-600 font-semibold mt-2">Sorry, your application for {jobTitle} has been rejected.</p>;
-                                                case 'reviewed':
-                                                    return <Badge className="mt-2 capitalize" variant="default">Under Review</Badge>;
-                                                case 'pending':
-                                                default:
-                                                    if (app.applicationMethod === 'whatsapp') {
-                                                        return <p className="text-sm text-muted-foreground mt-2">Check your WhatsApp for status updates.</p>;
-                                                    }
-                                                    if (app.applicationMethod === 'email') {
-                                                        return <p className="text-sm text-muted-foreground mt-2">Check your email for status updates.</p>;
-                                                    }
-                                                    return <p className="text-sm text-muted-foreground mt-2">Check your email or WhatsApp for status updates.</p>;
-                                            }
-                                        })()}
-                                        <div className='mt-4 flex gap-2'>
-                                            <Link href={`/jobs/${app.jobId}`}>
-                                                <Button variant="outline" size="sm">View Job</Button>
+                        <div className="grid gap-8 md:grid-cols-2">
+                            <div>
+                                <h3 className="font-semibold mb-4 flex items-center gap-2"><Briefcase className="h-5 w-5" />Favorite Jobs</h3>
+                                {favoriteJobs && favoriteJobs.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {favoriteJobs.map(job => (
+                                            <Link key={job.id} href={`/jobs/${job.jobId}`}>
+                                            <div className="p-3 rounded-lg border hover:bg-muted cursor-pointer">
+                                                <p className="font-medium">{job.title}</p>
+                                                <p className="text-sm text-muted-foreground">{job.companyName} - {job.location}, {job.country}</p>
+                                            </div>
                                             </Link>
-                                            <Button variant="destructive" size="sm" onClick={() => setApplicationToDelete(app)}>
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Withdraw
-                                            </Button>
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-                                ))}
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">No favorite jobs yet.</p>
+                                )}
                             </div>
-                        ) : (
+                            <div>
+                                <h3 className="font-semibold mb-4 flex items-center gap-2"><BedDouble className="h-5 w-5" />Favorite Spaces</h3>
+                                {favoriteRooms && favoriteRooms.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {favoriteRooms.map(room => (
+                                            <Link key={room.id} href={`/rooms/${room.roomId}`}>
+                                            <div className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted cursor-pointer">
+                                                <Image src={room.image} alt={room.title} width={64} height={64} className="rounded-md object-cover aspect-square" />
+                                                <div>
+                                                    <p className="font-medium">{room.title}</p>
+                                                    <p className="text-sm text-muted-foreground">{room.location}, {room.country}</p>
+                                                </div>
+                                            </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">No favorite spaces yet.</p>
+                                )}
+                            </div>
+                        </div>
+                        {(favoriteJobs?.length === 0 && favoriteRooms?.length === 0) && (
                             <div className='text-center py-12 border-2 border-dashed rounded-lg'>
-                                <Briefcase className="mx-auto h-12 w-12 text-muted-foreground" />
-                                <h3 className="mt-4 text-lg font-medium">No job applications yet</h3>
-                                <p className="mt-1 text-sm text-muted-foreground">Start applying for jobs to see them here.</p>
-                                <Link href="/jobs">
-                                    <Button variant="outline" className="mt-4">Find Jobs</Button>
-                                </Link>
+                                <Heart className="mx-auto h-12 w-12 text-muted-foreground" />
+                                <h3 className="mt-4 text-lg font-medium">Nothing in your favorites yet</h3>
+                                <p className="mt-1 text-sm text-muted-foreground">Click the heart icon on any listing to save it here.</p>
                             </div>
                         )}
                     </CardContent>
                 </Card>
-            )}
 
-            {/* Employer View */}
-            {isEmployer && (
-                 <Card>
+
+                {/* Job Seeker View */}
+                {isSeeker && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>My Job Applications</CardTitle>
+                            <CardDescription>Track your job applications.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {applicationsLoading ? (
+                                <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                            ) : jobApplications && jobApplications.length > 0 ? (
+                                <div className="grid gap-6 md:grid-cols-2">
+                                    {jobApplications.map(app => (
+                                        <Card key={app.id}>
+                                        <CardHeader>
+                                            <CardTitle className="text-lg">{app.jobTitle}</CardTitle>
+                                            <CardDescription>{app.companyName}</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-sm text-muted-foreground">Applied: {format(app.appliedAt.toDate(), 'MMM d, yyyy')}</p>
+                                            {(() => {
+                                                const status = app.status;
+                                                const jobTitle = app.jobTitle;
+
+                                                switch (status) {
+                                                    case 'hired':
+                                                        return <p className="text-sm text-green-600 font-semibold mt-2">Congratulations, you have been hired as a {jobTitle}.</p>;
+                                                    case 'rejected':
+                                                        return <p className="text-sm text-red-600 font-semibold mt-2">Sorry, your application for {jobTitle} has been rejected.</p>;
+                                                    case 'reviewed':
+                                                        return <Badge className="mt-2 capitalize" variant="default">Under Review</Badge>;
+                                                    case 'pending':
+                                                    default:
+                                                        if (app.applicationMethod === 'whatsapp') {
+                                                            return <p className="text-sm text-muted-foreground mt-2">Check your WhatsApp for status updates.</p>;
+                                                        }
+                                                        if (app.applicationMethod === 'email') {
+                                                            return <p className="text-sm text-muted-foreground mt-2">Check your email for status updates.</p>;
+                                                        }
+                                                        return <p className="text-sm text-muted-foreground mt-2">Check your email or WhatsApp for status updates.</p>;
+                                                }
+                                            })()}
+                                            <div className='mt-4 flex gap-2'>
+                                                <Link href={`/jobs/${app.jobId}`}>
+                                                    <Button variant="outline" size="sm">View Job</Button>
+                                                </Link>
+                                                <Button variant="destructive" size="sm" onClick={() => setApplicationToDelete(app)}>
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Withdraw
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className='text-center py-12 border-2 border-dashed rounded-lg'>
+                                    <Briefcase className="mx-auto h-12 w-12 text-muted-foreground" />
+                                    <h3 className="mt-4 text-lg font-medium">No job applications yet</h3>
+                                    <p className="mt-1 text-sm text-muted-foreground">Start applying for jobs to see them here.</p>
+                                    <Link href="/jobs">
+                                        <Button variant="outline" className="mt-4">Find Jobs</Button>
+                                    </Link>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Employer View */}
+                {isEmployer && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>My Job Listings</CardTitle>
+                            <CardDescription>Manage your posted jobs.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {jobListings && jobListings.length > 0 ? (
+                                <div className="grid gap-6 md:grid-cols-2">
+                                    {jobListings.map(job => (
+                                        <Card key={job.id}>
+                                        <CardHeader>
+                                            <CardTitle className="text-lg">{job.title}</CardTitle>
+                                            <CardDescription>{job.location}, {job.country}</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="flex flex-wrap gap-2">
+                                            <Link href={`/jobs/${job.id}`}>
+                                                <Button variant="outline" size="sm">View Listing</Button>
+                                            </Link>
+                                            <Link href={`/dashboard/jobs/${job.id}/applicants`}>
+                                                <Button size="sm">
+                                                    <Users className="mr-2 h-4 w-4"/>
+                                                    View Applicants
+                                                </Button>
+                                            </Link>
+                                            <Link href={`/dashboard/jobs/${job.id}/edit`}>
+                                                <Button variant="secondary" size="sm">
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    Edit
+                                                </Button>
+                                            </Link>
+                                            <Button variant="destructive" size="sm" onClick={() => setJobToDelete(job.id)}>
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Delete
+                                            </Button>
+                                            </div>
+                                        </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className='text-center py-12 border-2 border-dashed rounded-lg'>
+                                    <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
+                                    <h3 className="mt-4 text-lg font-medium">No jobs posted yet.</h3>
+                                    <p className="mt-1 text-sm text-muted-foreground">Post a job to find the best candidates.</p>
+                                    <Link href="/dashboard/post-job">
+                                        <Button className="mt-4">Post a Job</Button>
+                                    </Link>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Room Bookings View */}
+                <Card>
                     <CardHeader>
-                        <CardTitle>My Job Listings</CardTitle>
-                        <CardDescription>Manage your posted jobs.</CardDescription>
+                        <CardTitle>My Bookings</CardTitle>
+                        <CardDescription>View your upcoming and past stays.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {jobListings && jobListings.length > 0 ? (
-                             <div className="grid gap-6 md:grid-cols-2">
-                                {jobListings.map(job => (
-                                     <Card key={job.id}>
-                                      <CardHeader>
-                                        <CardTitle className="text-lg">{job.title}</CardTitle>
-                                        <CardDescription>{job.location}, {job.country}</CardDescription>
-                                      </CardHeader>
-                                      <CardContent>
-                                        <div className="flex flex-wrap gap-2">
-                                          <Link href={`/jobs/${job.id}`}>
-                                              <Button variant="outline" size="sm">View Listing</Button>
-                                          </Link>
-                                           <Link href={`/dashboard/jobs/${job.id}/applicants`}>
-                                              <Button size="sm">
-                                                <Users className="mr-2 h-4 w-4"/>
-                                                View Applicants
-                                              </Button>
-                                          </Link>
-                                          <Link href={`/dashboard/jobs/${job.id}/edit`}>
-                                            <Button variant="secondary" size="sm">
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                Edit
-                                            </Button>
-                                          </Link>
-                                          <Button variant="destructive" size="sm" onClick={() => setJobToDelete(job.id)}>
-                                              <Trash2 className="mr-2 h-4 w-4" />
-                                              Delete
-                                          </Button>
+                        {bookings && bookings.length > 0 ? (
+                            <div className="grid gap-6 md:grid-cols-2">
+                                {bookings.map(booking => (
+                                    <Card key={booking.id} className="overflow-hidden">
+                                        <div className="flex">
+                                            <div className="relative w-1/3 aspect-square">
+                                            <Image src={booking.roomImage} alt={booking.roomTitle} fill className="object-cover" />
+                                            </div>
+                                            <div className='p-4 flex-1 flex flex-col'>
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <h3 className="font-semibold text-sm">{booking.roomTitle}</h3>
+                                                        <p className="text-[10px] text-muted-foreground">{booking.roomLocation}</p>
+                                                    </div>
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0" 
+                                                        onClick={() => setBookingToDelete(booking)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                                <div className="mt-auto pt-2">
+                                                    <p className="text-[10px]">
+                                                        {format(booking.checkInDate.toDate(), 'MMM d, yyyy')} - {format(booking.checkOutDate.toDate(), 'MMM d, yyyy')}
+                                                    </p>
+                                                    <p className="text-xs font-semibold mt-1">Total: {booking.currencySymbol || '$'}{booking.totalPrice}</p>
+                                                </div>
+                                            </div>
                                         </div>
-                                      </CardContent>
                                     </Card>
                                 ))}
                             </div>
                         ) : (
                             <div className='text-center py-12 border-2 border-dashed rounded-lg'>
-                                <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
-                                <h3 className="mt-4 text-lg font-medium">No jobs posted yet.</h3>
-                                <p className="mt-1 text-sm text-muted-foreground">Post a job to find the best candidates.</p>
-                                <Link href="/dashboard/post-job">
-                                    <Button className="mt-4">Post a Job</Button>
+                                <BedDouble className="mx-auto h-12 w-12 text-muted-foreground" />
+                                <h3 className="mt-4 text-lg font-medium">No bookings yet</h3>
+                                <p className="mt-1 text-sm text-muted-foreground">Start exploring and book your next stay!</p>
+                                <Link href="/rooms">
+                                    <Button variant="outline" className="mt-4">Explore Rooms</Button>
                                 </Link>
                             </div>
                         )}
                     </CardContent>
                 </Card>
-            )}
-
-            {/* Room Bookings View */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>My Bookings</CardTitle>
-                    <CardDescription>View your upcoming and past stays.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {bookings && bookings.length > 0 ? (
-                        <div className="grid gap-6 md:grid-cols-2">
-                            {bookings.map(booking => (
-                                <Card key={booking.id} className="overflow-hidden">
-                                    <div className="flex">
-                                        <div className="relative w-1/3 aspect-square">
-                                           <Image src={booking.roomImage} alt={booking.roomTitle} fill className="object-cover" />
-                                        </div>
-                                        <div className='p-4 flex-1 flex flex-col'>
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <h3 className="font-semibold">{booking.roomTitle}</h3>
-                                                    <p className="text-sm text-muted-foreground">{booking.roomLocation}</p>
-                                                </div>
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="icon" 
-                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0" 
-                                                    onClick={() => setBookingToDelete(booking)}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
+                
+                {/* Room Listings View (For Owners) */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>My Space Listings</CardTitle>
+                        <CardDescription>Manage the spaces you are hosting.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {roomListings && roomListings.length > 0 ? (
+                            <div className="grid gap-6 md:grid-cols-2">
+                                {roomListings.map(listing => (
+                                    <Card key={listing.id}>
+                                        <div className="flex">
+                                            <div className="relative w-1/3 aspect-video">
+                                                <Image src={listing.images[0]} alt={listing.title} fill className="object-cover rounded-l-lg" />
                                             </div>
-                                            <div className="mt-auto pt-2">
-                                                <p className="text-sm">
-                                                    {format(booking.checkInDate.toDate(), 'MMM d, yyyy')} - {format(booking.checkOutDate.toDate(), 'MMM d, yyyy')}
+                                            <div className='p-4 flex-1'>
+                                                <h3 className="font-semibold text-sm">{listing.title}</h3>
+                                                <p className="text-[10px] text-muted-foreground">{listing.location}, {listing.country}</p>
+                                                <p className="text-xs mt-2 font-semibold">
+                                                    {listing.listingType === 'sale' && listing.salePrice ? `${listing.currencySymbol}${listing.salePrice.toLocaleString()}` : ''}
+                                                    {listing.listingType === 'rent' && listing.priceNight ? `${listing.currencySymbol}${listing.priceNight}/night` : ''}
+                                                    {listing.listingType === 'rent' && listing.priceMonth ? ` | ${listing.currencySymbol}${listing.priceMonth}/month` : ''}
                                                 </p>
-                                                <p className="text-sm font-semibold mt-1">Total: {booking.currencySymbol || '$'}{booking.totalPrice}</p>
+                                                <div className="flex flex-wrap gap-2 mt-2">
+                                                    <Link href={`/rooms/${listing.id}`}>
+                                                        <Button variant="outline" size="sm" className="h-7 text-[10px]">View</Button>
+                                                    </Link>
+                                                    <Link href={`/dashboard/rooms/${listing.id}/edit`}>
+                                                        <Button variant="secondary" size="sm" className="h-7 text-[10px]"><Edit className="mr-1 h-3 w-3" />Edit</Button>
+                                                    </Link>
+                                                    <Button variant="destructive" size="sm" className="h-7 text-[10px]" onClick={() => setRoomToDelete(listing.id)}>
+                                                        <Trash2 className="mr-1 h-3 w-3" />Delete
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
-                    ) : (
+                                    </Card>
+                                ))}
+                            </div>
+                        ) : (
                         <div className='text-center py-12 border-2 border-dashed rounded-lg'>
-                            <BedDouble className="mx-auto h-12 w-12 text-muted-foreground" />
-                            <h3 className="mt-4 text-lg font-medium">No bookings yet</h3>
-                            <p className="mt-1 text-sm text-muted-foreground">Start exploring and book your next stay!</p>
-                            <Link href="/rooms">
-                                <Button variant="outline" className="mt-4">Explore Rooms</Button>
-                            </Link>
+                                <Home className="mx-auto h-12 w-12 text-muted-foreground" />
+                                <h3 className="mt-4 text-lg font-medium">You have no active listings.</h3>
+                                <p className="mt-1 text-sm text-muted-foreground">List your space to start earning.</p>
+                                <Link href="/dashboard/list-room">
+                                    <Button variant="default" className="mt-4">List a Space</Button>
+                                </Link>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Notifications Sidebar */}
+            <div className="lg:col-span-1">
+                <Card className="sticky top-20">
+                    <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="text-xl flex items-center gap-2">
+                                <Bell className="h-5 w-5 text-primary" />
+                                Notifications
+                            </CardTitle>
+                            <CardDescription>Recent activity and surveys</CardDescription>
                         </div>
-                    )}
-                </CardContent>
-            </Card>
-             
-            {/* Room Listings View (For Owners) */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>My Space Listings</CardTitle>
-                    <CardDescription>Manage the spaces you are hosting.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {roomListings && roomListings.length > 0 ? (
-                        <div className="grid gap-6 md:grid-cols-2">
-                            {roomListings.map(listing => (
-                                 <Card key={listing.id}>
-                                    <div className="flex">
-                                        <div className="relative w-1.3 aspect-video">
-                                            <Image src={listing.images[0]} alt={listing.title} fill className="object-cover rounded-l-lg" />
-                                        </div>
-                                        <div className='p-4 flex-1'>
-                                            <h3 className="font-semibold">{listing.title}</h3>
-                                            <p className="text-sm text-muted-foreground">{listing.location}, {listing.country}</p>
-                                            <p className="text-sm mt-2 font-semibold">
-                                                {listing.listingType === 'sale' && listing.salePrice ? `${listing.currencySymbol}${listing.salePrice.toLocaleString()}` : ''}
-                                                {listing.listingType === 'rent' && listing.priceNight ? `${listing.currencySymbol}${listing.priceNight}/night` : ''}
-                                                {listing.listingType === 'rent' && listing.priceMonth ? ` | ${listing.currencySymbol}${listing.priceMonth}/month` : ''}
-                                            </p>
-                                            <div className="flex flex-wrap gap-2 mt-2">
-                                                <Link href={`/rooms/${listing.id}`}>
-                                                    <Button variant="outline" size="sm">View</Button>
-                                                </Link>
-                                                <Link href={`/dashboard/rooms/${listing.id}/edit`}>
-                                                    <Button variant="secondary" size="sm"><Edit className="mr-2 h-4 w-4" />Edit</Button>
-                                                </Link>
-                                                <Button variant="destructive" size="sm" onClick={() => setRoomToDelete(listing.id)}>
-                                                    <Trash2 className="mr-2 h-4 w-4" />Delete
+                    </CardHeader>
+                    <CardContent className="px-0">
+                        {notifications && notifications.length > 0 ? (
+                            <div className="divide-y max-h-[calc(100vh-300px)] overflow-y-auto">
+                                {notifications.map(notif => (
+                                    <div key={notif.id} className={cn("p-4 space-y-2 group transition-colors", !notif.read && "bg-primary/5")}>
+                                        <div className="flex justify-between items-start gap-2">
+                                            <div className="flex items-center gap-2">
+                                                {notif.type === 'survey' ? <HelpCircle className="h-4 w-4 text-primary" /> : <Bell className="h-4 w-4 text-muted-foreground" />}
+                                                <h4 className="font-semibold text-xs">{notif.title}</h4>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                {!notif.read && (
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleMarkAsRead(notif.id)}>
+                                                        <Check className="h-3 w-3" />
+                                                    </Button>
+                                                )}
+                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteNotification(notif.id)}>
+                                                    <Trash2 className="h-3 w-3" />
                                                 </Button>
                                             </div>
                                         </div>
+                                        <p className="text-xs text-muted-foreground">{notif.message}</p>
+                                        
+                                        {notif.type === 'survey' && !notif.surveyAnswer && (
+                                            <div className="flex gap-2 pt-1">
+                                                <Button size="sm" className="h-7 px-3 text-[10px] flex-1" onClick={() => handleSurveyAnswer(notif.id, 'yes')}>
+                                                    <Check className="mr-1 h-3 w-3" /> Yes
+                                                </Button>
+                                                <Button size="sm" variant="outline" className="h-7 px-3 text-[10px] flex-1" onClick={() => handleSurveyAnswer(notif.id, 'no')}>
+                                                    <X className="mr-1 h-3 w-3" /> No
+                                                </Button>
+                                            </div>
+                                        )}
+                                        <div className="flex justify-between items-center pt-1">
+                                            <span className="text-[10px] text-muted-foreground">
+                                                {format(notif.createdAt.toDate(), 'MMM d, h:mm a')}
+                                            </span>
+                                            {!notif.read && <Badge variant="default" className="h-4 px-1.5 text-[8px]">New</Badge>}
+                                        </div>
                                     </div>
-                                </Card>
-                            ))}
-                        </div>
-                    ) : (
-                       <div className='text-center py-12 border-2 border-dashed rounded-lg'>
-                            <Home className="mx-auto h-12 w-12 text-muted-foreground" />
-                            <h3 className="mt-4 text-lg font-medium">You have no active listings.</h3>
-                            <p className="mt-1 text-sm text-muted-foreground">List your space to start earning.</p>
-                            <Link href="/dashboard/list-room">
-                                <Button variant="default" className="mt-4">List a Space</Button>
-                            </Link>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="p-8 text-center">
+                                <Bell className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                                <p className="text-sm text-muted-foreground">No recent activity.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     </div>
     <AlertDialog open={!!jobToDelete} onOpenChange={(open) => !open && setJobToDelete(null)}>

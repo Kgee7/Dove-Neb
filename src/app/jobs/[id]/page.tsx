@@ -3,7 +3,7 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, writeBatch, query, collection, where, getDocs } from 'firebase/firestore';
+import { doc, writeBatch, query, collection, where, getDocs, addDoc } from 'firebase/firestore';
 import { useDoc, useFirestore, useUser } from '@/firebase';
 import { Job } from '@/lib/job-data';
 import Link from 'next/link';
@@ -130,7 +130,31 @@ export default function JobDetailsPage() {
         const applicationRef = doc(firestore, 'users', user.uid, 'applications', applicationId);
         batch.set(applicationRef, applicationData);
 
+        // Add Notification
+        const notificationRef = doc(collection(firestore, 'users', user.uid, 'notifications'));
+        batch.set(notificationRef, {
+            id: notificationRef.id,
+            title: 'Application Sent',
+            message: `Your application for "${job.title}" at "${job.companyName}" has been submitted successfully.`,
+            type: 'info',
+            read: false,
+            createdAt: new Date()
+        });
+
         await batch.commit();
+
+        // Simulate Survey Prompt for Jobs
+        setTimeout(async () => {
+            await addDoc(collection(firestore, 'users', user.uid, 'notifications'), {
+                title: 'Application Follow-up',
+                message: `Did you get the job at "${job.companyName}"?`,
+                type: 'survey',
+                surveyQuestion: `Did you get the job at "${job.companyName}"?`,
+                surveyAnswer: null,
+                read: false,
+                createdAt: new Date()
+            });
+        }, 8000);
         
         setApplicationState('applied');
         toast({

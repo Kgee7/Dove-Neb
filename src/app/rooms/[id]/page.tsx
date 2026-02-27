@@ -1,8 +1,9 @@
+
 'use client';
 
 import React, { useMemo, useState } from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
 import { useDoc, useFirestore, useUser } from '@/firebase';
 import { Room } from '@/lib/data';
 import Image from 'next/image';
@@ -51,7 +52,7 @@ export default function RoomDetailsPage() {
 
   const { data: room, isLoading } = useDoc<Room>(roomDocRef);
 
-  const handleInterestClick = () => {
+  const handleInterestClick = async () => {
     if (!user) {
         router.push(`/signup?redirect=${encodeURIComponent(pathname)}`);
         return;
@@ -59,39 +60,62 @@ export default function RoomDetailsPage() {
 
     if (!firestore || !room) return;
 
-    // Create a booking record for the user's dashboard
-    const bookingId = uuidv4();
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
+    try {
+        const bookingId = uuidv4();
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
 
-    const bookingData = {
-        id: bookingId,
-        roomId: room.id,
-        roomTitle: room.title,
-        roomLocation: `${room.location}, ${room.country}`,
-        roomImage: room.images[0] || '',
-        checkInDate: today,
-        checkOutDate: tomorrow,
-        totalPrice: room.priceNight || room.priceMonth || room.salePrice || 0,
-        currencySymbol: room.currencySymbol || '$',
-        status: 'pending',
-        renterId: user.uid,
-        createdAt: new Date(),
-    };
+        // 1. Create a booking record
+        const bookingData = {
+            id: bookingId,
+            roomId: room.id,
+            roomTitle: room.title,
+            roomLocation: `${room.location}, ${room.country}`,
+            roomImage: room.images[0] || '',
+            checkInDate: today,
+            checkOutDate: tomorrow,
+            totalPrice: room.priceNight || room.priceMonth || room.salePrice || 0,
+            currencySymbol: room.currencySymbol || '$',
+            status: 'pending',
+            renterId: user.uid,
+            createdAt: new Date(),
+        };
 
-    const bookingRef = doc(firestore, 'users', user.uid, 'bookings', bookingId);
-    
-    // Save the record - non-blocking
-    setDoc(bookingRef, bookingData).catch(err => {
+        const bookingRef = doc(firestore, 'users', user.uid, 'bookings', bookingId);
+        await setDoc(bookingRef, bookingData);
+
+        // 2. Create an info notification
+        await addDoc(collection(firestore, 'users', user.uid, 'notifications'), {
+            title: 'Interest Recorded',
+            message: `You expressed interest in "${room.title}". The space has been added to your dashboard.`,
+            type: 'info',
+            read: false,
+            createdAt: new Date()
+        });
+
+        // 3. Create a survey notification (Simulating an "automatic" prompt)
+        setTimeout(async () => {
+            await addDoc(collection(firestore, 'users', user.uid, 'notifications'), {
+                title: 'Quick Feedback',
+                message: `How was the lodge today at "${room.title}"?`,
+                type: 'survey',
+                surveyQuestion: `How was the lodge today at "${room.title}"?`,
+                surveyAnswer: null,
+                read: false,
+                createdAt: new Date()
+            });
+        }, 5000);
+
+        setShowContact(true);
+        toast({
+            title: "Interest Noted!",
+            description: "Owner contact information revealed and space added to your dashboard bookings.",
+        });
+    } catch (err: any) {
         console.error("Error creating interest booking:", err);
-    });
-
-    setShowContact(true);
-    toast({
-        title: "Interest Noted!",
-        description: "Owner contact information revealed and space added to your dashboard bookings.",
-    });
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not record interest.' });
+    }
   };
 
   if (isLoading || isUserLoading) {
