@@ -106,14 +106,14 @@ export default function HomePage() {
         )}
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 flex h-full flex-col items-center justify-center text-center px-4">
-          <div className="container max-w-3xl">
-            <h1 className="text-xl font-bold tracking-tight text-white sm:text-3xl md:text-4xl lg:text-5xl font-headline transition-all">
+          <div className="container max-w-2xl">
+            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl md:text-4xl lg:text-5xl font-headline transition-all">
               Where Opportunities Take Flight
             </h1>
             <p className="mt-3 text-sm text-white/80 sm:text-base md:text-lg lg:text-xl">
               Find your dream job and the perfect place to stay.
             </p>
-            <Card className="mx-auto mt-6 max-w-xl shadow-2xl overflow-hidden border-none bg-background/95 backdrop-blur-sm">
+            <Card className="mx-auto mt-8 max-w-lg shadow-2xl overflow-hidden border-none bg-background/95 backdrop-blur-sm">
               {isClient && 
                <Tabs defaultValue="jobs" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-none h-10">
@@ -127,7 +127,7 @@ export default function HomePage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           placeholder="Job title..."
-                          className="pl-9 h-10 text-sm"
+                          className="pl-9 h-10 text-sm focus-visible:ring-primary"
                           value={jobSearchQuery}
                           onChange={(e) => setJobSearchQuery(e.target.value)}
                         />
@@ -136,14 +136,14 @@ export default function HomePage() {
                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input 
                           placeholder="Location" 
-                          className="pl-9 h-10 text-sm"
+                          className="pl-9 h-10 text-sm focus-visible:ring-primary"
                           value={jobLocationQuery}
                           onChange={(e) => setJobLocationQuery(e.target.value)}
                         />
                       </div>
-                      <Button type="submit" className="h-10 px-5 text-sm shrink-0">
-                        <Search className="h-4 w-4 sm:hidden" />
-                        <span className="hidden sm:inline font-semibold">Search</span>
+                      <Button type="submit" className="h-10 px-5 text-sm shrink-0 font-semibold">
+                        <Search className="h-4 w-4 sm:mr-2" />
+                        <span className="sm:inline">Search</span>
                       </Button>
                     </form>
                   </CardContent>
@@ -155,7 +155,7 @@ export default function HomePage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           placeholder="Destination..."
-                          className="pl-9 h-10 text-sm"
+                          className="pl-9 h-10 text-sm focus-visible:ring-primary"
                           value={roomSearchQuery}
                           onChange={(e) => setRoomSearchQuery(e.target.value)}
                         />
@@ -164,14 +164,14 @@ export default function HomePage() {
                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input 
                           placeholder="Location" 
-                          className="pl-9 h-10 text-sm"
+                          className="pl-9 h-10 text-sm focus-visible:ring-primary"
                           value={roomLocationQuery}
                           onChange={(e) => setRoomLocationQuery(e.target.value)}
                         />
                       </div>
-                      <Button type="submit" className="h-10 px-5 text-sm shrink-0">
-                        <Search className="h-4 w-4 sm:hidden" />
-                        <span className="hidden sm:inline font-semibold">Search</span>
+                      <Button type="submit" className="h-10 px-5 text-sm shrink-0 font-semibold">
+                        <Search className="h-4 w-4 sm:mr-2" />
+                        <span className="sm:inline">Search</span>
                       </Button>
                     </form>
                   </CardContent>
