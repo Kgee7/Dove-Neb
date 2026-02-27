@@ -1,6 +1,4 @@
-
-import { collection, query, getDocs, where, DocumentData, FirestoreDataConverter } from 'firebase/firestore';
-import { firestore } from '@/firebase';
+import { DocumentData, FirestoreDataConverter } from 'firebase/firestore';
 
 // Basic data structures
 export interface UserProfile {
@@ -40,6 +38,7 @@ export interface Room {
     ownerId: string;
     contactEmail: string | null;
     contactWhatsapp: string | null;
+    interestCount?: number;
 }
 
 // Firestore data converters
@@ -62,6 +61,7 @@ export const roomConverter: FirestoreDataConverter<Room> = {
             ownerId: room.ownerId,
             contactEmail: room.contactEmail,
             contactWhatsapp: room.contactWhatsapp,
+            interestCount: room.interestCount || 0,
         };
     },
     fromFirestore(snapshot, options): Room {
@@ -84,6 +84,7 @@ export const roomConverter: FirestoreDataConverter<Room> = {
             ownerId: data.ownerId,
             contactEmail: data.contactEmail,
             contactWhatsapp: data.contactWhatsapp,
+            interestCount: data.interestCount || 0,
         };
     },
 };
