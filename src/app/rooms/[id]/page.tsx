@@ -57,14 +57,17 @@ export default function RoomDetailsPage() {
   const { data: room, isLoading } = useDoc<Room>(roomDocRef);
 
   // Check if user has already expressed interest to reveal contact info automatically
-  // Uses a Server Action to avoid permission issues
   useEffect(() => {
     if (!user || !id) return;
     
     const verifyInterest = async () => {
-        const hasExpressedInterest = await checkInterestStatus(id, user.uid);
-        if (hasExpressedInterest) {
-            setShowContact(true);
+        try {
+            const hasExpressedInterest = await checkInterestStatus(id, user.uid);
+            if (hasExpressedInterest) {
+                setShowContact(true);
+            }
+        } catch (err) {
+            console.error("Verification error:", err);
         }
     };
     verifyInterest();
@@ -80,8 +83,6 @@ export default function RoomDetailsPage() {
 
     setIsRating(true);
     try {
-        // Use Server Action to record interest and rate the room
-        // This bypasses client-side Firestore security rules
         const result = await recordInterestAction(
             id, 
             user.uid, 
@@ -100,7 +101,7 @@ export default function RoomDetailsPage() {
         toast({
             variant: "destructive",
             title: "Action Failed",
-            description: "Could not record your interest. Please try again."
+            description: error.message || "Could not record your interest. Please try again."
         });
     } finally {
         setIsRating(false);

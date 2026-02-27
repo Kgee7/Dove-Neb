@@ -2,14 +2,15 @@
 
 import * as admin from 'firebase-admin';
 
-// Initialize Firebase Admin SDK for server-side operations
-if (!admin.apps.length) {
-  admin.initializeApp({
-    projectId: "studio-7235955659-7c316",
-  });
+// Helper to safely get the Firestore instance with guaranteed initialization
+function getDb() {
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      projectId: "studio-7235955659-7c316",
+    });
+  }
+  return admin.firestore();
 }
-
-const db = admin.firestore();
 
 /**
  * Checks if a user has already expressed interest in a room.
@@ -18,6 +19,7 @@ const db = admin.firestore();
 export async function checkInterestStatus(roomId: string, userId: string) {
   if (!roomId || !userId) return false;
   try {
+    const db = getDb();
     const doc = await db.collection('rooms').doc(roomId).collection('ratings').doc(userId).get();
     return doc.exists;
   } catch (error) {
@@ -28,39 +30,44 @@ export async function checkInterestStatus(roomId: string, userId: string) {
 
 /**
  * Records a user's interest in a room and "rates" it by incrementing a counter.
- * This runs on the server to bypass client-side security rules.
+ * Uses a transaction to ensure atomic updates.
  */
 export async function recordInterestAction(roomId: string, userId: string, userName: string) {
-  if (!roomId || !userId) throw new Error("Missing parameters");
+  if (!roomId || !userId) throw new Error("Missing required parameters: roomId or userId");
+  
+  const db = getDb();
   
   try {
     const roomRef = db.collection('rooms').doc(roomId);
     const ratingRef = roomRef.collection('ratings').doc(userId);
     
-    // Check if interest already exists to prevent multiple counts from the same user
-    const existingInterest = await ratingRef.get();
-    
-    const batch = db.batch();
-    
-    // Always set/update the interest marker
-    batch.set(ratingRef, {
-      userId,
-      userName,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      type: 'interest'
-    }, { merge: true });
+    await db.runTransaction(async (transaction) => {
+      const roomDoc = await transaction.get(roomRef);
+      const ratingDoc = await transaction.get(ratingRef);
 
-    // Only increment the "rating" count if this is a new interest for this user
-    if (!existingInterest.exists) {
-        batch.update(roomRef, {
+      if (!roomDoc.exists) {
+        throw new Error("The room listing no longer exists.");
+      }
+
+      // 1. Record/Update the specific user's interest marker
+      transaction.set(ratingRef, {
+        userId,
+        userName,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        type: 'interest'
+      }, { merge: true });
+
+      // 2. Increment global room interest count only if this is a NEW interest for this user
+      if (!ratingDoc.exists) {
+        transaction.update(roomRef, {
           interestCount: admin.firestore.FieldValue.increment(1)
         });
-    }
+      }
+    });
 
-    await batch.commit();
     return { success: true };
-  } catch (error) {
-    console.error("Error recording interest on server:", error);
-    throw new Error("Failed to record interest");
+  } catch (error: any) {
+    console.error("CRITICAL ERROR in recordInterestAction:", error);
+    throw new Error(error.message || "Could not record your interest. Please try again later.");
   }
 }
