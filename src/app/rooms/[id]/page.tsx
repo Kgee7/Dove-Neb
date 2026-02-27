@@ -74,6 +74,7 @@ export default function RoomDetailsPage() {
         checkInDate: today,
         checkOutDate: tomorrow,
         totalPrice: room.priceNight || room.priceMonth || room.salePrice || 0,
+        currencySymbol: room.currencySymbol || '$',
         status: 'pending',
         renterId: user.uid,
         createdAt: new Date(),

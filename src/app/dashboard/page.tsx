@@ -1,4 +1,3 @@
-
 'use client';
 import { useRouter } from 'next/navigation';
 import React, { useMemo, useState, useEffect } from 'react';
@@ -45,6 +44,7 @@ type Booking = {
     checkInDate: { toDate: () => Date };
     checkOutDate: { toDate: () => Date };
     totalPrice: number;
+    currencySymbol?: string;
 }
 
 type JobApplication = {
@@ -456,7 +456,7 @@ export default function DashboardPage() {
                                             <p className="text-sm mt-2">
                                                 {format(booking.checkInDate.toDate(), 'MMM d, yyyy')} - {format(booking.checkOutDate.toDate(), 'MMM d, yyyy')}
                                             </p>
-                                            <p className="text-sm font-semibold mt-1">Total: ${booking.totalPrice}</p>
+                                            <p className="text-sm font-semibold mt-1">Total: {booking.currencySymbol || '$'}{booking.totalPrice}</p>
                                         </div>
                                     </div>
                                 </Card>
