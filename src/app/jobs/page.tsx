@@ -63,40 +63,40 @@ export default function JobsPage() {
   return (
     <div className="container mx-auto py-8 sm:py-12 px-4">
       <header className="text-center mb-8 sm:mb-12">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight font-headline">Find Your Next Opportunity</h1>
-        <p className="mt-3 text-sm sm:text-lg text-muted-foreground max-w-2xl mx-auto">Search through thousands of open positions. Your dream job is just a click away.</p>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight font-headline">Find Your Next Opportunity</h1>
+        <p className="mt-2 text-xs sm:text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto">Search through thousands of open positions. Your dream job is just a click away.</p>
       </header>
 
-      <Card className="p-2 sm:p-3 mb-8 sm:mb-12 shadow-md max-w-5xl mx-auto">
+      <Card className="p-1.5 sm:p-2 mb-8 sm:mb-12 shadow-md max-w-4xl mx-auto">
         {isClient && (
-        <div className="flex flex-col lg:flex-row gap-3 items-center">
-          <div className="flex flex-col sm:flex-row flex-1 w-full items-center bg-muted/30 rounded-lg lg:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden">
-            <div className="flex flex-1 items-center px-3 w-full border-b sm:border-b-0 sm:border-r">
-              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+        <div className="flex flex-col md:flex-row gap-2 items-center">
+          <div className="flex flex-col sm:flex-row flex-1 w-full items-center bg-muted/30 rounded-md sm:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden">
+            <div className="flex flex-1 items-center px-2.5 w-full border-b sm:border-b-0 sm:border-r">
+              <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               <Input 
-                placeholder='Job title or company'
+                placeholder='Job title'
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="border-none bg-transparent focus-visible:ring-0 h-10 text-sm"
+                className="border-none bg-transparent focus-visible:ring-0 h-8 sm:h-9 text-xs"
               />
             </div>
-            <div className="flex flex-1 items-center px-3 w-full">
-              <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+            <div className="flex flex-1 items-center px-2.5 w-full">
+              <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               <Input 
-                placeholder='City or country'
+                placeholder='Location'
                 value={locationTerm}
                 onChange={(e) => setLocationTerm(e.target.value)}
-                className="border-none bg-transparent focus-visible:ring-0 h-10 text-sm"
+                className="border-none bg-transparent focus-visible:ring-0 h-8 sm:h-9 text-xs"
               />
             </div>
           </div>
           
-          <div className="flex w-full lg:w-auto gap-2">
+          <div className="flex w-full md:w-auto gap-2">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="h-10 rounded-lg lg:rounded-full px-4 flex-1 lg:w-40">
+              <SelectTrigger className="h-8 sm:h-9 rounded-md sm:rounded-full px-3 flex-1 md:w-32 text-xs">
                 <div className='flex items-center overflow-hidden'>
-                  <Briefcase className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
-                  <SelectValue placeholder="Job Type" />
+                  <Briefcase className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
+                  <SelectValue placeholder="Type" />
                 </div>
               </SelectTrigger>
               <SelectContent>
@@ -104,8 +104,8 @@ export default function JobsPage() {
                 {jobTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Button className="h-10 px-6 rounded-lg lg:rounded-full font-bold shrink-0">
-              Filter
+            <Button className="h-8 sm:h-9 px-5 rounded-md sm:rounded-full font-bold shrink-0 text-xs">
+              Search
             </Button>
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function JobsPage() {
 
       {user && suggestedJobs && suggestedJobs.length > 0 && (
         <section className="mb-10 sm:mb-12">
-          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center">Suggested for You</h2>
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-center">Suggested for You</h2>
            {suggestedJobsLoading ? (
             <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin" /></div>
           ) : (
@@ -128,7 +128,7 @@ export default function JobsPage() {
       )}
 
       <section>
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center">All Jobs</h2>
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-center">All Jobs</h2>
         {jobsLoading ? (
            <div className="flex justify-center items-center h-64"><Loader2 className="h-12 w-12 animate-spin" /></div>
         ) : filteredJobs.length > 0 ? (

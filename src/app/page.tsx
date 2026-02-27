@@ -88,7 +88,7 @@ export default function HomePage() {
   return (
     <div className="flex-1">
       {/* Hero Section */}
-      <section className="relative h-[55vh] sm:h-[65vh] lg:h-[75vh] w-full min-h-[400px]">
+      <section className="relative h-[50vh] sm:h-[60vh] lg:h-[70vh] w-full min-h-[350px]">
         {heroImage && (
           <Image
             src={heroImage.imageUrl}
@@ -102,74 +102,74 @@ export default function HomePage() {
         )}
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 flex h-full flex-col items-center justify-center text-center px-4">
-          <div className="container max-w-3xl">
-            <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight text-white font-headline transition-all animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="container max-w-2xl">
+            <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-white font-headline transition-all animate-in fade-in slide-in-from-bottom-4 duration-700">
               Where Opportunities Take Flight
             </h1>
-            <p className="mt-2 text-xs sm:text-sm md:text-lg lg:text-xl text-white/80 animate-in fade-in slide-in-from-bottom-4 delay-100 duration-700">
+            <p className="mt-1 text-[10px] sm:text-xs md:text-base lg:text-lg text-white/80 animate-in fade-in slide-in-from-bottom-4 delay-100 duration-700">
               Find your dream job and the perfect place to stay.
             </p>
             
-            <Card className="mx-auto mt-6 sm:mt-8 w-full max-w-2xl shadow-2xl overflow-hidden border-none bg-background/95 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 delay-200 duration-700">
+            <Card className="mx-auto mt-4 sm:mt-6 w-full max-w-xl shadow-2xl overflow-hidden border-none bg-background/95 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 delay-200 duration-700">
               {isClient && 
                <Tabs defaultValue="jobs" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-none h-10">
-                  <TabsTrigger value="jobs" className="text-xs sm:text-sm">Find a Job</TabsTrigger>
-                  <TabsTrigger value="rooms" className="text-xs sm:text-sm">Find a Space</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-none h-8 sm:h-9">
+                  <TabsTrigger value="jobs" className="text-[10px] sm:text-xs">Find a Job</TabsTrigger>
+                  <TabsTrigger value="rooms" className="text-[10px] sm:text-xs">Find a Space</TabsTrigger>
                 </TabsList>
                 <TabsContent value="jobs" className="mt-0">
-                  <CardContent className="p-2 sm:p-3">
-                    <form className="flex flex-col md:flex-row items-center gap-2" onSubmit={handleJobSearch}>
-                      <div className="flex flex-col sm:flex-row flex-1 w-full items-center bg-muted/30 rounded-lg md:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden">
-                        <div className="flex flex-1 items-center px-3 w-full border-b md:border-b-0 md:border-r">
-                          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <CardContent className="p-1.5 sm:p-2">
+                    <form className="flex flex-col sm:flex-row items-center gap-1.5" onSubmit={handleJobSearch}>
+                      <div className="flex flex-col xs:flex-row flex-1 w-full items-center bg-muted/30 rounded-md sm:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden">
+                        <div className="flex flex-1 items-center px-2 w-full border-b xs:border-b-0 xs:border-r">
+                          <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <Input
-                            placeholder="Job title or company"
-                            className="border-none bg-transparent focus-visible:ring-0 h-9 sm:h-10 text-xs sm:text-sm w-full"
+                            placeholder="Job title"
+                            className="border-none bg-transparent focus-visible:ring-0 h-7 sm:h-8 text-[10px] sm:text-xs w-full px-2"
                             value={jobSearch}
                             onChange={(e) => setJobSearch(e.target.value)}
                           />
                         </div>
-                        <div className="flex flex-1 items-center px-3 w-full">
-                          <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div className="flex flex-1 items-center px-2 w-full">
+                          <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <Input
-                            placeholder="City or country"
-                            className="border-none bg-transparent focus-visible:ring-0 h-9 sm:h-10 text-xs sm:text-sm w-full"
+                            placeholder="Location"
+                            className="border-none bg-transparent focus-visible:ring-0 h-7 sm:h-8 text-[10px] sm:text-xs w-full px-2"
                             value={jobLoc}
                             onChange={(e) => setJobLoc(e.target.value)}
                           />
                         </div>
                       </div>
-                      <Button type="submit" className="w-full md:w-auto h-9 sm:h-10 px-6 rounded-lg md:rounded-full font-bold text-xs sm:text-sm">
+                      <Button type="submit" className="w-full sm:w-auto h-7 sm:h-8 px-4 rounded-md sm:rounded-full font-bold text-[10px] sm:text-xs">
                         Search
                       </Button>
                     </form>
                   </CardContent>
                 </TabsContent>
                 <TabsContent value="rooms" className="mt-0">
-                   <CardContent className="p-2 sm:p-3">
-                    <form className="flex flex-col md:flex-row items-center gap-2" onSubmit={handleRoomSearch}>
-                      <div className="flex flex-col sm:flex-row flex-1 w-full items-center bg-muted/30 rounded-lg md:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden">
-                        <div className="flex flex-1 items-center px-3 w-full border-b md:border-b-0 md:border-r">
-                          <Home className="h-4 w-4 text-muted-foreground shrink-0" />
+                   <CardContent className="p-1.5 sm:p-2">
+                    <form className="flex flex-col sm:flex-row items-center gap-1.5" onSubmit={handleRoomSearch}>
+                      <div className="flex flex-col xs:flex-row flex-1 w-full items-center bg-muted/30 rounded-md sm:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden">
+                        <div className="flex flex-1 items-center px-2 w-full border-b xs:border-b-0 xs:border-r">
+                          <Home className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <Input
                             placeholder="Type of space"
-                            className="border-none bg-transparent focus-visible:ring-0 h-9 sm:h-10 text-xs sm:text-sm w-full"
+                            className="border-none bg-transparent focus-visible:ring-0 h-7 sm:h-8 text-[10px] sm:text-xs w-full px-2"
                             value={roomSearch}
                             onChange={(e) => setRoomSearch(e.target.value)}
                           />
                         </div>
-                        <div className="flex flex-1 items-center px-3 w-full">
-                          <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div className="flex flex-1 items-center px-2 w-full">
+                          <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <Input
                             placeholder="Location"
-                            className="border-none bg-transparent focus-visible:ring-0 h-9 sm:h-10 text-xs sm:text-sm w-full"
+                            className="border-none bg-transparent focus-visible:ring-0 h-7 sm:h-8 text-[10px] sm:text-xs w-full px-2"
                             value={roomLoc}
                             onChange={(e) => setRoomLoc(e.target.value)}
                           />
                         </div>
                       </div>
-                      <Button type="submit" className="w-full md:w-auto h-9 sm:h-10 px-6 rounded-lg md:rounded-full font-bold text-xs sm:text-sm">
+                      <Button type="submit" className="w-full sm:w-auto h-7 sm:h-8 px-4 rounded-md sm:rounded-full font-bold text-[10px] sm:text-xs">
                         Search
                       </Button>
                     </form>
