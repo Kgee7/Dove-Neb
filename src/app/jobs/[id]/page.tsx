@@ -130,7 +130,6 @@ export default function JobDetailsPage() {
         const applicationRef = doc(firestore, 'users', user.uid, 'applications', applicationId);
         batch.set(applicationRef, applicationData);
 
-        // Add Notification
         const notificationRef = doc(collection(firestore, 'users', user.uid, 'notifications'));
         batch.set(notificationRef, {
             id: notificationRef.id,
@@ -143,7 +142,6 @@ export default function JobDetailsPage() {
 
         await batch.commit();
 
-        // Simulate Survey Prompt for Jobs
         setTimeout(async () => {
             await addDoc(collection(firestore, 'users', user.uid, 'notifications'), {
                 title: 'Application Follow-up',
@@ -159,12 +157,12 @@ export default function JobDetailsPage() {
         setApplicationState('applied');
         toast({
             title: 'Application Sent!',
-            description: `You have successfully applied for the ${job.title} position.`,
+            description: `Successfully applied for ${job.title}.`,
         });
 
     } catch(error: any) {
         setApplicationState('idle');
-        toast({ variant: 'destructive', title: 'Application Failed', description: error.message || 'Could not submit your application.' });
+        toast({ variant: 'destructive', title: 'Application Failed', description: error.message || 'Could not submit.' });
     }
   };
 
@@ -180,9 +178,9 @@ export default function JobDetailsPage() {
 
   if (!job) {
     return (
-      <div className="container py-12 text-center">
-        <h1 className="text-3xl font-bold">Job not found</h1>
-        <p className="text-muted-foreground">This listing may have been removed or the link is incorrect.</p>        
+      <div className="container py-12 text-center px-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Job not found</h1>
+        <p className="text-sm text-muted-foreground mt-2">Listing removed or incorrect link.</p>        
         <Link href="/jobs">
           <Button variant="link" className="mt-4">Back to all jobs</Button>
         </Link>
@@ -198,15 +196,15 @@ export default function JobDetailsPage() {
     }
     if (hasAlreadyApplied) {
         return (
-            <Card className="bg-secondary/20">
-                <CardHeader>
-                    <CardTitle className="text-lg">Application Sent</CardTitle>
-                    <CardDescription>You have already applied for this position.</CardDescription>
+            <Card className="bg-secondary/10 border-secondary/20">
+                <CardHeader className="p-4 sm:p-6 text-center">
+                    <CardTitle className="text-base sm:text-lg">Application Status</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">You have already submitted an application for this role.</CardDescription>
                 </CardHeader>
-                <CardContent className="flex justify-center">
-                    <Button disabled className="w-full max-w-sm">
+                <CardContent className="p-4 sm:p-6 pt-0 flex justify-center">
+                    <Button disabled className="w-full max-w-sm h-10 sm:h-11">
                         <CheckCircle className="mr-2 h-4 w-4" />
-                        Applied
+                        Application Sent
                     </Button>
                 </CardContent>
             </Card>
@@ -214,15 +212,15 @@ export default function JobDetailsPage() {
     }
     if (applicationState === 'applied') {
         return (
-            <Card className="bg-secondary/20 text-center">
-                <CardHeader>
-                    <CardTitle className="text-lg">Application Submitted!</CardTitle>
+            <Card className="bg-green-50/50 border-green-100 text-center">
+                <CardHeader className="p-4 sm:p-6">
+                    <CardTitle className="text-base sm:text-lg text-green-800">Application Submitted!</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <CheckCircle className="mx-auto h-8 w-8 text-green-500" />
-                    <p className="mt-4 font-semibold text-sm">To complete your application, please also send your CV to:</p>
-                    <div className="flex items-center justify-center gap-2 mt-2 font-mono p-2 bg-background rounded-md">
-                        {job.applicationMethod === 'email' ? <Mail className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
+                <CardContent className="p-4 sm:p-6 pt-0">
+                    <CheckCircle className="mx-auto h-8 w-8 text-green-500 mb-4" />
+                    <p className="text-xs sm:text-sm font-semibold text-muted-foreground mb-3">To finish, please send your CV to:</p>
+                    <div className="flex items-center justify-center gap-2 font-mono p-3 bg-background border rounded-lg shadow-sm text-xs sm:text-sm break-all">
+                        {job.applicationMethod === 'email' ? <Mail className="h-4 w-4 shrink-0" /> : <MessageSquare className="h-4 w-4 shrink-0" />}
                         <span>{job.applicationMethod === 'email' ? job.applicationEmail : job.applicationWhatsapp}</span>
                     </div>
                 </CardContent>
@@ -230,12 +228,13 @@ export default function JobDetailsPage() {
         );
     }
     return (
-        <Card className="bg-secondary/20">
-            <CardHeader className="text-center">
-                <CardTitle className="text-lg">Do you want to apply for this job?</CardTitle>
+        <Card className="bg-primary/[0.02] border-primary/10 shadow-md">
+            <CardHeader className="text-center p-4 sm:p-6">
+                <CardTitle className="text-base sm:text-lg">Apply for this role</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Your profile and resume will be shared with the employer.</CardDescription>
             </CardHeader>
-            <CardContent className="flex justify-center">
-                <Button onClick={handleApplyClick} className="w-full max-w-sm" disabled={applicationState === 'loading' || isProfileLoading}>
+            <CardContent className="flex justify-center p-4 sm:p-6 pt-0">
+                <Button onClick={handleApplyClick} className="w-full max-w-sm h-11 sm:h-12 text-sm sm:text-base font-bold" disabled={applicationState === 'loading' || isProfileLoading}>
                     {(applicationState === 'loading' || isProfileLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Apply Now
                 </Button>
@@ -245,49 +244,49 @@ export default function JobDetailsPage() {
   }
 
   return (
-    <div className="bg-muted/40">
-      <div className="container max-w-4xl py-12 mx-auto">
+    <div className="bg-muted/40 min-h-screen">
+      <div className="container max-w-4xl py-6 sm:py-12 mx-auto px-4">
         <div className="mb-4">
-          <Link href="/jobs" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to all jobs
+          <Link href="/jobs" className="inline-flex items-center text-xs sm:text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            <ArrowLeft className="mr-2 h-3.5 w-3.5" />
+            Back to job listings
           </Link>
         </div>
 
-        <Card className="relative">
+        <Card className="relative shadow-xl border-muted/60">
            {job && <FavoriteButton item={job} itemType="job" />}
-          <CardHeader>
-            <div className='flex justify-between items-start'>
-              <div>
-                <CardTitle className="text-3xl font-bold font-headline">{job.title}</CardTitle>
-                <CardDescription className="text-lg">{job.companyName}</CardDescription>
+          <CardHeader className="p-5 sm:p-8">
+            <div className='flex flex-col sm:flex-row justify-between items-start gap-4'>
+              <div className="min-w-0 flex-1">
+                <CardTitle className="text-xl sm:text-3xl font-bold font-headline leading-tight">{job.title}</CardTitle>
+                <CardDescription className="text-base sm:text-lg text-primary font-medium mt-1">{job.companyName}</CardDescription>
               </div>
-              <ShareButton title={job.title} text={`Check out this job: ${job.title} at ${job.companyName}`} />
+              <ShareButton title={job.title} text={`Check out this job: ${job.title} at ${job.companyName}`} className="shrink-0" />
             </div>
-            <div className="flex flex-wrap gap-4 pt-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" /> {job.location}, {job.country}
+            <div className="flex flex-wrap gap-x-4 gap-y-2 pt-4 text-xs sm:text-sm text-muted-foreground font-medium">
+              <div className="flex items-center gap-1.5">
+                <MapPin className="h-4 w-4 text-primary/60" /> {job.location}, {job.country}
               </div>
-              <div className="flex items-center gap-1">
-                <Briefcase className="h-4 w-4" /> {job.type}
+              <div className="flex items-center gap-1.5">
+                <Briefcase className="h-4 w-4 text-primary/60" /> {job.type}
               </div>
               {job.salaryMin && job.salaryMax && (
-                <div className="flex items-center gap-1">
-                  <DollarSign className="h-4 w-4" /> {salarySymbol}{job.salaryMin.toLocaleString()} - {salarySymbol}{job.salaryMax.toLocaleString()}
+                <div className="flex items-center gap-1.5">
+                  <DollarSign className="h-4 w-4 text-primary/60" /> {salarySymbol}{job.salaryMin.toLocaleString()} - {salarySymbol}{job.salaryMax.toLocaleString()}
                 </div>
               )}
             </div>
           </CardHeader>
-          <CardContent>
-            <Separator className="my-4" />
-            <div>
+          <CardContent className="p-5 sm:p-8 pt-0 sm:pt-0">
+            <Separator className="my-6" />
+            <div className="space-y-8">
               <div>
-                <h3 className="font-semibold text-xl mb-3">About the Job</h3>
-                <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap">
+                <h3 className="font-bold text-lg sm:text-xl mb-4 text-foreground">Role Description</h3>
+                <div className="prose prose-sm sm:prose-base max-w-none text-muted-foreground whitespace-pre-wrap leading-relaxed">
                     {job.description}
                 </div>
               </div>
-              <div className='mt-8'>
+              <div className='pt-4'>
                 {renderApplySection()}
               </div>
             </div>

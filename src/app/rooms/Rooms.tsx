@@ -70,42 +70,42 @@ export default function Rooms() {
   };
 
   return (
-    <div className="container py-12">
-      <div className="mb-12 text-center">
-        <h1 className="text-4xl font-bold tracking-tight md:text-5xl font-headline">
+    <div className="container py-8 sm:py-12 px-4">
+      <div className="mb-8 sm:mb-12 text-center">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight font-headline">
           Explore Spaces
         </h1>
-        <p className="mt-3 text-lg text-muted-foreground">
-          Find your next home away from home, or your next home.
+        <p className="mt-3 text-sm sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+          Find your next home away from home, or your next permanent residence.
         </p>
       </div>
 
-       <Card className="mx-auto mb-12 max-w-4xl shadow-lg">
-          <CardContent className="p-4">
+       <Card className="mx-auto mb-8 sm:mb-12 max-w-4xl shadow-md">
+          <CardContent className="p-3 sm:p-4">
             {isClient && (
-              <form className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" onSubmit={handleSearch}>
-                <div className="relative lg:col-span-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <form className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" onSubmit={handleSearch}>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Destination, e.g., 'beach house'"
-                    className="pl-10"
+                    placeholder="Search destination..."
+                    className="pl-9 h-10 text-sm"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <div className="relative lg:col-span-1">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input 
-                    placeholder="Location, e.g., 'Paris'" 
-                    className="pl-10"
+                    placeholder="City or country..." 
+                    className="pl-9 h-10 text-sm"
                     value={locationQuery}
                     onChange={(e) => setLocationQuery(e.target.value)}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <Select value={listingTypeFilter} onValueChange={setListingTypeFilter}>
-                      <SelectTrigger>
-                          <SelectValue placeholder="Listing Type" />
+                      <SelectTrigger className="h-10 text-sm">
+                          <SelectValue placeholder="Type" />
                       </SelectTrigger>
                       <SelectContent>
                           <SelectItem value="all">All Types</SelectItem>
@@ -113,7 +113,7 @@ export default function Rooms() {
                           <SelectItem value="sale">For Sale</SelectItem>
                       </SelectContent>
                   </Select>
-                  <Button type="submit" className='w-full'>
+                  <Button type="submit" className='w-full h-10 text-sm'>
                       Search
                   </Button>
                 </div>
@@ -124,15 +124,15 @@ export default function Rooms() {
 
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
           {filteredRooms.length > 0 ? (
             filteredRooms.map((room) => (
               <Card
                 key={room.id}
-                className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-2xl group"
+                className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl group border-muted/50"
               >
                 <CardHeader className="p-0 relative">
                     <FavoriteButton item={room} itemType="room" />
@@ -142,33 +142,34 @@ export default function Rooms() {
                                 src={room.images[0] || "/placeholder.jpg"}
                                 alt={room.title}
                                 fill
-                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                className="object-cover transition-transform duration-500 group-hover:scale-105"
                             />
                         </div>
                     </Link>
                 </CardHeader>
-                <CardContent className="flex flex-1 flex-col p-4">
-                    <div className="flex justify-between items-start mb-1">
-                        <CardTitle className="text-lg">
+                <CardContent className="flex flex-1 flex-col p-4 sm:p-5">
+                    <div className="flex justify-between items-start mb-1 gap-2">
+                        <CardTitle className="text-base sm:text-lg line-clamp-1">
                             <Link href={`/rooms/${room.id}`} className="hover:underline">
                                 {room.title}
                             </Link>
                         </CardTitle>
                         {(room.interestCount !== undefined && room.interestCount > 0) ? (
-                            <div className="flex items-center gap-1 text-sm font-bold shrink-0">
-                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <div className="flex items-center gap-1 text-[10px] sm:text-xs font-bold shrink-0 bg-primary/5 px-1.5 py-0.5 rounded">
+                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                                 <span>5.0</span>
-                                <span className="text-muted-foreground font-normal text-xs">({room.interestCount})</span>
+                                <span className="text-muted-foreground font-normal">({room.interestCount})</span>
                             </div>
                         ) : null}
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1 flex items-center">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        {room.location}, {room.country}
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1 flex items-center">
+                        <MapPin className="h-3.5 w-3.5 mr-1 shrink-0" />
+                        <span className="truncate">{room.location}, {room.country}</span>
                     </p>
                     <div className="mt-4 flex-grow" />
                      <div className="flex justify-between items-center mt-2">
-                        <p className="text-lg font-semibold">
+                        <p className="text-base sm:text-lg font-bold text-primary">
                             {room.listingType === 'sale' && room.salePrice ? (
                                 <>
                                     {room.currencySymbol}{room.salePrice.toLocaleString()}
@@ -176,19 +177,30 @@ export default function Rooms() {
                             ) : room.listingType === 'rent' && room.priceNight ? (
                                 <>
                                     {room.currencySymbol}{room.priceNight}
-                                    <span className="text-sm font-normal text-muted-foreground">/night</span>
+                                    <span className="text-[10px] sm:text-xs font-normal text-muted-foreground ml-0.5">/night</span>
                                 </>
-                            ) : null}
+                            ) : room.priceMonth ? (
+                                <>
+                                    {room.currencySymbol}{room.priceMonth}
+                                    <span className="text-[10px] sm:text-xs font-normal text-muted-foreground ml-0.5">/month</span>
+                                </>
+                            ) : 'Contact'}
                         </p>
-                        <Badge variant={room.listingType === 'sale' ? 'default' : 'outline'} className="capitalize">{room.listingType}</Badge>
+                        <Badge variant={room.listingType === 'sale' ? 'default' : 'outline'} className="capitalize text-[10px] py-0 px-2 h-5">{room.listingType}</Badge>
                      </div>
                   </CardContent>
               </Card>
             ))
           ) : (
-            <p className="col-span-full text-center text-muted-foreground py-16">
-              No spaces found matching your criteria. Try broadening your search!
-            </p>
+            <div className="col-span-full text-center py-20 border-2 border-dashed rounded-xl">
+              <p className="text-muted-foreground text-sm sm:text-base">No spaces found matching your criteria.</p>
+              <Button variant="link" onClick={() => {
+                  setSearchQuery('');
+                  setLocationQuery('');
+                  setListingTypeFilter('all');
+                  router.push('/rooms');
+              }}>Clear all filters</Button>
+            </div>
           )}
         </div>
       )}

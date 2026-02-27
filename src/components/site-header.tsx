@@ -39,7 +39,6 @@ export function SiteHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const userDocRef = useMemo(() => {
-    // Only create a doc ref if the user is loaded and exists
     if (!isUserLoading && user && firestore) {
       return doc(firestore, 'users', user.uid);
     }
@@ -62,13 +61,6 @@ export function SiteHeader() {
     if (firstName) {
       return firstName.substring(0, 2);
     }
-    if(user?.displayName) {
-        const names = user.displayName.split(' ');
-        if (names.length > 1) {
-            return `${names[0][0]}${names[names.length - 1][0]}`;
-        }
-        return names[0].substring(0, 2);
-    }
     if (user?.email) {
         return user.email.substring(0, 2).toUpperCase();
     }
@@ -87,12 +79,12 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 max-w-screen-2xl items-center">
-        <Link href="/" className="mr-6 flex items-center space-x-2">
+      <div className="container flex h-14 items-center px-4 sm:px-8">
+        <Link href="/" className="mr-4 sm:mr-6 flex items-center space-x-2 shrink-0">
           <Image src="/logo.png" alt="Dove Neb Logo" width={24} height={24} className="text-primary" />
-          <span className="font-bold sm:inline-block">Dove Neb</span>
+          <span className="font-bold text-sm sm:text-base hidden xs:inline-block">Dove Neb</span>
         </Link>
-        <nav className="hidden flex-1 items-center gap-4 text-sm lg:flex">
+        <nav className="hidden flex-1 items-center gap-4 sm:gap-6 text-sm lg:flex">
           {navLinks.map((link) => {
             if (link.protected && !user) return null;
             return (
@@ -100,7 +92,7 @@ export function SiteHeader() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "transition-colors hover:text-foreground/80",
+                  "transition-colors hover:text-foreground font-medium",
                   pathname?.startsWith(link.href)
                     ? "text-foreground"
                     : "text-foreground/60"
@@ -113,83 +105,115 @@ export function SiteHeader() {
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-2">
           {isUserLoading || (user && isProfileLoading) ? (
-             <Loader2 className="h-6 w-6 animate-spin" />
+             <Loader2 className="h-5 w-5 animate-spin" />
           ) : user ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <NotificationsDropdown />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="relative h-8 w-8 rounded-full"
+                    className="relative h-8 w-8 rounded-full focus-visible:ring-0"
                   >
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="h-8 w-8 border border-muted">
                       {photoURL && <AvatarImage
                         src={photoURL}
                         alt={fullName}
                       />}
-                      <AvatarFallback>
+                      <AvatarFallback className="text-[10px] sm:text-xs">
                         {getInitials(userProfile?.firstName, userProfile?.lastName)}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuContent className="w-56 mt-2" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">
+                      <p className="text-sm font-bold leading-none truncate">
                         {fullName}
                       </p>
-                      <p className="text-xs leading-none text-muted-foreground">
+                      <p className="text-[10px] leading-none text-muted-foreground truncate">
                         {user.email}
                       </p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                   <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+                   <DropdownMenuItem onClick={() => router.push("/dashboard")} className="cursor-pointer">
                     <UserIcon className="mr-2 h-4 w-4" />
                     <span>Dashboard</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push("/profile")}>
+                  <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer">
                     <UserIcon className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Sign out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <div className="lg:hidden">
+                <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                    <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Menu className="h-5 w-5" />
+                    </Button>
+                    </SheetTrigger>
+                    <SheetContent side="right" className="w-[85%] max-w-xs p-0">
+                        <SheetHeader className="p-6 border-b text-left">
+                            <SheetTitle className="text-lg font-bold flex items-center gap-2">
+                                <Image src="/logo.png" alt="Logo" width={24} height={24} />
+                                Dove Neb
+                            </SheetTitle>
+                        </SheetHeader>
+                        <div className="p-6 space-y-6">
+                            <div className="space-y-3">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Navigation</p>
+                                {navLinks.map(link => (
+                                    <Link key={link.href} href={link.href} onClick={() => setIsMobileMenuOpen(false)} className={cn("block text-sm font-medium py-2 px-3 rounded-md transition-colors", pathname === link.href ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted")}>
+                                        {link.label}
+                                    </Link>
+                                ))}
+                            </div>
+                            <Separator />
+                            <div className="space-y-3">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Postings</p>
+                                <Link href="/dashboard/list-room" onClick={() => setIsMobileMenuOpen(false)} className="block py-2">
+                                    <Button variant="outline" className="w-full justify-start h-10 text-xs">Lodge Now</Button>
+                                </Link>
+                                <Link href="/dashboard/post-job" onClick={() => setIsMobileMenuOpen(false)} className="block py-2">
+                                    <Button variant="outline" className="w-full justify-start h-10 text-xs">Post a Job</Button>
+                                </Link>
+                            </div>
+                        </div>
+                    </SheetContent>
+                </Sheet>
+              </div>
             </div>
           ) : (
             <>
-               <div className="hidden sm:flex items-center space-x-2">
+               <div className="hidden lg:flex items-center space-x-2">
                 <Link href="/dashboard/list-room">
-                    <Button variant="outline">
+                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs">
                         Lodge Now
                     </Button>
                 </Link>
                 <Link href="/dashboard/post-job">
-                    <Button variant="outline">
+                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs">
                         Post a Job
-                    </Button>
-                </Link>
-                <Link href="/support">
-                    <Button variant="outline">
-                        Help Center
                     </Button>
                 </Link>
                 <Link
                     href="/login"
-                    className={cn(buttonVariants({ variant: "ghost" }))}
+                    className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-3 text-xs")}
                 >
                     Sign In
                 </Link>
                 <Link
                     href="/signup"
                     className={cn(
-                    buttonVariants({ variant: "default" })
+                    buttonVariants({ variant: "default", size: "sm" }), "h-8 px-3 text-xs font-bold"
                     )}
                 >
                     Sign Up
@@ -200,13 +224,13 @@ export function SiteHeader() {
                 <SheetTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="p-2 sm:hidden"
+                    className="p-2 lg:hidden"
                   >
                     <Menu className="h-6 w-6" />
                     <span className="sr-only">Open menu</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[80%] max-w-xs p-0">
+                <SheetContent side="right" className="w-[85%] max-w-xs p-0">
                     <SheetHeader className="flex flex-row justify-between items-center py-4 px-6 border-b">
                          <Link href="/" className="flex items-center space-x-2" onClick={() => setIsMobileMenuOpen(false)}>
                             <Image src="/logo.png" alt="Dove Neb Logo" width={24} height={24} className="text-primary" />
@@ -215,28 +239,36 @@ export function SiteHeader() {
                         <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
                         <SheetClose asChild>
                            <Button variant="ghost" size="icon" className="rounded-full">
-                             <X className="h-6 w-6" />
+                             <X className="h-5 w-5" />
                              <span className="sr-only">Close menu</span>
                            </Button>
                         </SheetClose>
                     </SheetHeader>
                     <div className="p-6">
                         <div className="flex flex-col space-y-4">
-                            <Link href="/dashboard/list-room" onClick={() => setIsMobileMenuOpen(false)}>
-                                <Button variant="outline" className="w-full justify-start">Lodge Now</Button>
-                            </Link>
-                            <Link href="/dashboard/post-job" onClick={() => setIsMobileMenuOpen(false)}>
-                                <Button variant="outline" className="w-full justify-start">Post a Job</Button>
-                            </Link>
-                             <Link href="/support" onClick={() => setIsMobileMenuOpen(false)}>
-                                <Button variant="outline" className="w-full justify-start">Help Center</Button>
-                            </Link>
-                            <div className="border-t pt-4">
+                            <div className="space-y-2">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-3">Explore</p>
+                                <Link href="/jobs" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 text-sm font-medium hover:bg-muted rounded-md">Jobs</Link>
+                                <Link href="/rooms" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 text-sm font-medium hover:bg-muted rounded-md">Rooms</Link>
+                            </div>
+                            <Separator />
+                            <div className="space-y-3">
+                                <Link href="/dashboard/list-room" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Button variant="outline" className="w-full justify-start h-10 text-xs">Lodge Now</Button>
+                                </Link>
+                                <Link href="/dashboard/post-job" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Button variant="outline" className="w-full justify-start h-10 text-xs">Post a Job</Button>
+                                </Link>
+                                 <Link href="/support" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Button variant="outline" className="w-full justify-start h-10 text-xs">Help Center</Button>
+                                </Link>
+                            </div>
+                            <div className="border-t pt-4 space-y-3">
                                 <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <Button variant="ghost" className="w-full justify-start">Sign In</Button>
+                                    <Button variant="ghost" className="w-full justify-start h-10 text-xs">Sign In</Button>
                                 </Link>
                                 <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <Button className="w-full justify-start mt-2">Sign Up</Button>
+                                    <Button className="w-full justify-start h-10 text-xs font-bold">Sign Up</Button>
                                 </Link>
                             </div>
                         </div>

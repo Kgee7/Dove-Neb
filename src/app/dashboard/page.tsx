@@ -1,3 +1,4 @@
+
 'use client';
 import { useRouter } from 'next/navigation';
 import React, { useMemo, useState, useEffect } from 'react';
@@ -159,7 +160,6 @@ export default function DashboardPage() {
             message: `Survey complete: You answered "${answer}".`
         });
 
-        // If the answer is "yes" and there is a roomId, increment the room rating
         if (answer === 'yes' && roomId) {
             const result = await incrementRoomRating(roomId);
             if (result.success) {
@@ -230,11 +230,9 @@ export default function DashboardPage() {
     const { id, jobId, applicantDocId } = applicationToDelete;
     
     try {
-        // 1. Delete the application record from the user's subcollection
         const userApplicationRef = doc(firestore, 'users', user.uid, 'applications', id);
         await deleteDoc(userApplicationRef);
         
-        // 2. Delete the application record from the job's subcollection
         if (jobId && applicantDocId) {
             const jobApplicantRef = doc(firestore, 'jobs', jobId, 'applicants', applicantDocId);
             await deleteDoc(jobApplicantRef);
@@ -292,83 +290,83 @@ export default function DashboardPage() {
 
   return (
     <>
-    <div className="container py-10">
-       <div className="flex items-center justify-between mb-8">
+    <div className="container py-6 sm:py-10 px-4">
+       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline">Welcome, {userProfile?.firstName}!</h1>
-          <p className="text-muted-foreground">Manage your jobs, rooms, and applications.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold font-headline transition-all">Welcome, {userProfile?.firstName}!</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage your jobs, rooms, and applications.</p>
         </div>
-        <div className='flex gap-2'>
-            <Link href="/dashboard/list-room">
-                <Button>
+        <div className='flex flex-wrap gap-2'>
+            <Link href="/dashboard/list-room" className="flex-1 sm:flex-none">
+                <Button className="w-full h-9 sm:h-10 text-xs sm:text-sm">
                     <PlusCircle className="mr-2 h-4 w-4"/>
-                    List a Space
+                    List Space
                 </Button>
             </Link>
             {isEmployer && (
-                 <Link href="/dashboard/post-job">
-                    <Button>
+                 <Link href="/dashboard/post-job" className="flex-1 sm:flex-none">
+                    <Button className="w-full h-9 sm:h-10 text-xs sm:text-sm">
                         <PlusCircle className="mr-2 h-4 w-4"/>
-                        Post a Job
+                        Post Job
                     </Button>
                 </Link>
             )}
         </div>
       </div>
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-3">
             
-            <div className="lg:col-span-2 space-y-8">
+            <div className="lg:col-span-2 space-y-6 sm:space-y-8">
                 {/* My Favorites Section */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle>My Favorites</CardTitle>
-                        <CardDescription>Your saved jobs and spaces.</CardDescription>
+                    <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-4">
+                        <CardTitle className="text-xl">My Favorites</CardTitle>
+                        <CardDescription className="text-xs sm:text-sm">Your saved jobs and spaces.</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <div className="grid gap-8 md:grid-cols-2">
+                    <CardContent className="p-4 sm:p-6">
+                        <div className="grid gap-6 sm:gap-8 md:grid-cols-2">
                             <div>
-                                <h3 className="font-semibold mb-4 flex items-center gap-2"><Briefcase className="h-5 w-5" />Favorite Jobs</h3>
+                                <h3 className="font-semibold text-sm sm:text-base mb-3 sm:mb-4 flex items-center gap-2"><Briefcase className="h-4 w-4" />Favorite Jobs</h3>
                                 {favoriteJobs && favoriteJobs.length > 0 ? (
-                                    <div className="space-y-4">
+                                    <div className="space-y-3">
                                         {favoriteJobs.map(job => (
                                             <Link key={job.id} href={`/jobs/${job.jobId}`}>
-                                            <div className="p-3 rounded-lg border hover:bg-muted cursor-pointer">
-                                                <p className="font-medium">{job.title}</p>
-                                                <p className="text-sm text-muted-foreground">{job.companyName} - {job.location}, {job.country}</p>
+                                            <div className="p-3 rounded-lg border hover:bg-muted cursor-pointer transition-colors">
+                                                <p className="font-medium text-xs sm:text-sm truncate">{job.title}</p>
+                                                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{job.companyName} • {job.location}</p>
                                             </div>
                                             </Link>
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-muted-foreground">No favorite jobs yet.</p>
+                                    <p className="text-xs text-muted-foreground italic">No favorite jobs yet.</p>
                                 )}
                             </div>
                             <div>
-                                <h3 className="font-semibold mb-4 flex items-center gap-2"><BedDouble className="h-5 w-5" />Favorite Spaces</h3>
+                                <h3 className="font-semibold text-sm sm:text-base mb-3 sm:mb-4 flex items-center gap-2"><BedDouble className="h-4 w-4" />Favorite Spaces</h3>
                                 {favoriteRooms && favoriteRooms.length > 0 ? (
-                                    <div className="space-y-4">
+                                    <div className="space-y-3">
                                         {favoriteRooms.map(room => (
                                             <Link key={room.id} href={`/rooms/${room.roomId}`}>
-                                            <div className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted cursor-pointer">
-                                                <Image src={room.image} alt={room.title} width={64} height={64} className="rounded-md object-cover aspect-square" />
-                                                <div>
-                                                    <p className="font-medium">{room.title}</p>
-                                                    <p className="text-sm text-muted-foreground">{room.location}, {room.country}</p>
+                                            <div className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted cursor-pointer transition-colors">
+                                                <Image src={room.image} alt={room.title} width={48} height={48} className="rounded-md object-cover aspect-square shrink-0" />
+                                                <div className="min-w-0">
+                                                    <p className="font-medium text-xs sm:text-sm truncate">{room.title}</p>
+                                                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{room.location}, {room.country}</p>
                                                 </div>
                                             </div>
                                             </Link>
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-muted-foreground">No favorite spaces yet.</p>
+                                    <p className="text-xs text-muted-foreground italic">No favorite spaces yet.</p>
                                 )}
                             </div>
                         </div>
                         {(favoriteJobs?.length === 0 && favoriteRooms?.length === 0) && (
-                            <div className='text-center py-12 border-2 border-dashed rounded-lg'>
-                                <Heart className="mx-auto h-12 w-12 text-muted-foreground" />
-                                <h3 className="mt-4 text-lg font-medium">Nothing in your favorites yet</h3>
-                                <p className="mt-1 text-sm text-muted-foreground">Click the heart icon on any listing to save it here.</p>
+                            <div className='text-center py-10 border-2 border-dashed rounded-lg mt-4'>
+                                <Heart className="mx-auto h-10 w-10 text-muted-foreground/30" />
+                                <h3 className="mt-2 text-sm font-medium">Nothing here yet</h3>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground px-4">Click the heart icon on any listing to save it.</p>
                             </div>
                         )}
                     </CardContent>
@@ -378,52 +376,47 @@ export default function DashboardPage() {
                 {/* Job Seeker View */}
                 {isSeeker && (
                     <Card>
-                        <CardHeader>
-                            <CardTitle>My Job Applications</CardTitle>
-                            <CardDescription>Track your job applications.</CardDescription>
+                        <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-4">
+                            <CardTitle className="text-xl">My Job Applications</CardTitle>
+                            <CardDescription className="text-xs sm:text-sm">Track your progress.</CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-4 sm:p-6">
                             {applicationsLoading ? (
-                                <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                                <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
                             ) : jobApplications && jobApplications.length > 0 ? (
-                                <div className="grid gap-6 md:grid-cols-2">
+                                <div className="grid gap-4 md:grid-cols-2">
                                     {jobApplications.map(app => (
-                                        <Card key={app.id}>
-                                        <CardHeader>
-                                            <CardTitle className="text-lg">{app.jobTitle}</CardTitle>
-                                            <CardDescription>{app.companyName}</CardDescription>
+                                        <Card key={app.id} className="overflow-hidden border-muted/60">
+                                        <CardHeader className="p-4 pb-2">
+                                            <CardTitle className="text-sm sm:text-base line-clamp-1">{app.jobTitle}</CardTitle>
+                                            <CardDescription className="text-[10px] sm:text-xs truncate">{app.companyName}</CardDescription>
                                         </CardHeader>
-                                        <CardContent>
-                                            <p className="text-sm text-muted-foreground">Applied: {format(app.appliedAt.toDate(), 'MMM d, yyyy')}</p>
-                                            {(() => {
-                                                const status = app.status;
-                                                const jobTitle = app.jobTitle;
+                                        <CardContent className="p-4 pt-0">
+                                            <p className="text-[10px] text-muted-foreground">Applied: {format(app.appliedAt.toDate(), 'MMM d, yyyy')}</p>
+                                            <div className="mt-2">
+                                                {(() => {
+                                                    const status = app.status;
+                                                    const jobTitle = app.jobTitle;
 
-                                                switch (status) {
-                                                    case 'hired':
-                                                        return <p className="text-sm text-green-600 font-semibold mt-2">Congratulations, you have been hired as a {jobTitle}.</p>;
-                                                    case 'rejected':
-                                                        return <p className="text-sm text-red-600 font-semibold mt-2">Sorry, your application for {jobTitle} has been rejected.</p>;
-                                                    case 'reviewed':
-                                                        return <Badge className="mt-2 capitalize" variant="default">Under Review</Badge>;
-                                                    case 'pending':
-                                                    default:
-                                                        if (app.applicationMethod === 'whatsapp') {
-                                                            return <p className="text-sm text-muted-foreground mt-2">Check your WhatsApp for status updates.</p>;
-                                                        }
-                                                        if (app.applicationMethod === 'email') {
-                                                            return <p className="text-sm text-muted-foreground mt-2">Check your email for status updates.</p>;
-                                                        }
-                                                        return <p className="text-sm text-muted-foreground mt-2">Check your email or WhatsApp for status updates.</p>;
-                                                }
-                                            })()}
+                                                    switch (status) {
+                                                        case 'hired':
+                                                            return <p className="text-[10px] sm:text-xs text-green-600 font-semibold">Congratulations! You're hired.</p>;
+                                                        case 'rejected':
+                                                            return <p className="text-[10px] sm:text-xs text-red-600 font-semibold">Application rejected.</p>;
+                                                        case 'reviewed':
+                                                            return <Badge className="text-[8px] py-0 px-1.5 h-4 capitalize" variant="default">Under Review</Badge>;
+                                                        case 'pending':
+                                                        default:
+                                                            return <Badge variant="outline" className="text-[8px] py-0 px-1.5 h-4">Pending</Badge>;
+                                                    }
+                                                })()}
+                                            </div>
                                             <div className='mt-4 flex gap-2'>
-                                                <Link href={`/jobs/${app.jobId}`}>
-                                                    <Button variant="outline" size="sm">View Job</Button>
+                                                <Link href={`/jobs/${app.jobId}`} className="flex-1">
+                                                    <Button variant="outline" size="sm" className="w-full h-8 text-[10px]">View Job</Button>
                                                 </Link>
-                                                <Button variant="destructive" size="sm" onClick={() => setApplicationToDelete(app)}>
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Withdraw
+                                                <Button variant="destructive" size="sm" className="h-8 text-[10px]" onClick={() => setApplicationToDelete(app)}>
+                                                    <Trash2 className="h-3 w-3" />
                                                 </Button>
                                             </div>
                                         </CardContent>
@@ -432,11 +425,11 @@ export default function DashboardPage() {
                                 </div>
                             ) : (
                                 <div className='text-center py-12 border-2 border-dashed rounded-lg'>
-                                    <Briefcase className="mx-auto h-12 w-12 text-muted-foreground" />
-                                    <h3 className="mt-4 text-lg font-medium">No job applications yet</h3>
-                                    <p className="mt-1 text-sm text-muted-foreground">Start applying for jobs to see them here.</p>
+                                    <Briefcase className="mx-auto h-10 w-10 text-muted-foreground/30" />
+                                    <h3 className="mt-2 text-sm font-medium">No applications yet</h3>
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-4">Start applying to see updates here.</p>
                                     <Link href="/jobs">
-                                        <Button variant="outline" className="mt-4">Find Jobs</Button>
+                                        <Button variant="outline" size="sm">Find Jobs</Button>
                                     </Link>
                                 </div>
                             )}
@@ -447,39 +440,36 @@ export default function DashboardPage() {
                 {/* Employer View */}
                 {isEmployer && (
                     <Card>
-                        <CardHeader>
-                            <CardTitle>My Job Listings</CardTitle>
-                            <CardDescription>Manage your posted jobs.</CardDescription>
+                        <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-4">
+                            <CardTitle className="text-xl">My Job Listings</CardTitle>
+                            <CardDescription className="text-xs sm:text-sm">Manage your open roles.</CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-4 sm:p-6">
                             {jobListings && jobListings.length > 0 ? (
-                                <div className="grid gap-6 md:grid-cols-2">
+                                <div className="grid gap-4 md:grid-cols-2">
                                     {jobListings.map(job => (
-                                        <Card key={job.id}>
-                                        <CardHeader>
-                                            <CardTitle className="text-lg">{job.title}</CardTitle>
-                                            <CardDescription>{job.location}, {job.country}</CardDescription>
+                                        <Card key={job.id} className="border-muted/60">
+                                        <CardHeader className="p-4 pb-2">
+                                            <CardTitle className="text-sm sm:text-base truncate">{job.title}</CardTitle>
+                                            <CardDescription className="text-[10px] sm:text-xs">{job.location}</CardDescription>
                                         </CardHeader>
-                                        <CardContent>
-                                            <div className="flex flex-wrap gap-2">
+                                        <CardContent className="p-4 pt-0">
+                                            <div className="flex flex-wrap gap-1.5 mt-2">
                                             <Link href={`/jobs/${job.id}`}>
-                                                <Button variant="outline" size="sm">View Listing</Button>
+                                                <Button variant="outline" size="sm" className="h-7 text-[10px] px-2">View</Button>
                                             </Link>
                                             <Link href={`/dashboard/jobs/${job.id}/applicants`}>
-                                                <Button size="sm">
-                                                    <Users className="mr-2 h-4 w-4"/>
-                                                    View Applicants
+                                                <Button size="sm" className="h-7 text-[10px] px-2">
+                                                    Applicants
                                                 </Button>
                                             </Link>
                                             <Link href={`/dashboard/jobs/${job.id}/edit`}>
-                                                <Button variant="secondary" size="sm">
-                                                    <Edit className="mr-2 h-4 w-4" />
+                                                <Button variant="secondary" size="sm" className="h-7 text-[10px] px-2">
                                                     Edit
                                                 </Button>
                                             </Link>
-                                            <Button variant="destructive" size="sm" onClick={() => setJobToDelete(job.id)}>
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Delete
+                                            <Button variant="destructive" size="sm" className="h-7 text-[10px] px-2" onClick={() => setJobToDelete(job.id)}>
+                                                <Trash2 className="h-3 w-3" />
                                             </Button>
                                             </div>
                                         </CardContent>
@@ -488,11 +478,11 @@ export default function DashboardPage() {
                                 </div>
                             ) : (
                                 <div className='text-center py-12 border-2 border-dashed rounded-lg'>
-                                    <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
-                                    <h3 className="mt-4 text-lg font-medium">No jobs posted yet.</h3>
-                                    <p className="mt-1 text-sm text-muted-foreground">Post a job to find the best candidates.</p>
+                                    <Building2 className="mx-auto h-10 w-10 text-muted-foreground/30" />
+                                    <h3 className="mt-2 text-sm font-medium">No active listings</h3>
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-4">Post a role to find candidates.</p>
                                     <Link href="/dashboard/post-job">
-                                        <Button className="mt-4">Post a Job</Button>
+                                        <Button size="sm">Post a Job</Button>
                                     </Link>
                                 </div>
                             )}
@@ -502,39 +492,42 @@ export default function DashboardPage() {
 
                 {/* Room Bookings View */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle>My Bookings</CardTitle>
-                        <CardDescription>View your upcoming and past stays.</CardDescription>
+                    <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-4">
+                        <CardTitle className="text-xl">My Bookings</CardTitle>
+                        <CardDescription className="text-xs sm:text-sm">Manage your stay history.</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 sm:p-6">
                         {bookings && bookings.length > 0 ? (
-                            <div className="grid gap-6 md:grid-cols-2">
+                            <div className="grid gap-4 md:grid-cols-2">
                                 {bookings.map(booking => (
-                                    <Card key={booking.id} className="overflow-hidden">
-                                        <div className="flex">
-                                            <div className="relative w-1/3 aspect-square">
+                                    <Card key={booking.id} className="overflow-hidden border-muted/60">
+                                        <div className="flex h-24 sm:h-28">
+                                            <div className="relative w-24 sm:w-32 shrink-0">
                                             <Image src={booking.roomImage} alt={booking.roomTitle} fill className="object-cover" />
                                             </div>
-                                            <div className='p-4 flex-1 flex flex-col'>
-                                                <div className="flex justify-between items-start">
-                                                    <div>
-                                                        <h3 className="font-semibold text-sm">{booking.roomTitle}</h3>
-                                                        <p className="text-[10px] text-muted-foreground">{booking.roomLocation}</p>
+                                            <div className='p-3 flex-1 flex flex-col min-w-0'>
+                                                <div className="flex justify-between items-start gap-2">
+                                                    <div className="min-w-0">
+                                                        <h3 className="font-semibold text-xs sm:text-sm truncate">{booking.roomTitle}</h3>
+                                                        <p className="text-[9px] sm:text-[10px] text-muted-foreground truncate">{booking.roomLocation}</p>
                                                     </div>
                                                     <Button 
                                                         variant="ghost" 
                                                         size="icon" 
-                                                        className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0" 
+                                                        className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0" 
                                                         onClick={() => setBookingToDelete(booking)}
                                                     >
-                                                        <Trash2 className="h-4 w-4" />
+                                                        <Trash2 className="h-3.5 w-3.5" />
                                                     </Button>
                                                 </div>
-                                                <div className="mt-auto pt-2">
-                                                    <p className="text-[10px]">
-                                                        {format(booking.checkInDate.toDate(), 'MMM d, yyyy')} - {format(booking.checkOutDate.toDate(), 'MMM d, yyyy')}
-                                                    </p>
-                                                    <p className="text-xs font-semibold mt-1">Total: {booking.currencySymbol || '$'}{booking.totalPrice}</p>
+                                                <div className="mt-auto flex justify-between items-end">
+                                                    <div>
+                                                        <p className="text-[8px] sm:text-[9px] text-muted-foreground">
+                                                            {format(booking.checkInDate.toDate(), 'MMM d')} - {format(booking.checkOutDate.toDate(), 'MMM d')}
+                                                        </p>
+                                                        <p className="text-xs font-bold text-primary">{booking.currencySymbol || '$'}{booking.totalPrice}</p>
+                                                    </div>
+                                                    <Badge variant="outline" className="text-[8px] h-4 px-1">Active</Badge>
                                                 </div>
                                             </div>
                                         </div>
@@ -543,11 +536,11 @@ export default function DashboardPage() {
                             </div>
                         ) : (
                             <div className='text-center py-12 border-2 border-dashed rounded-lg'>
-                                <BedDouble className="mx-auto h-12 w-12 text-muted-foreground" />
-                                <h3 className="mt-4 text-lg font-medium">No bookings yet</h3>
-                                <p className="mt-1 text-sm text-muted-foreground">Start exploring and book your next stay!</p>
+                                <BedDouble className="mx-auto h-10 w-10 text-muted-foreground/30" />
+                                <h3 className="mt-2 text-sm font-medium">No bookings yet</h3>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground mb-4">Discover your next stay.</p>
                                 <Link href="/rooms">
-                                    <Button variant="outline" className="mt-4">Explore Rooms</Button>
+                                    <Button variant="outline" size="sm">Explore Rooms</Button>
                                 </Link>
                             </div>
                         )}
@@ -556,36 +549,35 @@ export default function DashboardPage() {
                 
                 {/* Room Listings View (For Owners) */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle>My Space Listings</CardTitle>
-                        <CardDescription>Manage the spaces you are hosting.</CardDescription>
+                    <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-4">
+                        <CardTitle className="text-xl">My Hosted Spaces</CardTitle>
+                        <CardDescription className="text-xs sm:text-sm">Manage your properties.</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 sm:p-6">
                         {roomListings && roomListings.length > 0 ? (
-                            <div className="grid gap-6 md:grid-cols-2">
+                            <div className="grid gap-4 md:grid-cols-2">
                                 {roomListings.map(listing => (
-                                    <Card key={listing.id}>
-                                        <div className="flex">
-                                            <div className="relative w-1/3 aspect-video">
-                                                <Image src={listing.images[0]} alt={listing.title} fill className="object-cover rounded-l-lg" />
+                                    <Card key={listing.id} className="overflow-hidden border-muted/60">
+                                        <div className="flex h-24 sm:h-28">
+                                            <div className="relative w-24 sm:w-32 shrink-0">
+                                                <Image src={listing.images[0]} alt={listing.title} fill className="object-cover" />
                                             </div>
-                                            <div className='p-4 flex-1'>
-                                                <h3 className="font-semibold text-sm">{listing.title}</h3>
-                                                <p className="text-[10px] text-muted-foreground">{listing.location}, {listing.country}</p>
-                                                <p className="text-xs mt-2 font-semibold">
+                                            <div className='p-3 flex-1 flex flex-col min-w-0'>
+                                                <h3 className="font-semibold text-xs sm:text-sm truncate">{listing.title}</h3>
+                                                <p className="text-[9px] sm:text-[10px] text-muted-foreground truncate">{listing.location}</p>
+                                                <p className="text-xs font-bold mt-1 text-primary">
                                                     {listing.listingType === 'sale' && listing.salePrice ? `${listing.currencySymbol}${listing.salePrice.toLocaleString()}` : ''}
                                                     {listing.listingType === 'rent' && listing.priceNight ? `${listing.currencySymbol}${listing.priceNight}/night` : ''}
-                                                    {listing.listingType === 'rent' && listing.priceMonth ? ` | ${listing.currencySymbol}${listing.priceMonth}/month` : ''}
                                                 </p>
-                                                <div className="flex flex-wrap gap-2 mt-2">
+                                                <div className="flex gap-1.5 mt-auto">
                                                     <Link href={`/rooms/${listing.id}`}>
-                                                        <Button variant="outline" size="sm" className="h-7 text-[10px]">View</Button>
+                                                        <Button variant="outline" size="sm" className="h-7 text-[10px] px-2">View</Button>
                                                     </Link>
                                                     <Link href={`/dashboard/rooms/${listing.id}/edit`}>
-                                                        <Button variant="secondary" size="sm" className="h-7 text-[10px]"><Edit className="mr-1 h-3 w-3" />Edit</Button>
+                                                        <Button variant="secondary" size="sm" className="h-7 text-[10px] px-2"><Edit className="h-3 w-3" /></Button>
                                                     </Link>
-                                                    <Button variant="destructive" size="sm" className="h-7 text-[10px]" onClick={() => setRoomToDelete(listing.id)}>
-                                                        <Trash2 className="mr-1 h-3 w-3" />Delete
+                                                    <Button variant="destructive" size="sm" className="h-7 text-[10px] px-2" onClick={() => setRoomToDelete(listing.id)}>
+                                                        <Trash2 className="h-3 w-3" />
                                                     </Button>
                                                 </div>
                                             </div>
@@ -595,11 +587,11 @@ export default function DashboardPage() {
                             </div>
                         ) : (
                         <div className='text-center py-12 border-2 border-dashed rounded-lg'>
-                                <Home className="mx-auto h-12 w-12 text-muted-foreground" />
-                                <h3 className="mt-4 text-lg font-medium">You have no active listings.</h3>
-                                <p className="mt-1 text-sm text-muted-foreground">List your space to start earning.</p>
+                                <Home className="mx-auto h-10 w-10 text-muted-foreground/30" />
+                                <h3 className="mt-2 text-sm font-medium">No properties listed</h3>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground mb-4">List your space to start hosting.</p>
                                 <Link href="/dashboard/list-room">
-                                    <Button variant="default" className="mt-4">List a Space</Button>
+                                    <Button size="sm">List a Space</Button>
                                 </Link>
                             </div>
                         )}
@@ -609,29 +601,32 @@ export default function DashboardPage() {
 
             {/* Notifications Sidebar */}
             <div className="lg:col-span-1">
-                <Card className="sticky top-20">
-                    <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle className="text-xl flex items-center gap-2">
+                <Card className="sticky top-20 border-primary/20 shadow-lg">
+                    <CardHeader className="p-4 sm:p-6 pb-2 border-b bg-primary/[0.02]">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
                                 <Bell className="h-5 w-5 text-primary" />
                                 Notifications
                             </CardTitle>
-                            <CardDescription>Recent activity and surveys</CardDescription>
+                            {notifications && notifications.filter(n => !n.read).length > 0 && (
+                                <Badge className="text-[10px] px-1.5 h-5">{notifications.filter(n => !n.read).length} new</Badge>
+                            )}
                         </div>
+                        <CardDescription className="text-xs">Your activity and updates</CardDescription>
                     </CardHeader>
-                    <CardContent className="px-0">
+                    <CardContent className="p-0">
                         {notifications && notifications.length > 0 ? (
-                            <div className="divide-y max-h-[calc(100vh-300px)] overflow-y-auto">
+                            <div className="divide-y max-h-[calc(100vh-320px)] overflow-y-auto">
                                 {notifications.map(notif => (
-                                    <div key={notif.id} className={cn("p-4 space-y-2 group transition-colors", !notif.read && "bg-primary/5")}>
+                                    <div key={notif.id} className={cn("p-4 space-y-2 group transition-colors", !notif.read && "bg-primary/[0.04]")}>
                                         <div className="flex justify-between items-start gap-2">
-                                            <div className="flex items-center gap-2">
-                                                {notif.type === 'survey' ? <HelpCircle className="h-4 w-4 text-primary" /> : <Bell className="h-4 w-4 text-muted-foreground" />}
-                                                <h4 className="font-semibold text-xs">{notif.title}</h4>
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                {notif.type === 'survey' ? <HelpCircle className="h-3.5 w-3.5 text-primary shrink-0" /> : <Bell className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                                                <h4 className="font-bold text-[11px] sm:text-xs truncate">{notif.title}</h4>
                                             </div>
-                                            <div className="flex items-center gap-1">
+                                            <div className="flex items-center gap-1 shrink-0">
                                                 {!notif.read && (
-                                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleMarkAsRead(notif.id)}>
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-primary/10" onClick={() => handleMarkAsRead(notif.id)}>
                                                         <Check className="h-3 w-3" />
                                                     </Button>
                                                 )}
@@ -640,31 +635,31 @@ export default function DashboardPage() {
                                                 </Button>
                                             </div>
                                         </div>
-                                        <p className="text-xs text-muted-foreground">{notif.message}</p>
+                                        <p className="text-[11px] leading-relaxed text-muted-foreground">{notif.message}</p>
                                         
                                         {notif.type === 'survey' && !notif.surveyAnswer && (
                                             <div className="flex gap-2 pt-1">
-                                                <Button size="sm" className="h-7 px-3 text-[10px] flex-1" onClick={() => handleSurveyAnswer(notif.id, 'yes', notif.roomId)}>
-                                                    <Check className="mr-1 h-3 w-3" /> Yes
+                                                <Button size="sm" className="h-7 px-3 text-[10px] flex-1 bg-primary font-bold" onClick={() => handleSurveyAnswer(notif.id, 'yes', notif.roomId)}>
+                                                    Yes
                                                 </Button>
-                                                <Button size="sm" variant="outline" className="h-7 px-3 text-[10px] flex-1" onClick={() => handleSurveyAnswer(notif.id, 'no')}>
-                                                    <X className="mr-1 h-3 w-3" /> No
+                                                <Button size="sm" variant="outline" className="h-7 px-3 text-[10px] flex-1 font-bold" onClick={() => handleSurveyAnswer(notif.id, 'no')}>
+                                                    No
                                                 </Button>
                                             </div>
                                         )}
                                         <div className="flex justify-between items-center pt-1">
-                                            <span className="text-[10px] text-muted-foreground">
+                                            <span className="text-[9px] text-muted-foreground uppercase font-medium">
                                                 {format(notif.createdAt.toDate(), 'MMM d, h:mm a')}
                                             </span>
-                                            {!notif.read && <Badge variant="default" className="h-4 px-1.5 text-[8px]">New</Badge>}
+                                            {!notif.read && <div className="h-1.5 w-1.5 bg-primary rounded-full" />}
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="p-8 text-center">
-                                <Bell className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                                <p className="text-sm text-muted-foreground">No recent activity.</p>
+                            <div className="p-12 text-center">
+                                <Bell className="h-10 w-10 text-muted-foreground/20 mx-auto mb-3" />
+                                <p className="text-xs text-muted-foreground">No recent activity.</p>
                             </div>
                         )}
                     </CardContent>
@@ -673,58 +668,58 @@ export default function DashboardPage() {
         </div>
     </div>
     <AlertDialog open={!!jobToDelete} onOpenChange={(open) => !open && setJobToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[90%] max-w-md rounded-lg">
             <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete this job listing and all associated applicant data.
+                <AlertDialogTitle className="text-lg">Delete listing?</AlertDialogTitle>
+                <AlertDialogDescription className="text-sm">
+                    This will permanently delete this job listing and all associated applicant data.
                 </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteJob}>Delete</AlertDialogAction>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                <AlertDialogCancel className="h-9 sm:h-10">Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteJob} className="h-9 sm:h-10 bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
     <AlertDialog open={!!roomToDelete} onOpenChange={(open) => !open && setRoomToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[90%] max-w-md rounded-lg">
             <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete this room listing from the platform.
+                <AlertDialogTitle className="text-lg">Delete room?</AlertDialogTitle>
+                <AlertDialogDescription className="text-sm">
+                    This will permanently delete this room listing from the platform.
                 </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteRoom}>Delete</AlertDialogAction>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                <AlertDialogCancel className="h-9 sm:h-10">Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteRoom} className="h-9 sm:h-10 bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
      <AlertDialog open={!!applicationToDelete} onOpenChange={(open) => !open && setApplicationToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[90%] max-w-md rounded-lg">
             <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This action cannot be undone. This will withdraw your application. The employer will no longer be able to see it.
+                <AlertDialogTitle className="text-lg">Withdraw application?</AlertDialogTitle>
+                <AlertDialogDescription className="text-sm">
+                    The employer will no longer be able to see your interest in this role.
                 </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleWithdrawApplication}>Withdraw</AlertDialogAction>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                <AlertDialogCancel className="h-9 sm:h-10">No, stay</AlertDialogCancel>
+                <AlertDialogAction onClick={handleWithdrawApplication} className="h-9 sm:h-10 bg-destructive hover:bg-destructive/90">Withdraw</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
     <AlertDialog open={!!bookingToDelete} onOpenChange={(open) => !open && setBookingToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[90%] max-w-md rounded-lg">
             <AlertDialogHeader>
-                <AlertDialogTitle>Delete Booking?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This will remove this booking from your history. This action cannot be undone.
+                <AlertDialogTitle className="text-lg">Remove booking?</AlertDialogTitle>
+                <AlertDialogDescription className="text-sm">
+                    This will remove the record from your history.
                 </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteBooking} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                <AlertDialogCancel className="h-9 sm:h-10">Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteBooking} className="h-9 sm:h-10 bg-destructive text-white hover:bg-destructive/90">Remove</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
