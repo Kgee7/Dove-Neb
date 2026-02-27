@@ -1,3 +1,4 @@
+
 'use client';
 import { useRouter } from 'next/navigation';
 import React, { useMemo, useState, useEffect } from 'react';
@@ -88,6 +89,7 @@ export default function DashboardPage() {
   const [jobToDelete, setJobToDelete] = useState<string | null>(null);
   const [roomToDelete, setRoomToDelete] = useState<string | null>(null);
   const [applicationToDelete, setApplicationToDelete] = useState<JobApplication | null>(null);
+  const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
 
   const userDocRef = useMemo(() => {
     if (!firestore || !user?.uid) return null;
@@ -208,6 +210,26 @@ export default function DashboardPage() {
         });
     } finally {
         setApplicationToDelete(null);
+    }
+  };
+
+  const handleDeleteBooking = async () => {
+    if (!firestore || !user || !bookingToDelete) return;
+    try {
+        const bookingRef = doc(firestore, 'users', user.uid, 'bookings', bookingToDelete.id);
+        await deleteDoc(bookingRef);
+        toast({
+            title: 'Booking Removed',
+            description: 'The booking record has been removed from your history.',
+        });
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Deletion Failed',
+            description: error.message || 'Could not remove the booking record.',
+        });
+    } finally {
+        setBookingToDelete(null);
     }
   };
 
@@ -450,13 +472,27 @@ export default function DashboardPage() {
                                         <div className="relative w-1/3 aspect-square">
                                            <Image src={booking.roomImage} alt={booking.roomTitle} fill className="object-cover" />
                                         </div>
-                                        <div className='p-4 flex-1'>
-                                            <h3 className="font-semibold">{booking.roomTitle}</h3>
-                                            <p className="text-sm text-muted-foreground">{booking.roomLocation}</p>
-                                            <p className="text-sm mt-2">
-                                                {format(booking.checkInDate.toDate(), 'MMM d, yyyy')} - {format(booking.checkOutDate.toDate(), 'MMM d, yyyy')}
-                                            </p>
-                                            <p className="text-sm font-semibold mt-1">Total: {booking.currencySymbol || '$'}{booking.totalPrice}</p>
+                                        <div className='p-4 flex-1 flex flex-col'>
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <h3 className="font-semibold">{booking.roomTitle}</h3>
+                                                    <p className="text-sm text-muted-foreground">{booking.roomLocation}</p>
+                                                </div>
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0" 
+                                                    onClick={() => setBookingToDelete(booking)}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                            <div className="mt-auto pt-2">
+                                                <p className="text-sm">
+                                                    {format(booking.checkInDate.toDate(), 'MMM d, yyyy')} - {format(booking.checkOutDate.toDate(), 'MMM d, yyyy')}
+                                                </p>
+                                                <p className="text-sm font-semibold mt-1">Total: {booking.currencySymbol || '$'}{booking.totalPrice}</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </Card>
@@ -567,6 +603,20 @@ export default function DashboardPage() {
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleWithdrawApplication}>Withdraw</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    <AlertDialog open={!!bookingToDelete} onOpenChange={(open) => !open && setBookingToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Delete Booking?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This will remove this booking from your history. This action cannot be undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteBooking} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
