@@ -85,13 +85,10 @@ service cloud.firestore {
 
     // RATINGS SUBCOLLECTION
     // Anyone can read ratings.
-    match /rooms/{roomId}/ratings {
-        allow list: if true;
-    }
-    // Only authenticated users can create a rating for themselves.
     match /rooms/{roomId}/ratings/{ratingId} {
-        allow get: if true;
-        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+        allow read: if true;
+        // Only authenticated users can create, update, or delete their own interest marker/rating.
+        allow write: if request.auth != null && ratingId == request.auth.uid;
     }
   }
 }
