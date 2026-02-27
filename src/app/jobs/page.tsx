@@ -13,9 +13,12 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Briefcase, Loader2, MapPin, Search } from 'lucide-react';
 import FavoriteButton from '@/components/favorite-button';
+import { useSearchParams } from 'next/navigation';
 
 export default function JobsPage() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const searchParams = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
+  const [locationTerm, setLocationTerm] = useState(searchParams.get('l') || '');
   const [typeFilter, setTypeFilter] = useState('all');
   const [isClient, setIsClient] = useState(false);
 
@@ -47,13 +50,15 @@ export default function JobsPage() {
     if (!jobs) return [];
     return allJobs.filter(job => {
       const term = searchTerm.toLowerCase();
-      const titleMatch = job.title && job.title.toLowerCase().includes(term);
-      const companyMatch = job.companyName && job.companyName.toLowerCase().includes(term);
-      const locationMatch = job.location && job.location.toLowerCase().includes(term);
+      const lTerm = locationTerm.toLowerCase();
+      
+      const titleMatch = job.title?.toLowerCase().includes(term) || job.companyName?.toLowerCase().includes(term);
+      const locationMatch = !lTerm || job.location?.toLowerCase().includes(lTerm) || job.country?.toLowerCase().includes(lTerm);
       const typeMatch = typeFilter === 'all' || (job.type && job.type === typeFilter);
-      return (titleMatch || companyMatch || locationMatch) && typeMatch;
+      
+      return titleMatch && locationMatch && typeMatch;
     });
-  }, [allJobs, searchTerm, typeFilter]);
+  }, [allJobs, searchTerm, locationTerm, typeFilter]);
 
   return (
     <div className="container mx-auto py-8 sm:py-12 px-4">
@@ -62,30 +67,47 @@ export default function JobsPage() {
         <p className="mt-3 text-sm sm:text-lg text-muted-foreground max-w-2xl mx-auto">Search through thousands of open positions. Your dream job is just a click away.</p>
       </header>
 
-      <Card className="p-4 sm:p-6 mb-8 sm:mb-12 shadow-md max-w-4xl mx-auto">
+      <Card className="p-2 sm:p-3 mb-8 sm:mb-12 shadow-md max-w-5xl mx-auto">
         {isClient && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-          <div className="md:col-span-2 relative">
-             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder='Search job, company or location...'
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full h-11 text-sm rounded-full"
-            />
+        <div className="flex flex-col lg:flex-row gap-3 items-center">
+          <div className="flex flex-col sm:flex-row flex-1 w-full items-center bg-muted/30 rounded-lg lg:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden">
+            <div className="flex flex-1 items-center px-3 w-full border-b sm:border-b-0 sm:border-r">
+              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+              <Input 
+                placeholder='Job title or company'
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="border-none bg-transparent focus-visible:ring-0 h-10 text-sm"
+              />
+            </div>
+            <div className="flex flex-1 items-center px-3 w-full">
+              <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+              <Input 
+                placeholder='City or country'
+                value={locationTerm}
+                onChange={(e) => setLocationTerm(e.target.value)}
+                className="border-none bg-transparent focus-visible:ring-0 h-10 text-sm"
+              />
+            </div>
           </div>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="h-11 rounded-full px-4">
-               <div className='flex items-center overflow-hidden'>
-                <Briefcase className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
-                <SelectValue placeholder="Job Type" />
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              {jobTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          
+          <div className="flex w-full lg:w-auto gap-2">
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="h-10 rounded-lg lg:rounded-full px-4 flex-1 lg:w-40">
+                <div className='flex items-center overflow-hidden'>
+                  <Briefcase className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
+                  <SelectValue placeholder="Job Type" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {jobTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button className="h-10 px-6 rounded-lg lg:rounded-full font-bold shrink-0">
+              Filter
+            </Button>
+          </div>
         </div>
         )}
       </Card>

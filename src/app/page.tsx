@@ -34,6 +34,7 @@ import { Job } from "@/lib/job-data";
 import data from "@/lib/placeholder-images.json";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 
 
 export default function HomePage() {
@@ -44,8 +45,10 @@ export default function HomePage() {
   const firestore = useFirestore();
   const router = useRouter();
 
-  const [jobSearchQuery, setJobSearchQuery] = useState('');
-  const [roomSearchQuery, setRoomSearchQuery] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
+  const [jobLoc, setJobLoc] = useState('');
+  const [roomTitle, setRoomTitle] = useState('');
+  const [roomLoc, setRoomLoc] = useState('');
   const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
@@ -73,21 +76,23 @@ export default function HomePage() {
   const handleJobSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (jobSearchQuery) params.set('q', jobSearchQuery);
+    if (jobTitle) params.set('q', jobTitle);
+    if (jobLoc) params.set('l', jobLoc);
     router.push(`/jobs?${params.toString()}`);
   };
 
   const handleRoomSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (roomSearchQuery) params.set('q', roomSearchQuery);
+    if (roomTitle) params.set('q', roomTitle);
+    if (roomLoc) params.set('l', roomLoc);
     router.push(`/rooms?${params.toString()}`);
   };
 
   return (
     <div className="flex-1">
       {/* Hero Section */}
-      <section className="relative h-[65vh] w-full min-h-[400px] lg:h-[75vh]">
+      <section className="relative h-[65vh] w-full min-h-[450px] lg:h-[75vh]">
         {heroImage && (
           <Image
             src={heroImage.imageUrl}
@@ -101,51 +106,74 @@ export default function HomePage() {
         )}
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 flex h-full flex-col items-center justify-center text-center px-4">
-          <div className="container max-w-2xl">
+          <div className="container max-w-3xl">
             <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl md:text-4xl lg:text-5xl font-headline transition-all">
               Where Opportunities Take Flight
             </h1>
             <p className="mt-2 text-sm text-white/80 sm:text-base md:text-lg lg:text-xl">
               Find your dream job and the perfect place to stay.
             </p>
-            <Card className="mx-auto mt-8 max-w-md shadow-2xl overflow-hidden border-none bg-background/95 backdrop-blur-sm">
+            
+            <Card className="mx-auto mt-8 w-full max-w-2xl shadow-2xl overflow-hidden border-none bg-background/95 backdrop-blur-sm">
               {isClient && 
                <Tabs defaultValue="jobs" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-none h-10">
                   <TabsTrigger value="jobs" className="text-xs sm:text-sm">Find a Job</TabsTrigger>
                   <TabsTrigger value="rooms" className="text-xs sm:text-sm">Find a Space</TabsTrigger>
                 </TabsList>
-                <TabsContent value="jobs">
-                  <CardContent className="p-4">
-                    <form className="flex flex-col sm:flex-row gap-2" onSubmit={handleJobSearch}>
-                      <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Search job, company or location..."
-                          className="pl-10 h-11 text-sm focus-visible:ring-primary rounded-full"
-                          value={jobSearchQuery}
-                          onChange={(e) => setJobSearchQuery(e.target.value)}
-                        />
+                <TabsContent value="jobs" className="mt-0">
+                  <CardContent className="p-2 sm:p-3">
+                    <form className="flex flex-col md:flex-row items-center gap-2" onSubmit={handleJobSearch}>
+                      <div className="flex flex-1 w-full items-center bg-muted/30 rounded-lg md:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden">
+                        <div className="flex flex-1 items-center px-3 border-b md:border-b-0 md:border-r">
+                          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <Input
+                            placeholder="Job title or company"
+                            className="border-none bg-transparent focus-visible:ring-0 h-9 sm:h-10 text-xs sm:text-sm"
+                            value={jobTitle}
+                            onChange={(e) => setJobTitle(e.target.value)}
+                          />
+                        </div>
+                        <div className="flex flex-1 items-center px-3">
+                          <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <Input
+                            placeholder="City or country"
+                            className="border-none bg-transparent focus-visible:ring-0 h-9 sm:h-10 text-xs sm:text-sm"
+                            value={jobLoc}
+                            onChange={(e) => setJobLoc(e.target.value)}
+                          />
+                        </div>
                       </div>
-                      <Button type="submit" className="h-11 px-6 rounded-full font-bold">
+                      <Button type="submit" className="w-full md:w-auto h-9 sm:h-10 px-6 rounded-lg md:rounded-full font-bold text-xs sm:text-sm">
                         Search
                       </Button>
                     </form>
                   </CardContent>
                 </TabsContent>
-                <TabsContent value="rooms">
-                   <CardContent className="p-4">
-                    <form className="flex flex-col sm:flex-row gap-2" onSubmit={handleRoomSearch}>
-                      <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Search destination or city..."
-                          className="pl-10 h-11 text-sm focus-visible:ring-primary rounded-full"
-                          value={roomSearchQuery}
-                          onChange={(e) => setRoomSearchQuery(e.target.value)}
-                        />
+                <TabsContent value="rooms" className="mt-0">
+                   <CardContent className="p-2 sm:p-3">
+                    <form className="flex flex-col md:flex-row items-center gap-2" onSubmit={handleRoomSearch}>
+                      <div className="flex flex-1 w-full items-center bg-muted/30 rounded-lg md:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden">
+                        <div className="flex flex-1 items-center px-3 border-b md:border-b-0 md:border-r">
+                          <Home className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <Input
+                            placeholder="Type of space"
+                            className="border-none bg-transparent focus-visible:ring-0 h-9 sm:h-10 text-xs sm:text-sm"
+                            value={roomTitle}
+                            onChange={(e) => setRoomTitle(e.target.value)}
+                          />
+                        </div>
+                        <div className="flex flex-1 items-center px-3">
+                          <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <Input
+                            placeholder="Location"
+                            className="border-none bg-transparent focus-visible:ring-0 h-9 sm:h-10 text-xs sm:text-sm"
+                            value={roomLoc}
+                            onChange={(e) => setRoomLoc(e.target.value)}
+                          />
+                        </div>
                       </div>
-                      <Button type="submit" className="h-11 px-6 rounded-full font-bold">
+                      <Button type="submit" className="w-full md:w-auto h-9 sm:h-10 px-6 rounded-lg md:rounded-full font-bold text-xs sm:text-sm">
                         Search
                       </Button>
                     </form>

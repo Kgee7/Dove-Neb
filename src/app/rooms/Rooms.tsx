@@ -11,7 +11,7 @@ import FavoriteButton from '@/components/favorite-button';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Loader2, Search, Star } from 'lucide-react';
+import { MapPin, Loader2, Search, Star, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,6 +22,7 @@ export default function Rooms() {
   const searchParams = useSearchParams();
 
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
+  const [locationTerm, setLocationTerm] = useState(searchParams.get('l') || '');
   const [listingTypeFilter, setListingTypeFilter] = useState(searchParams.get('type') || 'all');
   const [isClient, setIsClient] = useState(false);
 
@@ -44,21 +45,25 @@ export default function Rooms() {
     if (!rooms) return [];
     return rooms.filter(room => {
       const searchLower = searchTerm.toLowerCase();
+      const locLower = locationTerm.toLowerCase();
       
       const matchesSearch = searchTerm === '' || 
         (room.title && room.title.toLowerCase().includes(searchLower)) ||
-        (room.description && room.description.toLowerCase().includes(searchLower)) ||
-        (room.location && room.location.toLowerCase().includes(searchLower)) ||
-        (room.country && room.country.toLowerCase().includes(searchLower));
+        (room.description && room.description.toLowerCase().includes(searchLower));
 
-      return matchesSearch;
+      const matchesLocation = locationTerm === '' ||
+        (room.location && room.location.toLowerCase().includes(locLower)) ||
+        (room.country && room.country.toLowerCase().includes(locLower));
+
+      return matchesSearch && matchesLocation;
     });
-  }, [rooms, searchTerm]);
+  }, [rooms, searchTerm, locationTerm]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams(searchParams);
     if (searchTerm) params.set('q', searchTerm); else params.delete('q');
+    if (locationTerm) params.set('l', locationTerm); else params.delete('l');
     if (listingTypeFilter !== 'all') params.set('type', listingTypeFilter); else params.delete('type');
     router.push(`/rooms?${params.toString()}`);
   };
@@ -74,22 +79,34 @@ export default function Rooms() {
         </p>
       </div>
 
-       <Card className="mx-auto mb-8 sm:mb-12 max-w-4xl shadow-md">
-          <CardContent className="p-3 sm:p-4">
+       <Card className="mx-auto mb-8 sm:mb-12 max-w-5xl shadow-md">
+          <CardContent className="p-2 sm:p-3">
             {isClient && (
-              <form className="grid grid-cols-1 md:grid-cols-3 gap-3" onSubmit={handleSearch}>
-                <div className="md:col-span-2 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search destination or city..."
-                    className="pl-10 h-11 text-sm rounded-full"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+              <form className="flex flex-col lg:flex-row gap-3 items-center" onSubmit={handleSearch}>
+                <div className="flex flex-col sm:flex-row flex-1 w-full items-center bg-muted/30 rounded-lg lg:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden">
+                  <div className="flex flex-1 items-center px-3 w-full border-b sm:border-b-0 sm:border-r">
+                    <Home className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <Input
+                      placeholder="What are you looking for?"
+                      className="border-none bg-transparent focus-visible:ring-0 h-10 text-sm"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex flex-1 items-center px-3 w-full">
+                    <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <Input
+                      placeholder="Destination or city"
+                      className="border-none bg-transparent focus-visible:ring-0 h-10 text-sm"
+                      value={locationTerm}
+                      onChange={(e) => setLocationTerm(e.target.value)}
+                    />
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                
+                <div className="flex w-full lg:w-auto gap-2">
                   <Select value={listingTypeFilter} onValueChange={setListingTypeFilter}>
-                      <SelectTrigger className="h-11 text-sm rounded-full px-4">
+                      <SelectTrigger className="h-10 text-sm rounded-lg lg:rounded-full px-4 flex-1 lg:w-32">
                           <SelectValue placeholder="Type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -98,7 +115,7 @@ export default function Rooms() {
                           <SelectItem value="sale">For Sale</SelectItem>
                       </SelectContent>
                   </Select>
-                  <Button type="submit" className='w-full h-11 text-sm rounded-full font-bold'>
+                  <Button type="submit" className='h-10 px-6 rounded-lg lg:rounded-full font-bold shrink-0'>
                       Search
                   </Button>
                 </div>
@@ -181,6 +198,7 @@ export default function Rooms() {
               <p className="text-muted-foreground text-sm sm:text-base">No spaces found matching your criteria.</p>
               <Button variant="link" onClick={() => {
                   setSearchTerm('');
+                  setLocationTerm('');
                   setListingTypeFilter('all');
                   router.push('/rooms');
               }}>Clear all filters</Button>
