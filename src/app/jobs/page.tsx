@@ -114,7 +114,7 @@ export default function JobsPage() {
 
       {user && suggestedJobs && suggestedJobs.length > 0 && (
         <section className="mb-10 sm:mb-12">
-          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Suggested for You</h2>
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center">Suggested for You</h2>
            {suggestedJobsLoading ? (
             <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin" /></div>
           ) : (
@@ -128,7 +128,7 @@ export default function JobsPage() {
       )}
 
       <section>
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">All Jobs</h2>
+        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center">All Jobs</h2>
         {jobsLoading ? (
            <div className="flex justify-center items-center h-64"><Loader2 className="h-12 w-12 animate-spin" /></div>
         ) : filteredJobs.length > 0 ? (
