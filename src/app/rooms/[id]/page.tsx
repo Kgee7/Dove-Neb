@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -20,6 +19,8 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast";
 
@@ -293,6 +294,9 @@ export default function RoomDetailsPage() {
 
             </div>
             <DialogContent className="max-w-4xl max-h-[80vh]">
+                <DialogHeader className="sr-only">
+                    <DialogTitle>View Room Image</DialogTitle>
+                </DialogHeader>
                 <div className="relative aspect-video">
                     {selectedImage && (
                         <Image
