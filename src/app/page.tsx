@@ -92,7 +92,7 @@ export default function HomePage() {
   return (
     <div className="flex-1">
       {/* Hero Section */}
-      <section className="relative h-[80vh] w-full">
+      <section className="relative h-[80vh] w-full min-h-[500px]">
         {heroImage && (
           <Image
             src={heroImage.imageUrl}
@@ -100,12 +100,12 @@ export default function HomePage() {
             data-ai-hint={heroImage.imageHint}
             fill
             sizes="100vw"
-            className="object-cover"
+            className="object-cover object-center"
             priority
           />
         )}
         <div className="absolute inset-0 bg-black/50" />
-        <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
+        <div className="relative z-10 flex h-full flex-col items-center justify-center text-center px-4">
           <div className="container max-w-2xl">
             <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl font-headline">
               Where Opportunities Take Flight
@@ -113,7 +113,7 @@ export default function HomePage() {
             <p className="mt-4 text-lg text-white/80 md:text-xl">
               Find your dream job and the perfect place to stay.
             </p>
-            <Card className="mx-auto mt-8 max-w-2xl shadow-2xl">
+            <Card className="mx-auto mt-8 max-w-2xl shadow-2xl overflow-hidden">
               {isClient && 
                <Tabs defaultValue="jobs" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
@@ -122,12 +122,12 @@ export default function HomePage() {
                 </TabsList>
                 <TabsContent value="jobs">
                   <CardContent className="p-4">
-                    <form className="flex flex-row gap-2" onSubmit={handleJobSearch}>
+                    <form className="flex flex-col sm:flex-row gap-2" onSubmit={handleJobSearch}>
                       <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           placeholder="Job title..."
-                          className="pl-10"
+                          className="pl-10 h-11"
                           value={jobSearchQuery}
                           onChange={(e) => setJobSearchQuery(e.target.value)}
                         />
@@ -136,12 +136,12 @@ export default function HomePage() {
                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input 
                           placeholder="Location" 
-                          className="pl-10"
+                          className="pl-10 h-11"
                           value={jobLocationQuery}
                           onChange={(e) => setJobLocationQuery(e.target.value)}
                         />
                       </div>
-                      <Button type="submit" className="px-3">
+                      <Button type="submit" className="h-11 px-6">
                         <Search className="h-5 w-5 sm:hidden" />
                         <span className="hidden sm:inline">Search</span>
                       </Button>
@@ -150,12 +150,12 @@ export default function HomePage() {
                 </TabsContent>
                 <TabsContent value="rooms">
                    <CardContent className="p-4">
-                    <form className="flex flex-row gap-2" onSubmit={handleRoomSearch}>
+                    <form className="flex flex-col sm:flex-row gap-2" onSubmit={handleRoomSearch}>
                       <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           placeholder="Destination..."
-                          className="pl-10"
+                          className="pl-10 h-11"
                           value={roomSearchQuery}
                           onChange={(e) => setRoomSearchQuery(e.target.value)}
                         />
@@ -164,12 +164,12 @@ export default function HomePage() {
                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input 
                           placeholder="Location" 
-                          className="pl-10"
+                          className="pl-10 h-11"
                           value={roomLocationQuery}
                           onChange={(e) => setRoomLocationQuery(e.target.value)}
                         />
                       </div>
-                      <Button type="submit" className="px-3">
+                      <Button type="submit" className="h-11 px-6">
                         <Search className="h-5 w-5 sm:hidden" />
                         <span className="hidden sm:inline">Search</span>
                       </Button>
