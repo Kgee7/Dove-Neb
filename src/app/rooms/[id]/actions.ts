@@ -36,8 +36,9 @@ export async function incrementRoomRating(roomId: string) {
     console.log(`Successfully incremented rating for room: ${roomId}`);
     return { success: true };
   } catch (error: any) {
-    console.error("Error incrementing room rating on server:", error);
-    return { success: false, error: error.message };
+    // Log only the message to avoid serialization errors in some environments
+    console.error("Error incrementing room rating on server:", error?.message || "Unknown error");
+    return { success: false, error: error?.message || 'Update failed' };
   }
 }
 
@@ -55,9 +56,10 @@ export async function getRoom(id: string) {
     
     if (!doc.exists) return null;
     return { id: doc.id, ...doc.data() } as any;
-  } catch (error) {
-    // If Admin SDK fails (e.g. auth issues in dev/prototype), return null to fallback to default metadata
-    console.warn("Gracefully handled room metadata fetch failure:", error);
+  } catch (error: any) {
+    // If Admin SDK fails (e.g. auth issues in dev/prototype), return null to fallback to default metadata.
+    // We log only the message to prevent secondary errors during serialization.
+    console.log("Metadata fetch (Room) skipped due to environment restrictions:", error?.message || "Auth error");
     return null;
   }
 }
@@ -76,9 +78,9 @@ export async function getJob(id: string) {
     
     if (!doc.exists) return null;
     return { id: doc.id, ...doc.data() } as any;
-  } catch (error) {
+  } catch (error: any) {
     // If Admin SDK fails (e.g. auth issues in dev/prototype), return null to fallback to default metadata
-    console.warn("Gracefully handled job metadata fetch failure:", error);
+    console.log("Metadata fetch (Job) skipped due to environment restrictions:", error?.message || "Auth error");
     return null;
   }
 }
