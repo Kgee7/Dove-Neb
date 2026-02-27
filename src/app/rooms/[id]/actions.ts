@@ -1,25 +1,31 @@
 'use server';
 
-import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
+import { getApps, initializeApp, App } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 /**
+ * Helper to get or initialize the Firebase Admin App.
+ * Explicitly provides project ID to avoid auth token refresh issues in some environments.
+ */
+function getAdminApp(): App {
+  if (getApps().length === 0) {
+    return initializeApp({
+      projectId: 'studio-7235955659-7c316',
+    });
+  }
+  return getApps()[0];
+}
+
+/**
  * Server Action to securely increment a room's interest/rating count.
- * This runs on the server with administrative privileges, bypassing client-side security rules.
+ * This runs on the server with administrative privileges.
  */
 export async function incrementRoomRating(roomId: string) {
   if (!roomId) return { success: false, error: 'No room ID provided' };
 
-  let app: App;
-  if (getApps().length === 0) {
-    app = initializeApp();
-  } else {
-    app = getApps()[0];
-  }
-
-  const db = getFirestore(app);
-
   try {
+    const app = getAdminApp();
+    const db = getFirestore(app);
     const roomRef = db.collection('rooms').doc(roomId);
     
     // Atomically increment the interestCount field
@@ -40,18 +46,16 @@ export async function incrementRoomRating(roomId: string) {
  */
 export async function getRoom(id: string) {
   if (!id) return null;
-  let app: App;
-  if (getApps().length === 0) {
-    app = initializeApp();
-  } else {
-    app = getApps()[0];
-  }
-  const db = getFirestore(app);
+  
   try {
+    const app = getAdminApp();
+    const db = getFirestore(app);
     const doc = await db.collection('rooms').doc(id).get();
+    
     if (!doc.exists) return null;
     return { id: doc.id, ...doc.data() } as any;
   } catch (error) {
+    // If Admin SDK fails (e.g. auth issues in dev), return null to fallback to default metadata
     console.error("Error fetching room for metadata:", error);
     return null;
   }
@@ -62,18 +66,16 @@ export async function getRoom(id: string) {
  */
 export async function getJob(id: string) {
   if (!id) return null;
-  let app: App;
-  if (getApps().length === 0) {
-    app = initializeApp();
-  } else {
-    app = getApps()[0];
-  }
-  const db = getFirestore(app);
+
   try {
+    const app = getAdminApp();
+    const db = getFirestore(app);
     const doc = await db.collection('jobs').doc(id).get();
+    
     if (!doc.exists) return null;
     return { id: doc.id, ...doc.data() } as any;
   } catch (error) {
+    // If Admin SDK fails (e.g. auth issues in dev), return null to fallback to default metadata
     console.error("Error fetching job for metadata:", error);
     return null;
   }
