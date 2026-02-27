@@ -21,6 +21,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, User as UserIcon, Loader2, Menu, X } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 import NotificationsDropdown from "./notifications-dropdown";
 
 type UserProfile = {
