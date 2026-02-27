@@ -1,9 +1,9 @@
 
 'use client';
 
-import React, { useMemo, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { doc } from 'firebase/firestore';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useParams, useRouter, usePathname } from 'next/navigation';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { useDoc, useFirestore, useUser } from '@/firebase';
 import { Room } from '@/lib/data';
 import Image from 'next/image';
@@ -13,7 +13,7 @@ import ShareButton from '@/components/share-button';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Loader2, Wifi, Tv, Utensils, Wind, Star, Phone, MessageSquare, Maximize, Mail } from 'lucide-react';
+import { ArrowLeft, Loader2, Wifi, Tv, Utensils, Wind, Star, Phone, MessageSquare, Maximize, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -41,10 +41,13 @@ export default function RoomDetailsPage() {
   const { user, isUserLoading } = useUser();
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
   const id = params.id as string;
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showContact, setShowContact] = useState(false);
+  const [isRating, setIsRating] = useState(false);
   
   const roomDocRef = useMemo(() => {
     if (!firestore || !id) return null;
@@ -52,6 +55,56 @@ export default function RoomDetailsPage() {
   }, [firestore, id]);
 
   const { data: room, isLoading } = useDoc<Room>(roomDocRef);
+
+  // Check if user has already rated (expressed interest) to reveal contact info automatically
+  useEffect(() => {
+    if (!user || !firestore || !id) return;
+    
+    const checkInterest = async () => {
+        const ratingRef = doc(firestore, 'rooms', id, 'ratings', user.uid);
+        const snap = await getDoc(ratingRef);
+        if (snap.exists()) {
+            setShowContact(true);
+        }
+    };
+    checkInterest();
+  }, [user, firestore, id]);
+
+  const handleInterestClick = async () => {
+    if (!user) {
+        router.push(`/signup?redirect=${encodeURIComponent(pathname)}`);
+        return;
+    }
+
+    if (!firestore || !id) return;
+
+    setIsRating(true);
+    try {
+        // Create a rating entry to track interest
+        const ratingRef = doc(firestore, 'rooms', id, 'ratings', user.uid);
+        await setDoc(ratingRef, {
+            userId: user.uid,
+            userName: user.displayName || 'Anonymous User',
+            timestamp: serverTimestamp(),
+            type: 'interest'
+        }, { merge: true });
+
+        setShowContact(true);
+        toast({
+            title: "Interest Noted!",
+            description: "Owner contact information revealed. You can now reach out.",
+        });
+    } catch (error: any) {
+        console.error("Error recording interest:", error);
+        toast({
+            variant: "destructive",
+            title: "Action Failed",
+            description: "Could not record your interest. Please try again."
+        });
+    } finally {
+        setIsRating(false);
+    }
+  };
 
   if (isLoading || isUserLoading) {
     return (
@@ -150,8 +203,8 @@ export default function RoomDetailsPage() {
                         </div>
                     </div>
                     <div className="md:col-span-1">
-                         <Card className="sticky top-24 shadow-lg">
-                            <CardHeader>
+                         <Card className="sticky top-24 shadow-lg overflow-hidden">
+                            <CardHeader className="bg-primary/5 border-b">
                                 {room.listingType === 'sale' && room.salePrice && (
                                     <CardTitle className='text-2xl'>
                                         {room.currencySymbol}{room.salePrice.toLocaleString()}
@@ -166,29 +219,50 @@ export default function RoomDetailsPage() {
                                     </CardTitle>
                                 )}
                             </CardHeader>
-                            <CardContent className="grid gap-4">
-                                <div className="space-y-3">
-                                    <h3 className='font-semibold text-sm text-muted-foreground uppercase tracking-wider'>Contact the Owner</h3>
-                                    <p className="text-xs text-muted-foreground mb-4">Interested in this space? Reach out directly to discuss availability and details.</p>
-                                    
-                                    {room.contactEmail && (
-                                        <a href={`mailto:${room.contactEmail}`} className='w-full'>
-                                            <Button variant="outline" className='w-full group'>
-                                                <Mail className='mr-2 h-4 w-4 group-hover:text-primary transition-colors' /> Email Owner
-                                            </Button>
-                                        </a>
-                                    )}
-                                    {room.contactWhatsapp && (
-                                        <a href={`https://wa.me/${room.contactWhatsapp.replace(/\D/g, '')}`} target='_blank' rel='noopener noreferrer' className='w-full'>
-                                            <Button variant="outline" className='w-full group border-green-200 hover:bg-green-50 hover:border-green-300'>
-                                                <MessageSquare className='mr-2 h-4 w-4 text-green-600' /> WhatsApp Owner
-                                            </Button>
-                                        </a>
-                                    )}
-                                    {!room.contactEmail && !room.contactWhatsapp && (
-                                        <p className="text-sm text-muted-foreground italic">Contact information not provided for this listing.</p>
-                                    )}
-                                </div>
+                            <CardContent className="p-6">
+                                {!showContact ? (
+                                    <div className="space-y-4 text-center">
+                                        <div className="flex justify-center">
+                                            <div className="p-3 bg-muted rounded-full">
+                                                <Lock className="h-6 w-6 text-muted-foreground" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h3 className='font-semibold text-base mb-1'>Contact details hidden</h3>
+                                            <p className="text-sm text-muted-foreground">Click the button below to show how job seekers or renters can reach the owner.</p>
+                                        </div>
+                                        <Button onClick={handleInterestClick} className="w-full h-12 text-lg font-semibold" disabled={isRating}>
+                                            {isRating && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+                                            I am Interested
+                                        </Button>
+                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Requires sign in</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                        <div className="space-y-3">
+                                            <h3 className='font-semibold text-sm text-muted-foreground uppercase tracking-wider'>Contact the Owner</h3>
+                                            <p className="text-xs text-muted-foreground mb-4">You have expressed interest in this space. Reach out directly to discuss availability.</p>
+                                            
+                                            {room.contactEmail && (
+                                                <a href={`mailto:${room.contactEmail}`} className='w-full'>
+                                                    <Button variant="outline" className='w-full group h-11'>
+                                                        <Mail className='mr-2 h-4 w-4 group-hover:text-primary transition-colors' /> Email Owner
+                                                    </Button>
+                                                </a>
+                                            )}
+                                            {room.contactWhatsapp && (
+                                                <a href={`https://wa.me/${room.contactWhatsapp.replace(/\D/g, '')}`} target='_blank' rel='noopener noreferrer' className='w-full block mt-2'>
+                                                    <Button variant="outline" className='w-full group h-11 border-green-200 hover:bg-green-50 hover:border-green-300'>
+                                                        <MessageSquare className='mr-2 h-4 w-4 text-green-600' /> WhatsApp Owner
+                                                    </Button>
+                                                </a>
+                                            )}
+                                            {!room.contactEmail && !room.contactWhatsapp && (
+                                                <p className="text-sm text-muted-foreground italic">Contact information not provided for this listing.</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </CardContent>
                          </Card>
                     </div>
