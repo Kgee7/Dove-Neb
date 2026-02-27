@@ -95,13 +95,21 @@ export default function RoomDetailsPage() {
                 title: "Interest Noted!",
                 description: "Owner contact information revealed. You can now reach out.",
             });
+        } else {
+            // Handle expected logical errors returned from the server action
+            toast({
+                variant: "destructive",
+                title: "Action Failed",
+                description: result.error || "Could not record your interest. Please try again."
+            });
         }
     } catch (error: any) {
-        console.error("Error recording interest via action:", error);
+        // Handle unexpected runtime errors or network issues
+        console.error("Unexpected error in handleInterestClick:", error);
         toast({
             variant: "destructive",
-            title: "Action Failed",
-            description: error.message || "Could not record your interest. Please try again."
+            title: "Server Error",
+            description: "An unexpected error occurred on the server. Please try again later."
         });
     } finally {
         setIsRating(false);

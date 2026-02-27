@@ -5,9 +5,13 @@ import * as admin from 'firebase-admin';
 // Helper to safely get the Firestore instance with guaranteed initialization
 function getDb() {
   if (!admin.apps.length) {
-    admin.initializeApp({
-      projectId: "studio-7235955659-7c316",
-    });
+    try {
+      admin.initializeApp({
+        projectId: "studio-7235955659-7c316",
+      });
+    } catch (error) {
+      console.error("Firebase Admin initialization error:", error);
+    }
   }
   return admin.firestore();
 }
@@ -31,13 +35,15 @@ export async function checkInterestStatus(roomId: string, userId: string) {
 /**
  * Records a user's interest in a room and "rates" it by incrementing a counter.
  * Uses a transaction to ensure atomic updates.
+ * Returns a result object to avoid "unexpected response" errors on the client.
  */
 export async function recordInterestAction(roomId: string, userId: string, userName: string) {
-  if (!roomId || !userId) throw new Error("Missing required parameters: roomId or userId");
-  
-  const db = getDb();
+  if (!roomId || !userId) {
+    return { success: false, error: "Missing required parameters: roomId or userId" };
+  }
   
   try {
+    const db = getDb();
     const roomRef = db.collection('rooms').doc(roomId);
     const ratingRef = roomRef.collection('ratings').doc(userId);
     
@@ -68,6 +74,9 @@ export async function recordInterestAction(roomId: string, userId: string, userN
     return { success: true };
   } catch (error: any) {
     console.error("CRITICAL ERROR in recordInterestAction:", error);
-    throw new Error(error.message || "Could not record your interest. Please try again later.");
+    return { 
+      success: false, 
+      error: error.message || "Could not record your interest. Please try again later." 
+    };
   }
 }
