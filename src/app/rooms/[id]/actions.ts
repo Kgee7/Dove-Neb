@@ -43,6 +43,7 @@ export async function incrementRoomRating(roomId: string) {
 
 /**
  * Fetches a room's data on the server for metadata generation.
+ * Wrapped in an aggressive try-catch to prevent 500 errors if auth fails.
  */
 export async function getRoom(id: string) {
   if (!id) return null;
@@ -55,14 +56,15 @@ export async function getRoom(id: string) {
     if (!doc.exists) return null;
     return { id: doc.id, ...doc.data() } as any;
   } catch (error) {
-    // If Admin SDK fails (e.g. auth issues in dev), return null to fallback to default metadata
-    console.error("Error fetching room for metadata:", error);
+    // If Admin SDK fails (e.g. auth issues in dev/prototype), return null to fallback to default metadata
+    console.warn("Gracefully handled room metadata fetch failure:", error);
     return null;
   }
 }
 
 /**
  * Fetches a job's data on the server for metadata generation.
+ * Wrapped in an aggressive try-catch to prevent 500 errors if auth fails.
  */
 export async function getJob(id: string) {
   if (!id) return null;
@@ -75,8 +77,8 @@ export async function getJob(id: string) {
     if (!doc.exists) return null;
     return { id: doc.id, ...doc.data() } as any;
   } catch (error) {
-    // If Admin SDK fails (e.g. auth issues in dev), return null to fallback to default metadata
-    console.error("Error fetching job for metadata:", error);
+    // If Admin SDK fails (e.g. auth issues in dev/prototype), return null to fallback to default metadata
+    console.warn("Gracefully handled job metadata fetch failure:", error);
     return null;
   }
 }

@@ -4,11 +4,14 @@ import RoomDetailsClient from './RoomDetailsClient';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
+  
+  // Safely attempt to fetch room data
   const room = await getRoom(id);
   
   if (!room) {
     return {
-      title: 'Room Not Found | Dove Neb',
+      title: 'Space Details | Dove Neb',
+      description: 'Find your next home away from home or permanent residence on Dove Neb.',
     };
   }
 
@@ -20,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       description: room.description.substring(0, 160) + '...',
       type: 'website',
       siteName: 'Dove Neb',
-      // Note: WhatsApp has mixed support for base64 og:image, but we include it as fallback
+      // Provide the actual listing image for the WhatsApp preview
       images: room.images && room.images.length > 0 ? [room.images[0]] : [],
     },
     twitter: {

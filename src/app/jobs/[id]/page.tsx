@@ -4,11 +4,14 @@ import JobDetailsClient from './JobDetailsClient';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
+  
+  // Safely attempt to fetch job data
   const job = await getJob(id);
   
   if (!job) {
     return {
-      title: 'Job Not Found | Dove Neb',
+      title: 'Job Details | Dove Neb',
+      description: 'Explore this career opportunity on Dove Neb - Where Opportunities Take Flight.',
     };
   }
 
