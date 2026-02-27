@@ -34,3 +34,47 @@ export async function incrementRoomRating(roomId: string) {
     return { success: false, error: error.message };
   }
 }
+
+/**
+ * Fetches a room's data on the server for metadata generation.
+ */
+export async function getRoom(id: string) {
+  if (!id) return null;
+  let app: App;
+  if (getApps().length === 0) {
+    app = initializeApp();
+  } else {
+    app = getApps()[0];
+  }
+  const db = getFirestore(app);
+  try {
+    const doc = await db.collection('rooms').doc(id).get();
+    if (!doc.exists) return null;
+    return { id: doc.id, ...doc.data() } as any;
+  } catch (error) {
+    console.error("Error fetching room for metadata:", error);
+    return null;
+  }
+}
+
+/**
+ * Fetches a job's data on the server for metadata generation.
+ */
+export async function getJob(id: string) {
+  if (!id) return null;
+  let app: App;
+  if (getApps().length === 0) {
+    app = initializeApp();
+  } else {
+    app = getApps()[0];
+  }
+  const db = getFirestore(app);
+  try {
+    const doc = await db.collection('jobs').doc(id).get();
+    if (!doc.exists) return null;
+    return { id: doc.id, ...doc.data() } as any;
+  } catch (error) {
+    console.error("Error fetching job for metadata:", error);
+    return null;
+  }
+}
