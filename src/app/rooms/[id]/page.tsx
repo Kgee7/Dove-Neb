@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import { doc } from 'firebase/firestore';
 import { useDoc, useFirestore, useUser } from '@/firebase';
@@ -10,18 +10,14 @@ import Link from 'next/link';
 import FavoriteButton from '@/components/favorite-button';
 import ShareButton from '@/components/share-button';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Loader2, Wifi, Tv, Utensils, Wind, Star, Phone, MessageSquare, Maximize, Mail, Lock } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft, Loader2, Wifi, Tv, Utensils, Wind, Star, Phone, MessageSquare, Maximize, Mail, Lock, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast";
 
@@ -60,8 +56,6 @@ export default function RoomDetailsPage() {
         return;
     }
 
-    // Since we are removing the rating/database record function, 
-    // we simply reveal the contact information for the current session.
     setShowContact(true);
     toast({
         title: "Interest Noted!",
