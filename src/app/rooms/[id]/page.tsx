@@ -24,7 +24,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast";
-import { checkInterestStatus, recordInterestAction } from './actions';
 
 const amenityIcons: { [key: string]: React.ReactNode } = {
     'Wifi': <Wifi className="h-4 w-4" />,
@@ -47,7 +46,6 @@ export default function RoomDetailsPage() {
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showContact, setShowContact] = useState(false);
-  const [isRating, setIsRating] = useState(false);
   
   const roomDocRef = useMemo(() => {
     if (!firestore || !id) return null;
@@ -56,64 +54,19 @@ export default function RoomDetailsPage() {
 
   const { data: room, isLoading } = useDoc<Room>(roomDocRef);
 
-  // Check if user has already expressed interest to reveal contact info automatically
-  useEffect(() => {
-    if (!user || !id) return;
-    
-    const verifyInterest = async () => {
-        try {
-            const hasExpressedInterest = await checkInterestStatus(id, user.uid);
-            if (hasExpressedInterest) {
-                setShowContact(true);
-            }
-        } catch (err) {
-            console.error("Verification error:", err);
-        }
-    };
-    verifyInterest();
-  }, [user, id]);
-
-  const handleInterestClick = async () => {
+  const handleInterestClick = () => {
     if (!user) {
         router.push(`/signup?redirect=${encodeURIComponent(pathname)}`);
         return;
     }
 
-    if (!id) return;
-
-    setIsRating(true);
-    try {
-        const result = await recordInterestAction(
-            id, 
-            user.uid, 
-            user.displayName || user.email?.split('@')[0] || 'Anonymous User'
-        );
-
-        if (result.success) {
-            setShowContact(true);
-            toast({
-                title: "Interest Noted!",
-                description: "Owner contact information revealed. You can now reach out.",
-            });
-        } else {
-            // Handle expected logical errors returned from the server action
-            toast({
-                variant: "destructive",
-                title: "Action Failed",
-                description: result.error || "Could not record your interest. Please try again."
-            });
-        }
-    } catch (error: any) {
-        // Handle unexpected runtime errors or network issues
-        console.error("Unexpected error in handleInterestClick:", error);
-        toast({
-            variant: "destructive",
-            title: "Server Error",
-            description: "An unexpected error occurred on the server. Please try again later."
-        });
-    } finally {
-        setIsRating(false);
-    }
+    // Since we are removing the rating/database record function, 
+    // we simply reveal the contact information for the current session.
+    setShowContact(true);
+    toast({
+        title: "Interest Noted!",
+        description: "Owner contact information revealed. You can now reach out.",
+    });
   };
 
   if (isLoading || isUserLoading) {
@@ -153,14 +106,8 @@ export default function RoomDetailsPage() {
 
                 <div>
                     <h1 className="text-3xl font-bold font-headline mb-1">{room.title}</h1>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className='flex items-center gap-1'>
-                            <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
-                            <span className="font-semibold">
-                                {room.interestCount && room.interestCount > 0 ? `${room.interestCount} Interested` : 'New'}
-                            </span>
-                        </div>
-                        <span>·</span>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <MapPin className="h-4 w-4" />
                         <p>{room.location}, {room.country}</p>
                     </div>
                 </div>
@@ -242,8 +189,7 @@ export default function RoomDetailsPage() {
                                         <div>
                                             <p className="text-sm text-muted-foreground">click the button to contact the owner</p>
                                         </div>
-                                        <Button onClick={handleInterestClick} className="w-full h-12 text-lg font-semibold" disabled={isRating}>
-                                            {isRating && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+                                        <Button onClick={handleInterestClick} className="w-full h-12 text-lg font-semibold">
                                             I am Interested
                                         </Button>
                                     </div>
