@@ -7,7 +7,7 @@
     "runtime": "nodejs18"
   },
   "hosting": {
-    "public": ".next",
+    "public": "dist",
     "rewrites": [
       {
         "source": "**",
