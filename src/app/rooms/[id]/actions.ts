@@ -1,3 +1,4 @@
+
 'use server';
 
 import { getApps, initializeApp, App } from 'firebase-admin/app';
@@ -35,7 +36,6 @@ export async function incrementRoomRating(roomId: string) {
 
     return { success: true };
   } catch (error: any) {
-    // Log only the message to avoid serialization errors during Next.js server-client handoff
     console.error("Server Action Error (incrementRoomRating):", error?.message || "Unknown error");
     return { success: false, error: 'Failed to record rating' };
   }
@@ -56,8 +56,8 @@ export async function getRoom(id: string) {
     if (!doc.exists) return null;
     return { id: doc.id, ...doc.data() } as any;
   } catch (error: any) {
-    // Gracefully fallback to default metadata if credentials are unavailable on the server
-    console.log("Metadata Fetch Warning (getRoom):", error?.message || "Credentials not available");
+    // Gracefully handle failure during metadata generation
+    console.warn("Metadata Fetch Warning (getRoom):", error?.message || "Credentials not available");
     return null;
   }
 }
@@ -77,8 +77,8 @@ export async function getJob(id: string) {
     if (!doc.exists) return null;
     return { id: doc.id, ...doc.data() } as any;
   } catch (error: any) {
-    // Gracefully fallback to default metadata if credentials are unavailable on the server
-    console.log("Metadata Fetch Warning (getJob):", error?.message || "Credentials not available");
+    // Gracefully handle failure during metadata generation
+    console.warn("Metadata Fetch Warning (getJob):", error?.message || "Credentials not available");
     return null;
   }
 }

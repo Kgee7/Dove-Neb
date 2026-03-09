@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '10mb',
     },
   },
+  output: 'standalone',
   images: {
     remotePatterns: [
       {
