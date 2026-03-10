@@ -63,6 +63,7 @@ export default function SupportPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'generate' | 'recreate'>('chat');
+  const [isMounted, setIsMounted] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -71,6 +72,10 @@ export default function SupportPage() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
@@ -113,7 +118,6 @@ export default function SupportPage() {
     e.preventDefault();
     if (!input.trim() && !selectedImage) return;
 
-    // Validation for recreate mode
     if (activeTab === 'recreate' && !selectedImage) {
         toast({ variant: 'destructive', title: 'Image Required', description: 'Please upload an image to optimize.' });
         return;
@@ -180,6 +184,8 @@ export default function SupportPage() {
         default: return "Ask Neb anything or upload an image to optimize...";
     }
   };
+
+  if (!isMounted) return null;
 
   return (
     <div className="container mx-auto max-w-2xl py-12 px-4">

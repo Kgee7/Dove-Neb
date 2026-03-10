@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from "next/image";
@@ -118,28 +117,26 @@ export default function HomePage() {
                 </TabsList>
                 <TabsContent value="jobs" className="mt-0">
                   <CardContent className="p-1 sm:p-1.5">
-                    <form className="flex flex-col sm:flex-row items-center gap-1" onSubmit={handleJobSearch}>
-                      <div className="flex flex-1 w-full items-center bg-muted/30 rounded-md sm:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden">
-                        <div className="flex flex-1 items-center px-2 w-full border-r border-muted-foreground/20">
-                          <Search className="h-3 w-3 text-muted-foreground shrink-0" />
-                          <Input
-                            placeholder="Job title"
-                            className="border-none bg-transparent focus-visible:ring-0 h-7 sm:h-8 text-[10px] sm:text-xs w-full px-2"
-                            value={jobSearch}
-                            onChange={(e) => setJobSearch(e.target.value)}
-                          />
-                        </div>
-                        <div className="flex flex-1 items-center px-2 w-full">
-                          <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-                          <Input
-                            placeholder="Location"
-                            className="border-none bg-transparent focus-visible:ring-0 h-7 sm:h-8 text-[10px] sm:text-xs w-full px-2"
-                            value={jobLoc}
-                            onChange={(e) => setJobLoc(e.target.value)}
-                          />
-                        </div>
+                    <form className="flex items-center gap-1 bg-muted/30 rounded-md sm:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden pr-1" onSubmit={handleJobSearch}>
+                      <div className="flex flex-1 items-center px-2 border-r border-muted-foreground/20 h-8 sm:h-9">
+                        <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <Input
+                          placeholder="Job title"
+                          className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2"
+                          value={jobSearch}
+                          onChange={(e) => setJobSearch(e.target.value)}
+                        />
                       </div>
-                      <Button type="submit" className="w-full sm:w-auto h-7 sm:h-8 px-4 rounded-md sm:rounded-full font-bold text-[10px] sm:text-xs">
+                      <div className="flex flex-1 items-center px-2 h-8 sm:h-9">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <Input
+                          placeholder="Location"
+                          className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2"
+                          value={jobLoc}
+                          onChange={(e) => setJobLoc(e.target.value)}
+                        />
+                      </div>
+                      <Button type="submit" className="h-7 sm:h-8 px-4 rounded-md sm:rounded-full font-bold text-[10px] sm:text-xs">
                         Search
                       </Button>
                     </form>
@@ -147,28 +144,26 @@ export default function HomePage() {
                 </TabsContent>
                 <TabsContent value="rooms" className="mt-0">
                    <CardContent className="p-1 sm:p-1.5">
-                    <form className="flex flex-col sm:flex-row items-center gap-1" onSubmit={handleRoomSearch}>
-                      <div className="flex flex-1 w-full items-center bg-muted/30 rounded-md sm:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden">
-                        <div className="flex flex-1 items-center px-2 w-full border-r border-muted-foreground/20">
-                          <Home className="h-3 w-3 text-muted-foreground shrink-0" />
-                          <Input
-                            placeholder="Type of space"
-                            className="border-none bg-transparent focus-visible:ring-0 h-7 sm:h-8 text-[10px] sm:text-xs w-full px-2"
-                            value={roomSearch}
-                            onChange={(e) => setRoomSearch(e.target.value)}
-                          />
-                        </div>
-                        <div className="flex flex-1 items-center px-2 w-full">
-                          <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-                          <Input
-                            placeholder="Location"
-                            className="border-none bg-transparent focus-visible:ring-0 h-7 sm:h-8 text-[10px] sm:text-xs w-full px-2"
-                            value={roomLoc}
-                            onChange={(e) => setRoomLoc(e.target.value)}
-                          />
-                        </div>
+                    <form className="flex items-center gap-1 bg-muted/30 rounded-md sm:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden pr-1" onSubmit={handleRoomSearch}>
+                      <div className="flex flex-1 items-center px-2 border-r border-muted-foreground/20 h-8 sm:h-9">
+                        <Home className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <Input
+                          placeholder="Type of space"
+                          className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2"
+                          value={roomSearch}
+                          onChange={(e) => setRoomSearch(e.target.value)}
+                        />
                       </div>
-                      <Button type="submit" className="w-full sm:w-auto h-7 sm:h-8 px-4 rounded-md sm:rounded-full font-bold text-[10px] sm:text-xs">
+                      <div className="flex flex-1 items-center px-2 h-8 sm:h-9">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <Input
+                          placeholder="Location"
+                          className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2"
+                          value={roomLoc}
+                          onChange={(e) => setRoomLoc(e.target.value)}
+                        />
+                      </div>
+                      <Button type="submit" className="h-7 sm:h-8 px-4 rounded-md sm:rounded-full font-bold text-[10px] sm:text-xs">
                         Search
                       </Button>
                     </form>

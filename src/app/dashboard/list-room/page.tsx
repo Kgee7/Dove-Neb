@@ -1,16 +1,16 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, useStorage } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { currencies } from '@/lib/currencies';
-
+import { v4 as uuidv4 } from 'uuid';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -37,14 +37,6 @@ const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "
 
 const MAX_IMAGES = 12;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB per image
-const FIRESTORE_MAX_DOC_SIZE = 1048576; // 1MB
-
-const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(new Error('Failed to read file: ' + (error.target?.error?.message || 'Unknown error')));
-    reader.readAsDataURL(file);
-});
 
 const formSchema = z.object({
   listingType: z.enum(['rent', 'sale'], { required_error: 'Please select a listing type.' }),
@@ -74,7 +66,6 @@ const formSchema = z.object({
     path: ['salePrice'],
 });
 
-
 type ListRoomFormValues = z.infer<typeof formSchema>;
 
 type UserProfile = {
@@ -84,6 +75,7 @@ type UserProfile = {
 
 export default function ListRoomPage() {
   const firestore = useFirestore();
+  const storage = useStorage();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
@@ -185,11 +177,11 @@ export default function ListRoomPage() {
   };
 
   const onSubmit = async (data: ListRoomFormValues) => {
-    if (!user || !firestore || !userProfile) {
+    if (!user || !firestore || !userProfile || !storage) {
       toast({
         variant: 'destructive',
-        title: 'Authentication Error',
-        description: 'You must be logged in to list a room.',
+        title: 'Initialization Error',
+        description: 'Services are not ready. Please try again in a moment.',
       });
       return;
     }
@@ -204,11 +196,15 @@ export default function ListRoomPage() {
         const currency = selectedCurrency?.code || 'USD';
         const currencySymbol = selectedCurrency?.symbol || '$';
         
-        const imageBase64s: string[] = [];
+        // Upload images to Storage and get URLs
+        const imageURLs: string[] = [];
         for (const file of data.images) {
             if (file instanceof File) {
-                const base64 = await fileToBase64(file);
-                imageBase64s.push(base64);
+                const imageId = uuidv4();
+                const storageRef = ref(storage, `rooms/${newRoomId}/${imageId}`);
+                const snapshot = await uploadBytes(storageRef, file);
+                const downloadURL = await getDownloadURL(snapshot.ref);
+                imageURLs.push(downloadURL);
             }
         }
 
@@ -228,24 +224,12 @@ export default function ListRoomPage() {
           currencySymbol,
           contactEmail: data.contactEmail || null,
           contactWhatsapp: data.contactWhatsapp || null,
-          images: imageBase64s,
+          images: imageURLs,
           amenities: data.amenities || [],
           interestCount: 0,
           createdAt: new Date(),
         };
         
-        // Firestore document size check
-        const estimatedSize = new TextEncoder().encode(JSON.stringify(roomData)).length;
-        if (estimatedSize >= FIRESTORE_MAX_DOC_SIZE) {
-            toast({
-                variant: 'destructive',
-                title: 'Listing Too Large',
-                description: 'The combined size of your listing details and images is too large for the database. Please use fewer or smaller images.'
-            });
-            setIsLoading(false);
-            return;
-        }
-
         await setDoc(newRoomRef, roomData);
         
         toast({

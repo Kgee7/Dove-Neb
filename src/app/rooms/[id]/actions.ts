@@ -1,4 +1,3 @@
-
 'use server';
 
 import { getApps, initializeApp, App } from 'firebase-admin/app';
@@ -57,7 +56,7 @@ export async function getRoom(id: string) {
     return { id: doc.id, ...doc.data() } as any;
   } catch (error: any) {
     // Gracefully handle failure during metadata generation
-    console.warn("Metadata Fetch Warning (getRoom):", error?.message || "Credentials not available");
+    console.warn("Metadata Fetch Warning (getRoom):", error?.message);
     return null;
   }
 }
@@ -78,7 +77,7 @@ export async function getJob(id: string) {
     return { id: doc.id, ...doc.data() } as any;
   } catch (error: any) {
     // Gracefully handle failure during metadata generation
-    console.warn("Metadata Fetch Warning (getJob):", error?.message || "Credentials not available");
+    console.warn("Metadata Fetch Warning (getJob):", error?.message);
     return null;
   }
 }

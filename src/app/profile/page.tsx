@@ -4,8 +4,9 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useDoc, useFirestore, setDoc } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useDoc, useFirestore, useStorage } from '@/firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -48,16 +49,10 @@ const profileSchema = z.object({
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(new Error('Failed to read file: ' + (error.target?.error?.message || 'Unknown error')));
-    reader.readAsDataURL(file);
-});
-
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const storage = useStorage();
   const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -109,7 +104,7 @@ export default function ProfilePage() {
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user || !userDocRef) return;
+    if (!file || !user || !userDocRef || !storage) return;
     
     if (file.size > MAX_FILE_SIZE) {
         toast({
@@ -131,23 +126,21 @@ export default function ProfilePage() {
 
     setUploading(true);
     try {
-      const photoURL = await fileToBase64(file);
+      const storageRef = ref(storage, `users/${user.uid}/profilePicture`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const photoURL = await getDownloadURL(snapshot.ref);
+      
       await setDoc(userDocRef, { photoURL }, { merge: true });
       toast({
         title: 'Profile Picture Updated',
         description: 'Your new avatar has been saved.',
       });
     } catch (error: any) {
-      let description = 'Could not update profile picture.';
-      if (error.message && error.message.includes('longer than 1048487 bytes')) {
-        description = 'Your image exceed the limit';
-      } else {
-        description = error.message || description;
-      }
+      console.error(error);
       toast({
         variant: 'destructive',
         title: 'Upload Failed',
-        description: description,
+        description: error.message || 'Could not update profile picture.',
       });
     } finally {
       setUploading(false);
@@ -156,7 +149,7 @@ export default function ProfilePage() {
       
   const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user || !userDocRef) return;
+    if (!file || !user || !userDocRef || !storage) return;
 
     if (file.size > MAX_FILE_SIZE) {
         toast({
@@ -179,23 +172,21 @@ export default function ProfilePage() {
 
     setUploadingResume(true);
     try {
-      const resumeURL = await fileToBase64(file);
+      const storageRef = ref(storage, `users/${user.uid}/resume/${file.name}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const resumeURL = await getDownloadURL(snapshot.ref);
+
       await setDoc(userDocRef, { resumeURL }, { merge: true });
       toast({
         title: 'Resume Uploaded',
         description: 'Your resume has been saved successfully.',
       });
     } catch (error: any) {
-      let description = 'Could not upload resume.';
-      if (error.message && error.message.includes('longer than 1048487 bytes')) {
-        description = 'Your resume file exceeds the size limit.';
-      } else {
-        description = error.message || description;
-      }
+      console.error(error);
       toast({
         variant: 'destructive',
         title: 'Upload Failed',
-        description: description,
+        description: error.message || 'Could not upload resume.',
       });
     } finally {
       setUploadingResume(false);
