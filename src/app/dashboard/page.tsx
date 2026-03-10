@@ -20,7 +20,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@/components/ui/button";
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -185,13 +185,13 @@ export default function DashboardPage() {
                 const alreadyNotified = notifications?.find(n => n.relatedListingId === listing.id && n.type === 'expiry_check');
                 if (!alreadyNotified) {
                     const message = listing.type === 'job' 
-                        ? `Your job posting titled "${listing.title}" will expire on ${listing.endDate}. Have you hired a worker for this position?`
-                        : `Your apartment listing "${listing.title}" will expire on ${listing.endDate}. Have you sold this apartment?`;
+                        ? `"${listing.title}" will expire on ${listing.endDate}. Have you hired a worker for this position?`
+                        : `"${listing.title}" will expire on ${listing.endDate}. Have you sold this apartment?`;
 
                     const notifId = uuidv4();
                     setDoc(doc(firestore, 'users', user.uid, 'notifications', notifId), {
                         id: notifId,
-                        title: 'Listing Expiry Check',
+                        title: listing.title,
                         message,
                         type: 'expiry_check',
                         surveyQuestion: message,
@@ -249,7 +249,7 @@ export default function DashboardPage() {
             await setDoc(doc(firestore, 'users', user.uid, 'notifications', followUpId), {
                 id: followUpId,
                 title: 'Listing Scheduled for Removal',
-                message: `Your listing titled "${notif.title}" will automatically be removed from public view within 24 hours.`,
+                message: `"${notif.title}" will automatically be removed from public view within 24 hours.`,
                 type: 'info',
                 read: false,
                 createdAt: new Date()

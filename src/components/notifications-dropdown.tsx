@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo } from 'react';
@@ -104,7 +103,7 @@ export default function NotificationsDropdown() {
           await setDoc(doc(firestore, 'users', user.uid, 'notifications', followUpId), {
               id: followUpId,
               title: 'Listing Scheduled for Removal',
-              message: `Your listing titled "${title}" will automatically be removed from public view within 24 hours.`,
+              message: `"${title}" will automatically be removed from public view within 24 hours.`,
               type: 'info',
               read: false,
               createdAt: new Date()
