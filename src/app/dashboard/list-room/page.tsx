@@ -4,13 +4,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser, useStorage } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { currencies } from '@/lib/currencies';
-import { v4 as uuidv4 } from 'uuid';
+import { fileToBase64, compressImage } from '@/lib/image-utils';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -36,7 +35,6 @@ import { useDoc } from '@/firebase';
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
 const MAX_IMAGES = 12;
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB per image
 
 const formSchema = z.object({
   listingType: z.enum(['rent', 'sale'], { required_error: 'Please select a listing type.' }),
@@ -75,7 +73,6 @@ type UserProfile = {
 
 export default function ListRoomPage() {
   const firestore = useFirestore();
-  const storage = useStorage();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
@@ -124,12 +121,14 @@ export default function ListRoomPage() {
         if (file instanceof File) {
           return URL.createObjectURL(file);
         }
-        return '';
+        return file; // If it's already a base64 string
       }).filter(Boolean);
       setImagePreviews(urls);
       
       return () => {
-        urls.forEach(url => URL.revokeObjectURL(url));
+        urls.forEach(url => {
+            if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+        });
       };
     }
   }, [watchedImages]);
@@ -157,16 +156,6 @@ export default function ListRoomPage() {
         return;
     }
 
-    const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE);
-    if (oversizedFiles.length > 0) {
-        toast({
-            variant: 'destructive',
-            title: 'Some Files Too Large',
-            description: `One or more images are larger than ${MAX_FILE_SIZE / 1024 / 1024}MB. Please upload smaller files.`,
-        });
-        return;
-    }
-
     form.setValue('images', [...currentImages, ...files], { shouldValidate: true });
   };
   
@@ -177,7 +166,7 @@ export default function ListRoomPage() {
   };
 
   const onSubmit = async (data: ListRoomFormValues) => {
-    if (!user || !firestore || !userProfile || !storage) {
+    if (!user || !firestore || !userProfile) {
       toast({
         variant: 'destructive',
         title: 'Initialization Error',
@@ -196,15 +185,15 @@ export default function ListRoomPage() {
         const currency = selectedCurrency?.code || 'USD';
         const currencySymbol = selectedCurrency?.symbol || '$';
         
-        // Upload images to Storage and get URLs
-        const imageURLs: string[] = [];
+        // Convert and compress images to Base64
+        const imageBase64s: string[] = [];
         for (const file of data.images) {
             if (file instanceof File) {
-                const imageId = uuidv4();
-                const storageRef = ref(storage, `rooms/${newRoomId}/${imageId}`);
-                const snapshot = await uploadBytes(storageRef, file);
-                const downloadURL = await getDownloadURL(snapshot.ref);
-                imageURLs.push(downloadURL);
+                const b64 = await fileToBase64(file);
+                const compressed = await compressImage(b64, 800, 600, 0.5); // Aggressive compression for 12 images
+                imageBase64s.push(compressed);
+            } else if (typeof file === 'string') {
+                imageBase64s.push(file);
             }
         }
 
@@ -224,10 +213,10 @@ export default function ListRoomPage() {
           currencySymbol,
           contactEmail: data.contactEmail || null,
           contactWhatsapp: data.contactWhatsapp || null,
-          images: imageURLs,
+          images: imageBase64s,
           amenities: data.amenities || [],
           interestCount: 0,
-          createdAt: new Date(),
+          createdAt: new Date().toISOString(),
         };
         
         await setDoc(newRoomRef, roomData);
@@ -495,14 +484,14 @@ export default function ListRoomPage() {
                           </div>
                       </label>
                       <FormDescription>
-                          Up to {MAX_IMAGES} images. Each under {MAX_FILE_SIZE / 1024 / 1024}MB.
+                          Up to {MAX_IMAGES} images. Each will be optimized for fast loading.
                       </FormDescription>
                       {fieldState.error && <FormMessage />}
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
                           {imagePreviews.map((previewUrl, index) => (
                             <div key={index} className="relative group">
                                   <img src={previewUrl} alt={`preview ${index}`} className="w-full h-24 object-cover rounded-md" />
-                                  <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveImage(index)}>
+                                  <Button variant="destructive" size="icon" type="button" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveImage(index)}>
                                       <Trash2 className="h-4 w-4" />
                                   </Button>
                             </div>

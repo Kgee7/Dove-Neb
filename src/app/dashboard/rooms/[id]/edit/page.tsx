@@ -9,7 +9,8 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Room } from '@/lib/data';
-import { currencies, Currency } from '@/lib/currencies';
+import { currencies } from '@/lib/currencies';
+import { fileToBase64, compressImage } from '@/lib/image-utils';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -24,7 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, ArrowLeft, X } from 'lucide-react';
+import { Loader2, ArrowLeft, X, Trash2, Upload } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -33,6 +34,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
+const MAX_IMAGES = 12;
 
 const formSchema = z.object({
   listingType: z.enum(['rent', 'sale'], { required_error: 'Please select a listing type.' }),
@@ -47,6 +49,7 @@ const formSchema = z.object({
   contactEmail: z.string().email().optional().or(z.literal('')),
   contactWhatsapp: z.string().optional(),
   amenities: z.array(z.string()).optional(),
+  images: z.array(z.any()).min(1, 'At least one image is required.').max(MAX_IMAGES),
 }).refine(data => {
     if (data.listingType === 'rent') return data.priceNight || data.priceMonth;
     return true;
@@ -72,6 +75,7 @@ export default function EditRoomPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [newAmenity, setNewAmenity] = useState('');
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   const roomDocRef = useMemo(() => {
     if (!firestore || !id) return null;
@@ -95,8 +99,11 @@ export default function EditRoomPage() {
       amenities: [],
       contactEmail: '',
       contactWhatsapp: '',
+      images: [],
     },
   });
+
+  const watchedImages = form.watch('images');
 
   useEffect(() => {
     if (room) {
@@ -114,9 +121,28 @@ export default function EditRoomPage() {
         salePrice: room.salePrice || undefined,
         contactEmail: room.contactEmail || '',
         contactWhatsapp: room.contactWhatsapp || '',
+        images: room.images || [],
       });
     }
   }, [room, user, router, form, toast]);
+
+  useEffect(() => {
+    if (watchedImages) {
+      const urls = watchedImages.map(file => {
+        if (file instanceof File) {
+          return URL.createObjectURL(file);
+        }
+        return file; // Base64 string
+      }).filter(Boolean);
+      setImagePreviews(urls);
+      
+      return () => {
+        urls.forEach(url => {
+            if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+        });
+      };
+    }
+  }, [watchedImages]);
   
   const handleAddAmenity = () => {
     const currentAmenities = form.getValues('amenities') || [];
@@ -131,6 +157,25 @@ export default function EditRoomPage() {
       form.setValue('amenities', currentAmenities.filter(a => a !== amenityToRemove), { shouldValidate: true });
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const currentImages = form.getValues('images') || [];
+    if (currentImages.length + files.length > MAX_IMAGES) {
+        toast({ variant: 'destructive', title: 'Too many images', description: `You can only upload up to ${MAX_IMAGES} images.` });
+        return;
+    }
+
+    form.setValue('images', [...currentImages, ...files], { shouldValidate: true });
+  };
+  
+  const handleRemoveImage = (indexToRemove: number) => {
+      const currentImages = form.getValues('images');
+      const updatedImages = currentImages.filter((_, i) => i !== indexToRemove);
+      form.setValue('images', updatedImages, { shouldValidate: true });
+  };
+
   const onSubmit = async (data: EditRoomFormValues) => {
     if (!user || !roomDocRef) return;
     setIsLoading(true);
@@ -140,6 +185,18 @@ export default function EditRoomPage() {
         const currency = selectedCurrency?.code || 'USD';
         const currencySymbol = selectedCurrency?.symbol || '$';
 
+        // Process images
+        const imageBase64s: string[] = [];
+        for (const file of data.images) {
+            if (file instanceof File) {
+                const b64 = await fileToBase64(file);
+                const compressed = await compressImage(b64, 800, 600, 0.5);
+                imageBase64s.push(compressed);
+            } else if (typeof file === 'string') {
+                imageBase64s.push(file);
+            }
+        }
+
         await updateDoc(roomDocRef, {
           ...data,
           priceNight: data.priceNight || null,
@@ -147,6 +204,7 @@ export default function EditRoomPage() {
           salePrice: data.salePrice || null,
           currency,
           currencySymbol,
+          images: imageBase64s,
         });
 
         toast({
@@ -404,6 +462,47 @@ export default function EditRoomPage() {
                     )}
                 />
             </div>
+
+            <FormField
+                control={form.control}
+                name="images"
+                render={({ field, fieldState }) => (
+                <FormItem>
+                    <FormLabel>Room Images</FormLabel>
+                    <FormControl>
+                    <Input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        id="image-upload"
+                        disabled={isLoading}
+                    />
+                    </FormControl>
+                    <label htmlFor="image-upload" className="flex items-center justify-center w-full p-6 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted">
+                        <div className="text-center">
+                            <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
+                            <p className="mt-2 text-sm text-muted-foreground">Click or drag to update images</p>
+                        </div>
+                    </label>
+                    <FormDescription>
+                        Up to {MAX_IMAGES} images. Each optimized for the database.
+                    </FormDescription>
+                    {fieldState.error && <FormMessage />}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+                        {imagePreviews.map((previewUrl, index) => (
+                        <div key={index} className="relative group">
+                                <img src={previewUrl} alt={`preview ${index}`} className="w-full h-24 object-cover rounded-md" />
+                                <Button variant="destructive" size="icon" type="button" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveImage(index)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                        </div>
+                        ))}
+                    </div>
+                </FormItem>
+                )}
+            />
             
             <FormField
                 control={form.control}
