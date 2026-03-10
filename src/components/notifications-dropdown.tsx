@@ -17,7 +17,7 @@ import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
-import { incrementRoomRating } from '@/app/rooms/[id]/actions';
+import { incrementRoomRating } from '@/app/rooms/[id]/room-actions';
 import { useToast } from '@/hooks/use-toast';
 
 export type Notification = {

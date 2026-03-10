@@ -1,7 +1,5 @@
-'use server';
-
 import { getApps, initializeApp, App } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 
 /**
  * Helper to get or initialize the Firebase Admin App.
@@ -14,30 +12,6 @@ function getAdminApp(): App {
     });
   }
   return getApps()[0];
-}
-
-/**
- * Server Action to securely increment a room's interest/rating count.
- * This runs on the server with administrative privileges.
- */
-export async function incrementRoomRating(roomId: string) {
-  if (!roomId) return { success: false, error: 'No room ID provided' };
-
-  try {
-    const app = getAdminApp();
-    const db = getFirestore(app);
-    const roomRef = db.collection('rooms').doc(roomId);
-    
-    // Atomically increment the interestCount field
-    await roomRef.update({
-      interestCount: FieldValue.increment(1)
-    });
-
-    return { success: true };
-  } catch (error: any) {
-    console.error("Server Action Error (incrementRoomRating):", error?.message || "Unknown error");
-    return { success: false, error: 'Failed to record rating' };
-  }
 }
 
 /**
