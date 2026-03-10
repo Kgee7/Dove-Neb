@@ -1,3 +1,4 @@
+
 'use client';
 import { useRouter } from 'next/navigation';
 import React, { useMemo, useState, useEffect } from 'react';
@@ -20,7 +21,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/button";
+} from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -248,7 +249,7 @@ export default function DashboardPage() {
             const followUpId = uuidv4();
             await setDoc(doc(firestore, 'users', user.uid, 'notifications', followUpId), {
                 id: followUpId,
-                title: 'Listing Scheduled for Removal',
+                title: notif.title,
                 message: `"${notif.title}" will automatically be removed from public view within 24 hours.`,
                 type: 'info',
                 read: false,
