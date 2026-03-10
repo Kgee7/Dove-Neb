@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import React, { useMemo, useState, useEffect } from 'react';
 import { useUser, useFirestore, useDoc, useCollection, where, deleteDoc } from '@/firebase';
-import { doc, collection, query, orderBy, limit, updateDoc, getDocs, setDoc } from 'firebase/firestore';
+import { doc, collection, query, orderBy, limit, updateDoc, getDocs, setDoc, addDoc } from 'firebase/firestore';
 import { Loader2, PlusCircle, Home, BedDouble, Briefcase, Building2, Users, Edit, Trash2, Heart, Bell, HelpCircle, Check, X } from "lucide-react";
 import {
   Card,
@@ -25,7 +25,7 @@ import {
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
-import { format } from 'date-fns';
+import { format, differenceInDays, parseISO, addHours, isAfter } from 'date-fns';
 import { Job } from '@/lib/job-data';
 import { Room } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Notification } from '@/components/notifications-dropdown';
 import { cn } from '@/lib/utils';
 import { incrementRoomRating } from '@/app/rooms/[id]/actions';
+import { v4 as uuidv4 } from 'uuid';
 
 type UserProfile = {
   userType: 'seeker' | 'employer' | 'renter' | 'owner';
@@ -102,7 +103,7 @@ export default function DashboardPage() {
   // Notifications
   const notificationsQuery = useMemo(() => {
     if (!firestore || !user?.uid) return null;
-    return query(collection(firestore, 'users', user.uid, 'notifications'), orderBy('createdAt', 'desc'), limit(10));
+    return query(collection(firestore, 'users', user.uid, 'notifications'), orderBy('createdAt', 'desc'), limit(20));
   }, [firestore, user?.uid]);
   const { data: notifications, isLoading: notificationsLoading } = useCollection<Notification>(notificationsQuery);
 
@@ -150,17 +151,116 @@ export default function DashboardPage() {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
+
+  // Expiry Checker logic
+  useEffect(() => {
+    if (!user || !firestore || isProfileLoading || notificationsLoading || (jobListingsLoading && roomListingsLoading)) return;
+
+    const checkExpiries = async () => {
+        const today = new Date();
+        const listingsToCheck: { id: string, title: string, endDate: string, type: 'job' | 'room' }[] = [];
+
+        jobListings?.forEach(job => {
+            if (job.status === 'active' && job.listingEndDate) {
+                listingsToCheck.push({ id: job.id, title: job.title, endDate: job.listingEndDate, type: 'job' });
+            }
+        });
+
+        roomListings?.forEach(room => {
+            if (room.status === 'active' && room.listingType === 'sale' && room.listingEndDate) {
+                listingsToCheck.push({ id: room.id, title: room.title, endDate: room.listingEndDate, type: 'room' });
+            }
+        });
+
+        for (const listing of listingsToCheck) {
+            const endDate = parseISO(listing.endDate);
+            const daysLeft = differenceInDays(endDate, today);
+
+            // Check if listing is actually expired
+            if (daysLeft < 0) {
+                const docRef = doc(firestore, listing.type === 'job' ? 'jobs' : 'rooms', listing.id);
+                await updateDoc(docRef, { status: 'archived' });
+                continue;
+            }
+
+            // Check if within 3 days and notification not yet sent
+            if (daysLeft <= 3) {
+                const alreadyNotified = notifications?.find(n => n.relatedListingId === listing.id && n.type === 'expiry_check');
+                if (!alreadyNotified) {
+                    const message = listing.type === 'job' 
+                        ? `Your job posting titled "${listing.title}" will expire on ${listing.endDate}. Have you hired a worker for this position?`
+                        : `Your apartment listing "${listing.title}" will expire on ${listing.endDate}. Have you sold this apartment?`;
+
+                    const notifId = uuidv4();
+                    await setDoc(doc(firestore, 'users', user.uid, 'notifications', notifId), {
+                        id: notifId,
+                        title: 'Listing Expiry Check',
+                        message,
+                        type: 'expiry_check',
+                        surveyQuestion: message,
+                        surveyAnswer: null,
+                        relatedListingId: listing.id,
+                        relatedListingType: listing.type,
+                        read: false,
+                        createdAt: new Date()
+                    });
+                }
+            }
+        }
+
+        // Handle auto-removal for pending_removal listings after 24h
+        const pendingRemovals = [
+            ...(jobListings?.filter(j => j.status === 'pending_removal') || []).map(j => ({ ...j, type: 'job' })),
+            ...(roomListings?.filter(r => r.status === 'pending_removal') || []).map(r => ({ ...r, type: 'room' }))
+        ];
+
+        for (const item of pendingRemovals) {
+            if (item.removalDate) {
+                const rDate = item.removalDate.toDate ? item.removalDate.toDate() : new Date(item.removalDate);
+                if (isAfter(new Date(), rDate)) {
+                    const docRef = doc(firestore, (item as any).type === 'job' ? 'jobs' : 'rooms', item.id);
+                    await updateDoc(docRef, { status: 'archived' });
+                }
+            }
+        }
+    };
+
+    checkExpiries();
+  }, [user, firestore, jobListings, roomListings, notifications, isProfileLoading, notificationsLoading, jobListingsLoading, roomListingsLoading]);
   
   const handleSurveyAnswer = async (notifId: string, answer: 'yes' | 'no', roomId?: string) => {
     if (!firestore || !user) return;
     try {
+        const notif = notifications?.find(n => n.id === notifId);
+        
         await updateDoc(doc(firestore, 'users', user.uid, 'notifications', notifId), {
             surveyAnswer: answer,
             read: true,
             message: `Survey complete: You answered "${answer}".`
         });
 
-        if (answer === 'yes' && roomId) {
+        if (notif?.type === 'expiry_check' && answer === 'yes' && notif.relatedListingId) {
+            const collectionName = (notif as any).relatedListingType === 'job' ? 'jobs' : 'rooms';
+            const listingRef = doc(firestore, collectionName, notif.relatedListingId);
+            
+            const removalDate = addHours(new Date(), 24);
+            await updateDoc(listingRef, { 
+                status: 'pending_removal',
+                removalDate: removalDate
+            });
+
+            const followUpId = uuidv4();
+            await setDoc(doc(firestore, 'users', user.uid, 'notifications', followUpId), {
+                id: followUpId,
+                title: 'Listing Scheduled for Removal',
+                message: `Your listing titled "${notif.title}" will automatically be removed from public view within 24 hours.`,
+                type: 'info',
+                read: false,
+                createdAt: new Date()
+            });
+
+            toast({ title: 'Listing Scheduled', description: 'Your listing will be removed from public view within 24 hours.' });
+        } else if (answer === 'yes' && roomId) {
             const result = await incrementRoomRating(roomId);
             if (result.success) {
                 toast({ title: 'Feedback Recorded', description: 'Thank you! Your positive feedback has improved this space\'s rating.' });
@@ -396,8 +496,6 @@ export default function DashboardPage() {
                                             <div className="mt-2">
                                                 {(() => {
                                                     const status = app.status;
-                                                    const jobTitle = app.jobTitle;
-
                                                     switch (status) {
                                                         case 'hired':
                                                             return <p className="text-[10px] sm:text-xs text-green-600 font-semibold">Congratulations! You're hired.</p>;
@@ -448,9 +546,12 @@ export default function DashboardPage() {
                             {jobListings && jobListings.length > 0 ? (
                                 <div className="grid gap-4 md:grid-cols-2">
                                     {jobListings.map(job => (
-                                        <Card key={job.id} className="border-muted/60">
+                                        <Card key={job.id} className={cn("border-muted/60", job.status !== 'active' && "opacity-60 bg-muted/20")}>
                                         <CardHeader className="p-4 pb-2">
-                                            <CardTitle className="text-sm sm:text-base truncate">{job.title}</CardTitle>
+                                            <div className="flex justify-between items-start">
+                                                <CardTitle className="text-sm sm:text-base truncate">{job.title}</CardTitle>
+                                                {job.status !== 'active' && <Badge variant="secondary" className="text-[8px] px-1 h-4">{job.status === 'pending_removal' ? 'Removing' : 'Expired'}</Badge>}
+                                            </div>
                                             <CardDescription className="text-[10px] sm:text-xs">{job.location}</CardDescription>
                                         </CardHeader>
                                         <CardContent className="p-4 pt-0">
@@ -557,13 +658,16 @@ export default function DashboardPage() {
                         {roomListings && roomListings.length > 0 ? (
                             <div className="grid gap-4 md:grid-cols-2">
                                 {roomListings.map(listing => (
-                                    <Card key={listing.id} className="overflow-hidden border-muted/60">
+                                    <Card key={listing.id} className={cn("overflow-hidden border-muted/60", listing.status !== 'active' && "opacity-60 bg-muted/20")}>
                                         <div className="flex h-24 sm:h-28">
                                             <div className="relative w-24 sm:w-32 shrink-0">
                                                 <Image src={listing.images[0]} alt={listing.title} fill className="object-cover" />
                                             </div>
                                             <div className='p-3 flex-1 flex flex-col min-w-0'>
-                                                <h3 className="font-semibold text-xs sm:text-sm truncate">{listing.title}</h3>
+                                                <div className="flex justify-between items-start">
+                                                    <h3 className="font-semibold text-xs sm:text-sm truncate">{listing.title}</h3>
+                                                    {listing.status !== 'active' && <Badge variant="secondary" className="text-[8px] px-1 h-4">{listing.status === 'pending_removal' ? 'Removing' : 'Expired'}</Badge>}
+                                                </div>
                                                 <p className="text-[9px] sm:text-[10px] text-muted-foreground truncate">{listing.location}</p>
                                                 <p className="text-xs font-bold mt-1 text-primary">
                                                     {listing.listingType === 'sale' && listing.salePrice ? `${listing.currencySymbol}${listing.salePrice.toLocaleString()}` : ''}
@@ -621,7 +725,7 @@ export default function DashboardPage() {
                                     <div key={notif.id} className={cn("p-4 space-y-2 group transition-colors", !notif.read && "bg-primary/[0.04]")}>
                                         <div className="flex justify-between items-start gap-2">
                                             <div className="flex items-center gap-2 min-w-0">
-                                                {notif.type === 'survey' ? <HelpCircle className="h-3.5 w-3.5 text-primary shrink-0" /> : <Bell className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                                                {notif.type === 'survey' || notif.type === 'expiry_check' ? <HelpCircle className="h-3.5 w-3.5 text-primary shrink-0" /> : <Bell className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
                                                 <h4 className="font-bold text-[11px] sm:text-xs truncate">{notif.title}</h4>
                                             </div>
                                             <div className="flex items-center gap-1 shrink-0">
@@ -637,7 +741,7 @@ export default function DashboardPage() {
                                         </div>
                                         <p className="text-[11px] leading-relaxed text-muted-foreground">{notif.message}</p>
                                         
-                                        {notif.type === 'survey' && !notif.surveyAnswer && (
+                                        {(notif.type === 'survey' || notif.type === 'expiry_check') && !notif.surveyAnswer && (
                                             <div className="flex gap-2 pt-1">
                                                 <Button size="sm" className="h-7 px-3 text-[10px] flex-1 bg-primary font-bold" onClick={() => handleSurveyAnswer(notif.id, 'yes', notif.roomId)}>
                                                     Yes

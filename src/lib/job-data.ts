@@ -15,6 +15,11 @@ export type Job = {
   applicationEmail?: string;
   applicationWhatsapp?: string;
   employerId: string;
+  listingStartDate: string;
+  listingEndDate: string;
+  status: 'active' | 'pending_removal' | 'archived';
+  removalDate?: any;
+  createdAt: any;
 };
 
 export type JobApplicant = {

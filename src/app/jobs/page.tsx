@@ -1,8 +1,9 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useCollection, useFirestore, useUser } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, where, limit } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Briefcase, Loader2, MapPin, Search } from 'lucide-react';
 import FavoriteButton from '@/components/favorite-button';
 import { useSearchParams } from 'next/navigation';
+import { isWithinInterval, parseISO } from 'date-fns';
 
 function JobsPageClient() {
   const searchParams = useSearchParams();
@@ -27,7 +29,8 @@ function JobsPageClient() {
 
   const jobsQuery = useMemo(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'jobs'), limit(40));
+    // Only fetch active jobs
+    return query(collection(firestore, 'jobs'), where('status', '==', 'active'), limit(100));
   }, [firestore]);
 
   const { data: jobs, isLoading: jobsLoading } = useCollection<Job>(jobsQuery);
@@ -36,6 +39,8 @@ function JobsPageClient() {
 
   const filteredJobs = useMemo(() => {
     if (!jobs) return [];
+    const today = new Date();
+
     return allJobs.filter(job => {
       const term = searchTerm.toLowerCase();
       const lTerm = locationTerm.toLowerCase();
@@ -43,7 +48,20 @@ function JobsPageClient() {
       const titleMatch = job.title?.toLowerCase().includes(term) || job.companyName?.toLowerCase().includes(term);
       const locationMatch = !lTerm || job.location?.toLowerCase().includes(lTerm) || job.country?.toLowerCase().includes(lTerm);
       
-      return titleMatch && locationMatch;
+      // Date and Status Filtering
+      let dateMatch = true;
+      if (job.listingStartDate && job.listingEndDate) {
+          try {
+              dateMatch = isWithinInterval(today, {
+                  start: parseISO(job.listingStartDate),
+                  end: parseISO(job.listingEndDate)
+              });
+          } catch (e) {
+              dateMatch = true;
+          }
+      }
+
+      return titleMatch && locationMatch && dateMatch && job.status === 'active';
     });
   }, [allJobs, searchTerm, locationTerm]);
 

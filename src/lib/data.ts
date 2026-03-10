@@ -1,3 +1,4 @@
+
 import { DocumentData, FirestoreDataConverter } from 'firebase/firestore';
 
 // Basic data structures
@@ -17,7 +18,6 @@ export interface Job {
     location: string;
     description: string;
     postedDate: Date;
-    // Add other relevant job fields
 }
 
 export interface Room {
@@ -39,6 +39,11 @@ export interface Room {
     contactEmail: string | null;
     contactWhatsapp: string | null;
     interestCount?: number;
+    listingStartDate?: string;
+    listingEndDate?: string;
+    status?: 'active' | 'pending_removal' | 'archived';
+    removalDate?: any;
+    createdAt?: any;
 }
 
 // Firestore data converters
@@ -62,6 +67,11 @@ export const roomConverter: FirestoreDataConverter<Room> = {
             contactEmail: room.contactEmail,
             contactWhatsapp: room.contactWhatsapp,
             interestCount: room.interestCount || 0,
+            listingStartDate: room.listingStartDate || null,
+            listingEndDate: room.listingEndDate || null,
+            status: room.status || 'active',
+            removalDate: room.removalDate || null,
+            createdAt: room.createdAt || null,
         };
     },
     fromFirestore(snapshot, options): Room {
@@ -85,6 +95,11 @@ export const roomConverter: FirestoreDataConverter<Room> = {
             contactEmail: data.contactEmail,
             contactWhatsapp: data.contactWhatsapp,
             interestCount: typeof data.interestCount === 'number' ? data.interestCount : 0,
+            listingStartDate: data.listingStartDate,
+            listingEndDate: data.listingEndDate,
+            status: data.status,
+            removalDate: data.removalDate,
+            createdAt: data.createdAt,
         };
     },
 };

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -10,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { currencies } from '@/lib/currencies';
 import { fileToBase64, compressImage } from '@/lib/image-utils';
+import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -49,6 +51,8 @@ const formSchema = z.object({
   contactWhatsapp: z.string().optional(),
   images: z.array(z.any()).min(1, 'At least one image is required.').max(MAX_IMAGES, `You can upload a maximum of ${MAX_IMAGES} images.`),
   amenities: z.array(z.string()).optional(),
+  listingStartDate: z.string().optional(),
+  listingEndDate: z.string().optional(),
 }).refine(data => {
     if (data.listingType === 'rent') return data.priceNight || data.priceMonth;
     return true;
@@ -56,10 +60,10 @@ const formSchema = z.object({
     message: 'For rentals, you must provide at least a nightly or monthly price.',
     path: ['priceNight'],
 }).refine(data => {
-    if (data.listingType === 'sale') return data.salePrice;
+    if (data.listingType === 'sale') return data.salePrice && data.listingStartDate && data.listingEndDate;
     return true;
 }, {
-    message: 'For sales, you must provide a price.',
+    message: 'For sales, you must provide a price and listing dates.',
     path: ['salePrice'],
 });
 
@@ -102,6 +106,8 @@ export default function ListRoomPage() {
       amenities: [],
       contactEmail: '',
       contactWhatsapp: '',
+      listingStartDate: format(new Date(), 'yyyy-MM-dd'),
+      listingEndDate: format(new Date(new Date().setMonth(new Date().getMonth() + 1)), 'yyyy-MM-dd'),
     },
   });
 
@@ -120,7 +126,7 @@ export default function ListRoomPage() {
         if (file instanceof File) {
           return URL.createObjectURL(file);
         }
-        return file; // If it's already a base64 string
+        return file; 
       }).filter(Boolean);
       setImagePreviews(urls);
       
@@ -184,12 +190,11 @@ export default function ListRoomPage() {
         const currency = selectedCurrency?.code || 'USD';
         const currencySymbol = selectedCurrency?.symbol || '$';
         
-        // Convert and compress images to Base64
         const imageBase64s: string[] = [];
         for (const file of data.images) {
             if (file instanceof File) {
                 const b64 = await fileToBase64(file);
-                const compressed = await compressImage(b64, 800, 800, 0.5); // Use aggressive compression to fit 12 images in 1MB
+                const compressed = await compressImage(b64, 800, 800, 0.5); 
                 imageBase64s.push(compressed);
             } else if (typeof file === 'string') {
                 imageBase64s.push(file);
@@ -215,7 +220,10 @@ export default function ListRoomPage() {
           images: imageBase64s,
           amenities: data.amenities || [],
           interestCount: 0,
-          createdAt: new Date().toISOString(),
+          status: 'active',
+          listingStartDate: data.listingType === 'sale' ? data.listingStartDate : null,
+          listingEndDate: data.listingType === 'sale' ? data.listingEndDate : null,
+          createdAt: new Date(),
         };
         
         await setDoc(newRoomRef, roomData);
@@ -246,7 +254,7 @@ export default function ListRoomPage() {
   }
   
   return (
-    <div className="flex min-h-[calc(100vh-8rem)] w-full items-center justify-center">
+    <div className="flex min-h-[calc(100vh-8rem)] w-full items-center justify-center px-4">
       <div className="container max-w-3xl py-12">
         <Card>
           <CardHeader>
@@ -417,6 +425,7 @@ export default function ListRoomPage() {
               )}
 
               {listingType === 'sale' && (
+                  <>
                   <FormField
                     control={form.control}
                     name="salePrice"
@@ -430,6 +439,35 @@ export default function ListRoomPage() {
                       </FormItem>
                     )}
                   />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                        control={form.control}
+                        name="listingStartDate"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Listing Start Date</FormLabel>
+                            <FormControl>
+                            <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="listingEndDate"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Listing End Date</FormLabel>
+                            <FormControl>
+                            <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                  </div>
+                  </>
               )}
                 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

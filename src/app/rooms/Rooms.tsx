@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -6,8 +7,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useCollection, useFirestore } from '@/firebase';
 import { Room } from '@/lib/data';
 import { useState, useMemo, useEffect } from 'react';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, limit } from 'firebase/firestore';
 import FavoriteButton from '@/components/favorite-button';
+import { isWithinInterval, parseISO } from 'date-fns';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
@@ -30,13 +32,15 @@ export default function Rooms() {
 
   const roomsQuery = useMemo(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'rooms'));
+    return query(collection(firestore, 'rooms'), where('status', '==', 'active'), limit(100));
   }, [firestore]);
   
   const { data: rooms, isLoading } = useCollection<Room>(roomsQuery);
 
   const filteredRooms = useMemo(() => {
     if (!rooms) return [];
+    const today = new Date();
+
     return rooms.filter(room => {
       const searchLower = searchTerm.toLowerCase();
       const locLower = locationTerm.toLowerCase();
@@ -49,7 +53,20 @@ export default function Rooms() {
         (room.location && room.location.toLowerCase().includes(locLower)) ||
         (room.country && room.country.toLowerCase().includes(locLower));
 
-      return matchesSearch && matchesLocation;
+      // Expiry filtering for sales
+      let dateMatch = true;
+      if (room.listingType === 'sale' && room.listingStartDate && room.listingEndDate) {
+          try {
+              dateMatch = isWithinInterval(today, {
+                  start: parseISO(room.listingStartDate),
+                  end: parseISO(room.listingEndDate)
+              });
+          } catch (e) {
+              dateMatch = true;
+          }
+      }
+
+      return matchesSearch && matchesLocation && dateMatch && room.status === 'active';
     });
   }, [rooms, searchTerm, locationTerm]);
 

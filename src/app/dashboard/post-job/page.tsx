@@ -9,7 +9,8 @@ import { useFirestore, useUser } from '@/firebase';
 import { addDoc, collection } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { currencies, Currency } from '@/lib/currencies';
+import { currencies } from '@/lib/currencies';
+import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -42,6 +43,8 @@ const formSchema = z.object({
   applicationMethod: z.enum(['email', 'whatsapp'], { required_error: 'Please select an application method.' }),
   applicationEmail: z.string().email('Please enter a valid email.').optional(),
   applicationWhatsapp: z.string().min(10, 'Please enter a valid WhatsApp number.').optional(),
+  listingStartDate: z.string().min(1, 'Start date is required.'),
+  listingEndDate: z.string().min(1, 'End date is required.'),
 }).refine((data) => {
     if (data.applicationMethod === 'email') return !!data.applicationEmail;
     return true;
@@ -81,6 +84,8 @@ export default function PostJobPage() {
       applicationMethod: 'email',
       applicationEmail: '',
       applicationWhatsapp: '',
+      listingStartDate: format(new Date(), 'yyyy-MM-dd'),
+      listingEndDate: format(new Date(new Date().setMonth(new Date().getMonth() + 1)), 'yyyy-MM-dd'),
     },
   });
 
@@ -115,10 +120,11 @@ export default function PostJobPage() {
         applicationEmail: data.applicationMethod === 'email' ? data.applicationEmail : null,
         applicationWhatsapp: data.applicationMethod === 'whatsapp' ? data.applicationWhatsapp : null,
         employerId: user.uid,
+        status: 'active',
         createdAt: new Date(),
       };
 
-      await addDoc(collection(firestore, 'jobs'), jobData);
+      await addDoc(collection(firestore!, 'jobs'), jobData);
 
       toast({
         title: 'Job Posted!',
@@ -147,7 +153,7 @@ export default function PostJobPage() {
 
   return (
     <div className="flex min-h-[calc(100vh-8rem)] w-full items-center justify-center">
-      <div className="container max-w-3xl py-12">
+      <div className="container max-w-3xl py-12 px-4">
         <Card>
           <CardHeader>
             <CardTitle>Post a New Job</CardTitle>
@@ -289,6 +295,38 @@ export default function PostJobPage() {
                     )}
                   />
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="listingStartDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Listing Start Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormDescription>When the listing becomes public.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="listingEndDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Listing End Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormDescription>When the listing expires automatically.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
                   name="description"
@@ -303,7 +341,7 @@ export default function PostJobPage() {
                         />
                       </FormControl>
                       <FormDescription>
-                          Use Markdown for formatting.
+                          Use Markdown for formatting. Supports 5,000+ words.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
