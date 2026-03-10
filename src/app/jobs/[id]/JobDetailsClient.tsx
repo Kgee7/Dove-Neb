@@ -73,13 +73,18 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
 
     if (isProfileLoading) return;
 
-    if (userProfile?.userType !== 'seeker') {
+    // Only block if we are 100% sure they are not a seeker
+    if (userProfile && userProfile.userType === 'employer') {
         toast({ variant: 'destructive', title: 'Only Job Seekers can apply.'});
         return;
     }
     
-    if (!userProfile.resumeURL) {
-        toast({ variant: 'destructive', title: 'Resume Required', description: 'Please upload a resume to your profile before applying.'});
+    if (!userProfile?.resumeURL) {
+        toast({ 
+            variant: 'destructive', 
+            title: 'Resume Required', 
+            description: 'Please upload a resume to your profile before applying.'
+        });
         router.push('/profile');
         return;
     }
@@ -191,9 +196,14 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
   const salarySymbol = job.salaryCurrencySymbol || '$';
 
   const renderApplySection = () => {
-    if (userProfile && userProfile.userType !== 'seeker') {
+    // Hide for the job poster or confirmed employers
+    const isEmployer = user && userProfile && userProfile.userType === 'employer';
+    const isJobPoster = user && job && job.employerId === user.uid;
+
+    if (isEmployer || isJobPoster) {
         return null;
     }
+
     if (hasAlreadyApplied) {
         return (
             <Card className="bg-secondary/10 border-secondary/20">
@@ -210,6 +220,7 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
             </Card>
         );
     }
+
     if (applicationState === 'applied') {
         return (
             <Card className="bg-green-50/50 border-green-100 text-center">
@@ -218,7 +229,7 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
                 </CardHeader>
                 <CardContent className="p-4 sm:p-6 pt-0">
                     <CheckCircle className="mx-auto h-8 w-8 text-green-500 mb-4" />
-                    <p className="text-xs sm:text-sm font-semibold text-muted-foreground mb-3">To finish, please send your CV to:</p>
+                    <p className="text-xs sm:text-sm font-semibold text-muted-foreground mb-3">To finish, please contact the employer:</p>
                     <div className="flex items-center justify-center gap-2 font-mono p-3 bg-background border rounded-lg shadow-sm text-xs sm:text-sm break-all">
                         {job.applicationMethod === 'email' ? <Mail className="h-4 w-4 shrink-0" /> : <MessageSquare className="h-4 w-4 shrink-0" />}
                         <span>{job.applicationMethod === 'email' ? job.applicationEmail : job.applicationWhatsapp}</span>
@@ -227,6 +238,7 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
             </Card>
         );
     }
+
     return (
         <Card className="bg-primary/[0.02] border-primary/10 shadow-md">
             <CardHeader className="text-center p-4 sm:p-6">
@@ -234,8 +246,8 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
                 <CardDescription className="text-xs sm:text-sm">Your profile and resume will be shared with the employer.</CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center p-4 sm:p-6 pt-0">
-                <Button onClick={handleApplyClick} className="w-full max-w-sm h-11 sm:h-12 text-sm sm:text-base font-bold" disabled={applicationState === 'loading' || isProfileLoading}>
-                    {(applicationState === 'loading' || isProfileLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button onClick={handleApplyClick} className="w-full max-w-sm h-11 sm:h-12 text-sm sm:text-base font-bold" disabled={applicationState === 'loading' || (user && isProfileLoading)}>
+                    {(applicationState === 'loading' || (user && isProfileLoading)) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Apply Now
                 </Button>
             </CardContent>
