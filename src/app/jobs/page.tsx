@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { collection, query, where, limit } from 'firebase/firestore';
@@ -16,7 +16,7 @@ import { Briefcase, Loader2, MapPin, Search } from 'lucide-react';
 import FavoriteButton from '@/components/favorite-button';
 import { useSearchParams } from 'next/navigation';
 
-export default function JobsPage() {
+function JobsPageClient() {
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
   const [locationTerm, setLocationTerm] = useState(searchParams.get('l') || '');
@@ -196,5 +196,13 @@ function JobCard({ job }: { job: Job }) {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+export default function JobsPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin" /></div>}>
+      <JobsPageClient />
+    </Suspense>
   );
 }

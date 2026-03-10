@@ -31,7 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2 } from "lucide-react";
-import React from "react";
+import React, { Suspense } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const formSchema = z.object({
@@ -46,7 +46,7 @@ const formSchema = z.object({
   }),
 });
 
-export default function SignupPage() {
+function SignupPageClient() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -108,8 +108,6 @@ export default function SignupPage() {
         description: "You will be redirected.",
       });
 
-      // The useEffect will handle redirection once the user state is updated.
-      // No explicit push is needed here if the useEffect is reliable.
     } catch (error: any) {
       console.error(error);
       toast({
@@ -259,5 +257,13 @@ export default function SignupPage() {
         </Link>
       </div>
     </>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="flex h-full w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+      <SignupPageClient />
+    </Suspense>
   );
 }
