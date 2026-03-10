@@ -51,6 +51,8 @@ const formSchema = z.object({
   contactWhatsapp: z.string().optional(),
   amenities: z.array(z.string()).optional(),
   images: z.array(z.any()).min(1, 'At least one image is required.').max(MAX_IMAGES),
+  listingStartDate: z.string().optional(),
+  listingEndDate: z.string().optional(),
 }).refine(data => {
     if (data.listingType === 'rent') return data.priceNight || data.priceMonth;
     return true;
@@ -58,10 +60,10 @@ const formSchema = z.object({
     message: 'For rentals, you must provide at least a nightly or monthly price.',
     path: ['priceNight'],
 }).refine(data => {
-    if (data.listingType === 'sale') return data.salePrice;
+    if (data.listingType === 'sale') return data.salePrice && data.listingStartDate && data.listingEndDate;
     return true;
 }, {
-    message: 'For sales, you must provide a price.',
+    message: 'For sales, you must provide a price and listing dates.',
     path: ['salePrice'],
 });
 
@@ -101,10 +103,13 @@ export default function EditRoomPage() {
       contactEmail: '',
       contactWhatsapp: '',
       images: [],
+      listingStartDate: '',
+      listingEndDate: '',
     },
   });
 
   const watchedImages = form.watch('images');
+  const listingType = form.watch('listingType');
 
   useEffect(() => {
     if (room) {
@@ -123,6 +128,8 @@ export default function EditRoomPage() {
         contactEmail: room.contactEmail || '',
         contactWhatsapp: room.contactWhatsapp || '',
         images: room.images || [],
+        listingStartDate: room.listingStartDate || '',
+        listingEndDate: room.listingEndDate || '',
       });
     }
   }, [room, user, router, form, toast]);
@@ -206,6 +213,8 @@ export default function EditRoomPage() {
           currency,
           currencySymbol,
           images: imageBase64s,
+          listingStartDate: data.listingType === 'sale' ? data.listingStartDate : null,
+          listingEndDate: data.listingType === 'sale' ? data.listingEndDate : null,
         });
 
         toast({
@@ -243,8 +252,6 @@ export default function EditRoomPage() {
       </div>
     );
   }
-  
-  const listingType = form.watch('listingType');
 
   return (
     <div className="container max-w-3xl py-12">
@@ -415,6 +422,7 @@ export default function EditRoomPage() {
             )}
 
             {listingType === 'sale' && (
+                <>
                  <FormField
                   control={form.control}
                   name="salePrice"
@@ -428,6 +436,35 @@ export default function EditRoomPage() {
                     </FormItem>
                   )}
                 />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                        control={form.control}
+                        name="listingStartDate"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Listing Start Date</FormLabel>
+                            <FormControl>
+                            <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="listingEndDate"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Listing End Date</FormLabel>
+                            <FormControl>
+                            <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                </div>
+                </>
             )}
               
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -316,7 +316,9 @@ export default function HomePage() {
                                 </>
                             ) : null}
                         </p>
-                        <Badge variant={room.listingType === 'sale' ? 'default' : 'outline'} className="capitalize text-[8px] sm:text-[9px] py-0 px-2 h-5">{room.listingType}</Badge>
+                        <Badge variant={room.listingType === 'sale' ? 'default' : 'outline'} className="capitalize text-[8px] sm:text-[9px] py-0 px-2 h-5">
+                          {room.listingType === 'sale' ? 'For Sale' : 'For Rent'}
+                        </Badge>
                     </div>
                   </div>
                 </Card>

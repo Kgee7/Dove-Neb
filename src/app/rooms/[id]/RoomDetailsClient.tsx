@@ -23,6 +23,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from '@/components/ui/badge';
 
 const amenityIcons: { [key: string]: React.ReactNode } = {
     'Wifi': <Wifi className="h-4 w-4" />,
@@ -158,7 +159,12 @@ export default function RoomDetailsClient({ id }: RoomDetailsClientProps) {
             <div className="mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="min-w-0">
-                        <h1 className="text-xl sm:text-3xl font-bold font-headline mb-1 line-clamp-2">{room.title}</h1>
+                        <div className="flex items-center gap-3 mb-1">
+                            <h1 className="text-xl sm:text-3xl font-bold font-headline line-clamp-2">{room.title}</h1>
+                            <Badge variant={room.listingType === 'sale' ? 'default' : 'outline'} className="h-6 whitespace-nowrap">
+                                {room.listingType === 'sale' ? 'For Sale' : 'For Rent'}
+                            </Badge>
+                        </div>
                         <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                             <MapPin className="h-3.5 w-3.5 shrink-0" />
                             <p className="truncate">{room.location}, {room.country}</p>
