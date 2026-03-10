@@ -2,7 +2,7 @@
 
 import React, { useState, FormEvent, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Mail, MessageCircle, Send, Bot, User, Loader2, ImagePlus, Download, X, ImageIcon, Sparkles, MessageSquare, Wand2 } from 'lucide-react';
+import { Mail, MessageCircle, Send, Bot, User, Loader2, ImagePlus, Download, X, ImageIcon, MessageSquare, Sparkles, Wand2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supportAgent } from '@/ai/flows/support-agent-flow';
@@ -204,9 +204,18 @@ export default function SupportPage() {
             
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full sm:w-auto">
                 <TabsList className="grid grid-cols-3 h-9">
-                    <TabsTrigger value="chat" className="text-xs"><MessageSquare className="h-3 w-3 mr-1 sm:hidden" /> <span className="hidden sm:inline">Support</span></TabsTrigger>
-                    <TabsTrigger value="generate" className="text-xs"><Sparkles className="h-3 w-3 mr-1" /> <span className="hidden sm:inline">New Image</span></TabsTrigger>
-                    <TabsTrigger value="recreate" className="text-xs"><Wand2 className="h-3 w-3 mr-1" /> <span className="hidden sm:inline">Optimize</span></TabsTrigger>
+                    <TabsTrigger value="chat" className="text-xs">
+                        <MessageSquare className="h-3 w-3 mr-1 sm:hidden" /> 
+                        <span className="hidden sm:inline">Support</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="generate" className="text-xs">
+                        <Sparkles className="h-3 w-3 mr-1" /> 
+                        <span className="hidden sm:inline">New Image</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="recreate" className="text-xs">
+                        <Wand2 className="h-3 w-3 mr-1" /> 
+                        <span className="hidden sm:inline">Optimize</span>
+                    </TabsTrigger>
                 </TabsList>
             </Tabs>
           </div>

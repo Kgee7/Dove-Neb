@@ -151,9 +151,9 @@ export default function ProfilePage() {
     try {
       const resumeURL = await fileToBase64(file);
       
-      // Resumes can be large, so we check size
+      // Resumes can be large, so we check size to avoid Firestore limit
       if (resumeURL.length > 800000) {
-          throw new Error('File is too large for database storage. Please use a smaller PDF.');
+          throw new Error('File is too large for database storage. Please use a smaller PDF (under 500KB).');
       }
 
       await setDoc(userDocRef, { resumeURL }, { merge: true });
@@ -330,21 +330,21 @@ export default function ProfilePage() {
                 
                 {userProfile?.userType === 'seeker' && (
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="p-4 pb-2">
                             <CardTitle className='text-lg'>Resume</CardTitle>
                             <CardDescription>Your resume is used for job applications.</CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-4">
                             <div className="flex flex-col items-start gap-4">
                                <div className="flex items-center gap-4">
                                 {userProfile.resumeURL ? (
-                                    <Button type="button" variant="link" onClick={viewResume}>
+                                    <Button type="button" variant="link" className="p-0 h-auto" onClick={viewResume}>
                                         View Current Resume
                                     </Button>
                                 ) : (
                                     <p className="text-sm text-muted-foreground">No resume uploaded.</p>
                                 )}
-                                <Button type="button" onClick={() => resumeInputRef.current?.click()} disabled={uploadingResume}>
+                                <Button type="button" variant="outline" size="sm" onClick={() => resumeInputRef.current?.click()} disabled={uploadingResume}>
                                     {uploadingResume ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                                     {userProfile.resumeURL ? 'Replace Resume' : 'Upload Resume'}
                                 </Button>
@@ -361,7 +361,7 @@ export default function ProfilePage() {
                     </Card>
                 )}
               
-              <div className="flex justify-end">
+              <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={loading || uploading || uploadingResume}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {loading ? 'Saving...' : 'Save Changes'}

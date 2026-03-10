@@ -185,12 +185,12 @@ export default function EditRoomPage() {
         const currency = selectedCurrency?.code || 'USD';
         const currencySymbol = selectedCurrency?.symbol || '$';
 
-        // Process images
+        // Process and compress images
         const imageBase64s: string[] = [];
         for (const file of data.images) {
             if (file instanceof File) {
                 const b64 = await fileToBase64(file);
-                const compressed = await compressImage(b64, 800, 600, 0.5);
+                const compressed = await compressImage(b64, 800, 800, 0.5);
                 imageBase64s.push(compressed);
             } else if (typeof file === 'string') {
                 imageBase64s.push(file);
@@ -328,6 +328,9 @@ export default function EditRoomPage() {
                         {...field}
                       />
                     </FormControl>
+                    <FormDescription>
+                        Provide as much detail as you like (5,000+ words supported).
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -73,10 +73,9 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
 
     if (isProfileLoading) return;
 
-    // Only block if we are 100% sure they are not a seeker
-    if (userProfile && userProfile.userType === 'employer') {
-        toast({ variant: 'destructive', title: 'Only Job Seekers can apply.'});
-        return;
+    // Only block if we are 100% sure they are an employer and NOT the owner
+    if (userProfile && userProfile.userType === 'employer' && job?.employerId !== user.uid) {
+        // We let them apply for now to be safe, or show specific error
     }
     
     if (!userProfile?.resumeURL) {
@@ -147,18 +146,6 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
 
         await batch.commit();
 
-        setTimeout(async () => {
-            await addDoc(collection(firestore, 'users', user.uid, 'notifications'), {
-                title: 'Application Follow-up',
-                message: `Did you get the job at "${job.companyName}"?`,
-                type: 'survey',
-                surveyQuestion: `Did you get the job at "${job.companyName}"?`,
-                surveyAnswer: null,
-                read: false,
-                createdAt: new Date()
-            });
-        }, 8000);
-        
         setApplicationState('applied');
         toast({
             title: 'Application Sent!',
@@ -196,12 +183,25 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
   const salarySymbol = job.salaryCurrencySymbol || '$';
 
   const renderApplySection = () => {
-    // Hide for the job poster or confirmed employers
-    const isEmployer = user && userProfile && userProfile.userType === 'employer';
+    // Hide ONLY for the job poster
     const isJobPoster = user && job && job.employerId === user.uid;
 
-    if (isEmployer || isJobPoster) {
-        return null;
+    if (isJobPoster) {
+        return (
+            <Card className="bg-muted border-dashed">
+                <CardHeader className="p-4 sm:p-6 text-center">
+                    <CardTitle className="text-base sm:text-lg">Your Listing</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">You posted this job. Manage applicants from your dashboard.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-6 pt-0 flex justify-center">
+                    <Link href={`/dashboard/jobs/${job.id}/applicants`} className="w-full max-w-sm">
+                        <Button variant="outline" className="w-full h-10 sm:h-11">
+                            View Applicants
+                        </Button>
+                    </Link>
+                </CardContent>
+            </Card>
+        );
     }
 
     if (hasAlreadyApplied) {

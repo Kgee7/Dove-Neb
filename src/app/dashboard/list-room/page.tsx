@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, useDoc } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -30,7 +30,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { useDoc } from '@/firebase';
 
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
@@ -190,7 +189,7 @@ export default function ListRoomPage() {
         for (const file of data.images) {
             if (file instanceof File) {
                 const b64 = await fileToBase64(file);
-                const compressed = await compressImage(b64, 800, 600, 0.5); // Aggressive compression for 12 images
+                const compressed = await compressImage(b64, 800, 800, 0.5); // Use aggressive compression to fit 12 images in 1MB
                 imageBase64s.push(compressed);
             } else if (typeof file === 'string') {
                 imageBase64s.push(file);
@@ -324,6 +323,9 @@ export default function ListRoomPage() {
                           {...field}
                         />
                       </FormControl>
+                      <FormDescription>
+                          Provide as much detail as you like (5,000+ words supported).
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -484,7 +486,7 @@ export default function ListRoomPage() {
                           </div>
                       </label>
                       <FormDescription>
-                          Up to {MAX_IMAGES} images. Each will be optimized for fast loading.
+                          Up to {MAX_IMAGES} images. Each optimized for direct storage.
                       </FormDescription>
                       {fieldState.error && <FormMessage />}
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">

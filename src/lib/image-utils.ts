@@ -15,13 +15,13 @@ export const fileToBase64 = (file: File): Promise<string> =>
 
 /**
  * Compresses an image Base64 string using Canvas.
- * Targets a specific quality and dimension to keep Firestore documents under 1MB.
+ * Optimized to keep Firestore documents under 1MB even with 12 images.
  */
 export const compressImage = async (
   base64: string,
-  maxWidth = 1024,
-  maxHeight = 1024,
-  quality = 0.6
+  maxWidth = 800,
+  maxHeight = 800,
+  quality = 0.5
 ): Promise<string> => {
   return new Promise((resolve) => {
     const img = new Image();
