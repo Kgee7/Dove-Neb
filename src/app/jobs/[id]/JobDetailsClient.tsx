@@ -229,7 +229,7 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
                 </CardHeader>
                 <CardContent className="p-4 sm:p-6 pt-0">
                     <CheckCircle className="mx-auto h-8 w-8 text-green-500 mb-4" />
-                    <p className="text-xs sm:text-sm font-semibold text-muted-foreground mb-3">To finish, please contact the employer:</p>
+                    <p className="text-xs sm:text-sm font-semibold text-muted-foreground mb-3">To finish, send your cv/cover letter to:</p>
                     <div className="flex items-center justify-center gap-2 font-mono p-3 bg-background border rounded-lg shadow-sm text-xs sm:text-sm break-all">
                         {job.applicationMethod === 'email' ? <Mail className="h-4 w-4 shrink-0" /> : <MessageSquare className="h-4 w-4 shrink-0" />}
                         <span>{job.applicationMethod === 'email' ? job.applicationEmail : job.applicationWhatsapp}</span>
