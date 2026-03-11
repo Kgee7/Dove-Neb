@@ -138,9 +138,6 @@ function JobCard({ job }: { job: Job }) {
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                     <CardTitle className="text-sm sm:text-lg font-bold leading-tight line-clamp-2">{job.title}</CardTitle>
-                    <Badge variant={job.listingType === 'sale' ? 'default' : 'outline'} className="h-5 text-[8px] uppercase shrink-0">
-                        {job.listingType === 'sale' ? 'For Sale' : 'For Rent'}
-                    </Badge>
                 </div>
                 <CardDescription className="text-[10px] sm:text-sm truncate">{job.companyName}</CardDescription>
             </div>

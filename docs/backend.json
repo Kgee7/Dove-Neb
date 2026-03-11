@@ -47,7 +47,6 @@
         "description": { "type": "string", "description": "A detailed description of the job." },
         "country": { "type": "string", "description": "Country where the job is located." },
         "location": { "type": "string", "description": "Location of the job (e.g., City, State)." },
-        "listingType": { "type": "string", "enum": ["rent", "sale"], "description": "Whether the service/person is for rent or for sale (contract)." },
         "type": { "type": "string", "enum": ["Full-time", "Part-time", "Contract", "Internship", "Remote", "Hybrid"], "description": "Type of employment." },
         "salaryMin": { "type": "number", "description": "Minimum salary for the position." },
         "salaryMax": { "type": "number", "description": "Maximum salary for the position." },
@@ -62,7 +61,7 @@
         "removalDate": { "type": "string", "format": "date-time" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "employerId", "companyName", "title", "description", "country", "location", "type", "applicationMethod", "listingType", "listingStartDate", "listingEndDate"]
+      "required": ["id", "employerId", "companyName", "title", "description", "country", "location", "type", "applicationMethod", "listingStartDate", "listingEndDate"]
     },
     "JobApplication": {
         "title": "Job Application",

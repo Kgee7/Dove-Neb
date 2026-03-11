@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from "next/image";
@@ -123,7 +122,7 @@ export default function HomePage() {
                         <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         <Input
                           placeholder="Job title"
-                          className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2"
+                          className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2 shadow-none"
                           value={jobSearch}
                           onChange={(e) => setJobSearch(e.target.value)}
                         />
@@ -132,7 +131,7 @@ export default function HomePage() {
                         <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         <Input
                           placeholder="Location"
-                          className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2"
+                          className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2 shadow-none"
                           value={jobLoc}
                           onChange={(e) => setJobLoc(e.target.value)}
                         />
@@ -150,7 +149,7 @@ export default function HomePage() {
                         <Home className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         <Input
                           placeholder="Type of space"
-                          className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2"
+                          className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2 shadow-none"
                           value={roomSearch}
                           onChange={(e) => setRoomSearch(e.target.value)}
                         />
@@ -159,7 +158,7 @@ export default function HomePage() {
                         <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         <Input
                           placeholder="Location"
-                          className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2"
+                          className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2 shadow-none"
                           value={roomLoc}
                           onChange={(e) => setRoomLoc(e.target.value)}
                         />
@@ -210,9 +209,6 @@ export default function HomePage() {
                             {job.title}
                             </Link>
                         </h3>
-                        <Badge variant={job.listingType === 'sale' ? 'default' : 'outline'} className="text-[8px] h-4 uppercase shrink-0">
-                            {job.listingType === 'sale' ? 'For Sale' : 'For Rent'}
-                        </Badge>
                     </div>
                     <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center pt-1">
                         <Building2 className="h-3 w-3 mr-1.5 shrink-0" />

@@ -268,9 +268,6 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-3 mb-2">
                     <CardTitle className="text-xl sm:text-3xl font-bold font-headline leading-tight">{job.title}</CardTitle>
-                    <Badge variant={job.listingType === 'sale' ? 'default' : 'outline'} className="h-6">
-                        {job.listingType === 'sale' ? 'For Sale' : 'For Rent'}
-                    </Badge>
                 </div>
                 <CardDescription className="text-base sm:text-lg text-primary font-medium mt-1">{job.companyName}</CardDescription>
               </div>
