@@ -179,6 +179,11 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
   
   const salarySymbol = job.salaryCurrencySymbol || '$';
   const salaryFrequency = job.salaryPeriod === 'hour' ? '/ hour' : '/ month';
+  const salaryInfo = job.salaryMin && job.salaryMax 
+    ? `${salarySymbol}${job.salaryMin.toLocaleString()} - ${salarySymbol}${job.salaryMax.toLocaleString()} ${salaryFrequency}` 
+    : 'Competitive Salary';
+
+  const shareText = `*${job.title}*\n${job.companyName}\n\n📍 ${job.location}, ${job.country}\n💼 ${job.type}\n💰 ${salaryInfo}`;
 
   const renderApplySection = () => {
     const isJobPoster = user && job && job.employerId === user.uid;
@@ -272,7 +277,7 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
                 </div>
                 <CardDescription className="text-base sm:text-lg text-primary font-medium mt-1">{job.companyName}</CardDescription>
               </div>
-              <ShareButton title={job.title} text={`Check out this job: ${job.title} at ${job.companyName}`} className="shrink-0" />
+              <ShareButton title={job.title} text={shareText} className="shrink-0" />
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-2 pt-4 text-xs sm:text-sm text-muted-foreground font-medium">
               <div className="flex items-center gap-1.5">

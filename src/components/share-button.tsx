@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -44,7 +45,10 @@ export default function ShareButton({ title, text, className }: ShareButtonProps
     if (typeof window === 'undefined') return;
 
     const url = window.location.href;
-    const encodedText = encodeURIComponent(`${text}\n\n${url}`);
+    
+    // Formatting the message text for better WhatsApp preview visibility
+    const fullMessageText = `${text}\n\nCheck it out:`;
+    const encodedText = encodeURIComponent(`${fullMessageText}\n${url}`);
 
     switch (platform) {
       case 'whatsapp':

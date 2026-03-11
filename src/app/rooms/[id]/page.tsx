@@ -1,3 +1,4 @@
+
 import { Metadata } from 'next';
 import { getRoom } from './actions';
 import RoomDetailsClient from './RoomDetailsClient';
@@ -15,12 +16,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     };
   }
 
+  const price = room.listingType === 'sale' 
+    ? `${room.currencySymbol}${room.salePrice?.toLocaleString()}` 
+    : `${room.currencySymbol}${room.priceNight?.toLocaleString() || room.priceMonth?.toLocaleString()}${room.priceNight ? '/night' : '/month'}`;
+
   return {
     title: `${room.title} in ${room.location} | Dove Neb`,
-    description: room.description.substring(0, 160) + '...',
+    description: `${room.listingType === 'sale' ? 'Sale' : 'Rent'}: ${room.title} in ${room.location}. Price: ${price}. ${room.description.substring(0, 100)}...`,
     openGraph: {
       title: room.title,
-      description: room.description.substring(0, 160) + '...',
+      description: `Located in ${room.location}. Available for ${room.listingType}. Price: ${price}.`,
       type: 'website',
       siteName: 'Dove Neb',
       // Provide the actual listing image for the WhatsApp preview

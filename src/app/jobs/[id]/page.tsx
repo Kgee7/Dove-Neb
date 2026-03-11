@@ -1,3 +1,4 @@
+
 import { Metadata } from 'next';
 import { getJob } from '@/app/rooms/[id]/actions';
 import JobDetailsClient from './JobDetailsClient';
@@ -15,12 +16,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     };
   }
 
+  const salaryInfo = job.salaryMin && job.salaryMax 
+    ? `${job.salaryCurrencySymbol}${job.salaryMin.toLocaleString()} - ${job.salaryCurrencySymbol}${job.salaryMax.toLocaleString()} / ${job.salaryPeriod}`
+    : 'Competitive Salary';
+
   return {
     title: `${job.title} at ${job.companyName} | Dove Neb`,
-    description: job.description.substring(0, 160) + '...',
+    description: `${job.companyName} is hiring a ${job.title} in ${job.location}. Position type: ${job.type}. Salary: ${salaryInfo}. ${job.description.substring(0, 100)}...`,
     openGraph: {
-      title: `${job.title} | ${job.companyName}`,
-      description: job.description.substring(0, 160) + '...',
+      title: `${job.title} at ${job.companyName}`,
+      description: `${job.companyName} is hiring in ${job.location}. ${job.type} role. ${salaryInfo}.`,
       type: 'website',
       siteName: 'Dove Neb',
     },

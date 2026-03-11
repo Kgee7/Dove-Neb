@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -171,6 +172,12 @@ export default function RoomDetailsClient({ id }: RoomDetailsClientProps) {
     );
   }
 
+  const price = room.listingType === 'sale' 
+    ? `${room.currencySymbol}${room.salePrice?.toLocaleString()}` 
+    : `${room.currencySymbol}${room.priceNight?.toLocaleString() || room.priceMonth?.toLocaleString()}${room.priceNight ? '/night' : '/month'}`;
+
+  const shareText = `*${room.title}*\n\n📍 ${room.location}, ${room.country}\n🏠 ${room.listingType === 'sale' ? 'For Sale' : 'For Rent'}\n💰 ${price}`;
+
   const ownerDisplayName = room.ownerName && room.ownerName.trim() && !room.ownerName.includes('undefined')
     ? `Hosted by ${room.ownerName}` 
     : 'Hosted by a verified owner';
@@ -219,7 +226,7 @@ export default function RoomDetailsClient({ id }: RoomDetailsClientProps) {
             <div className="space-y-4">
                 <div className="relative aspect-[4/3] sm:aspect-video rounded-xl overflow-hidden shadow-2xl bg-background group">
                     {room && <FavoriteButton item={room} itemType="room" />}
-                    {room && <ShareButton title={room.title} text={`Check out this space: ${room.title}`} className="absolute top-2 right-12 z-10 h-8 w-8 rounded-full bg-black/30 hover:bg-black/50 border-none text-white transition-colors" />}
+                    {room && <ShareButton title={room.title} text={shareText} className="absolute top-2 right-12 z-10 h-8 w-8 rounded-full bg-black/30 hover:bg-black/50 border-none text-white transition-colors" />}
                     
                     <div className="relative w-full h-full cursor-pointer" onClick={() => openZoom(activeImageIndex)}>
                         <Image
