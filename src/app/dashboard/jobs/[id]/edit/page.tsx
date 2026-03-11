@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -9,7 +10,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Job } from '@/lib/job-data';
-import { currencies, Currency } from '@/lib/currencies';
+import { currencies } from '@/lib/currencies';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -32,6 +33,7 @@ import { Label } from '@/components/ui/label';
 import { CurrencySelector } from '@/components/currency-selector';
 
 const formSchema = z.object({
+  listingType: z.enum(['rent', 'sale'], { required_error: 'Please select a listing type.' }),
   title: z.string().min(5, 'Title must be at least 5 characters long.'),
   companyName: z.string().min(2, 'Company name is required.'),
   country: z.string().min(2, 'Country is required.'),
@@ -44,6 +46,8 @@ const formSchema = z.object({
   applicationMethod: z.enum(['email', 'whatsapp'], { required_error: 'Please select an application method.' }),
   applicationEmail: z.string().email('Please enter a valid email.').optional(),
   applicationWhatsapp: z.string().min(10, 'Please enter a valid WhatsApp number.').optional(),
+  listingStartDate: z.string().min(1, 'Start date is required.'),
+  listingEndDate: z.string().min(1, 'End date is required.'),
 }).refine((data) => {
     if (data.applicationMethod === 'email') return !!data.applicationEmail;
     return true;
@@ -80,6 +84,7 @@ export default function EditJobPage() {
   const form = useForm<EditJobFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+        listingType: 'rent',
         title: '',
         companyName: '',
         country: '',
@@ -91,6 +96,8 @@ export default function EditJobPage() {
         applicationMethod: 'email',
         applicationEmail: '',
         applicationWhatsapp: '',
+        listingStartDate: '',
+        listingEndDate: '',
     },
   });
 
@@ -105,9 +112,10 @@ export default function EditJobPage() {
       }
       form.reset({
         ...job,
+        listingType: job.listingType || 'rent',
         applicationEmail: job.applicationEmail || '',
         applicationWhatsapp: job.applicationWhatsapp || '',
-        country: (job as any).country || '',
+        country: job.country || '',
         currency: job.salaryCurrency || 'USD',
       });
     }
@@ -185,6 +193,47 @@ export default function EditJobPage() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <FormField
+                    control={form.control}
+                    name="listingType"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>Job Listing Category</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="grid grid-cols-2 gap-4"
+                          >
+                            <FormItem>
+                              <FormControl>
+                                <RadioGroupItem value="rent" id="rent" className="peer sr-only" />
+                              </FormControl>
+                              <Label
+                                htmlFor="rent"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                              >
+                                For Rent
+                              </Label>
+                            </FormItem>
+                            <FormItem>
+                              <FormControl>
+                                <RadioGroupItem value="sale" id="sale" className="peer sr-only" />
+                              </FormControl>
+                              <Label
+                                htmlFor="sale"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                              >
+                                For Sale
+                              </Label>
+                            </FormItem>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+              <FormField
                 control={form.control}
                 name="title"
                 render={({ field }) => (
@@ -244,8 +293,8 @@ export default function EditJobPage() {
                   name="type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Job Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormLabel>Employment Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a job type" />
@@ -309,6 +358,36 @@ export default function EditJobPage() {
                   )}
                 />
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="listingStartDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Listing Start Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="listingEndDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Listing End Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
               <FormField
                 control={form.control}
                 name="description"
@@ -345,13 +424,13 @@ export default function EditJobPage() {
                           <FormControl>
                             <RadioGroupItem value="email" id="email" />
                           </FormControl>
-                          <Label htmlFor="email" className="font-normal">Email</Label>
+                          <Label htmlFor="email" className="font-normal cursor-pointer">Email</Label>
                         </FormItem>
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
                             <RadioGroupItem value="whatsapp" id="whatsapp" />
                           </FormControl>
-                          <Label htmlFor="whatsapp" className="font-normal">WhatsApp</Label>
+                          <Label htmlFor="whatsapp" className="font-normal cursor-pointer">WhatsApp</Label>
                         </FormItem>
                       </RadioGroup>
                     </FormControl>

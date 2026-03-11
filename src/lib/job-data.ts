@@ -5,6 +5,7 @@ export type Job = {
   companyName: string;
   country: string;
   location: string;
+  listingType: 'rent' | 'sale';
   type: 'Full-time' | 'Part-time' | 'Contract' | 'Internship' | 'Remote' | 'Hybrid';
   description: string;
   salaryMin?: number;

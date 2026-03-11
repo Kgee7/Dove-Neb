@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -15,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase, Mail, CheckCircle, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 type UserProfile = {
   firstName: string;
@@ -73,11 +75,6 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
 
     if (isProfileLoading) return;
 
-    // Only block if we are 100% sure they are an employer and NOT the owner
-    if (userProfile && userProfile.userType === 'employer' && job?.employerId !== user.uid) {
-        // We let them apply for now to be safe, or show specific error
-    }
-    
     if (!userProfile?.resumeURL) {
         toast({ 
             variant: 'destructive', 
@@ -183,7 +180,6 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
   const salarySymbol = job.salaryCurrencySymbol || '$';
 
   const renderApplySection = () => {
-    // Hide ONLY for the job poster
     const isJobPoster = user && job && job.employerId === user.uid;
 
     if (isJobPoster) {
@@ -270,7 +266,12 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
           <CardHeader className="p-5 sm:p-8">
             <div className='flex flex-col sm:flex-row justify-between items-start gap-4'>
               <div className="min-w-0 flex-1">
-                <CardTitle className="text-xl sm:text-3xl font-bold font-headline leading-tight">{job.title}</CardTitle>
+                <div className="flex items-center gap-3 mb-2">
+                    <CardTitle className="text-xl sm:text-3xl font-bold font-headline leading-tight">{job.title}</CardTitle>
+                    <Badge variant={job.listingType === 'sale' ? 'default' : 'outline'} className="h-6">
+                        {job.listingType === 'sale' ? 'For Sale' : 'For Rent'}
+                    </Badge>
+                </div>
                 <CardDescription className="text-base sm:text-lg text-primary font-medium mt-1">{job.companyName}</CardDescription>
               </div>
               <ShareButton title={job.title} text={`Check out this job: ${job.title} at ${job.companyName}`} className="shrink-0" />

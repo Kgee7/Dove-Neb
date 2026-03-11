@@ -14,6 +14,7 @@ import { Briefcase, Loader2, MapPin, Search } from 'lucide-react';
 import FavoriteButton from '@/components/favorite-button';
 import { useSearchParams } from 'next/navigation';
 import { isWithinInterval, parseISO } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 function JobsPageClient() {
   const searchParams = useSearchParams();
@@ -135,8 +136,13 @@ function JobCard({ job }: { job: Job }) {
       <CardHeader className="p-4 sm:p-6 pb-2">
         <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-                <CardTitle className="text-sm sm:text-lg font-bold leading-tight line-clamp-2">{job.title}</CardTitle>
-                <CardDescription className="mt-1 text-[10px] sm:text-sm truncate">{job.companyName}</CardDescription>
+                <div className="flex items-center gap-2 mb-1">
+                    <CardTitle className="text-sm sm:text-lg font-bold leading-tight line-clamp-2">{job.title}</CardTitle>
+                    <Badge variant={job.listingType === 'sale' ? 'default' : 'outline'} className="h-5 text-[8px] uppercase shrink-0">
+                        {job.listingType === 'sale' ? 'For Sale' : 'For Rent'}
+                    </Badge>
+                </div>
+                <CardDescription className="text-[10px] sm:text-sm truncate">{job.companyName}</CardDescription>
             </div>
              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg bg-muted flex items-center justify-center font-bold text-xs sm:text-lg shrink-0">
                 {job.companyName?.charAt(0) || '?'}

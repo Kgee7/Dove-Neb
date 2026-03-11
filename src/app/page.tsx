@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from "next/image";
@@ -15,7 +16,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, limit } from 'firebase/firestore';
+import { collection, query, limit, where } from 'firebase/firestore';
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,7 +52,7 @@ export default function HomePage() {
 
   const roomsQuery = useMemo(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'rooms'), limit(6));
+    return query(collection(firestore, 'rooms'), where('status', '==', 'active'), limit(6));
   }, [firestore]);
   
   const { data: rooms, isLoading: roomsLoading } = useCollection<Room>(
@@ -60,7 +61,7 @@ export default function HomePage() {
 
   const jobsQuery = useMemo(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'jobs'), limit(6));
+    return query(collection(firestore, 'jobs'), where('status', '==', 'active'), limit(6));
   }, [firestore]);
 
   const { data: jobs, isLoading: jobsLoading } = useCollection<Job>(
@@ -203,11 +204,16 @@ export default function HomePage() {
                   className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-lg bg-muted/30 border-muted/50"
                 >
                   <div className="p-4 sm:p-6 pb-2 sm:pb-3">
-                    <h3 className="text-sm sm:text-base font-bold line-clamp-1">
-                        <Link href={`/jobs/${job.id}`} className="hover:underline">
-                          {job.title}
-                        </Link>
-                    </h3>
+                    <div className="flex justify-between items-start gap-2 mb-1">
+                        <h3 className="text-sm sm:text-base font-bold line-clamp-1">
+                            <Link href={`/jobs/${job.id}`} className="hover:underline">
+                            {job.title}
+                            </Link>
+                        </h3>
+                        <Badge variant={job.listingType === 'sale' ? 'default' : 'outline'} className="text-[8px] h-4 uppercase shrink-0">
+                            {job.listingType === 'sale' ? 'For Sale' : 'For Rent'}
+                        </Badge>
+                    </div>
                     <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center pt-1">
                         <Building2 className="h-3 w-3 mr-1.5 shrink-0" />
                         <span className="truncate">{job.companyName}</span>
