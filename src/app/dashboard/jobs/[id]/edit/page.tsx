@@ -10,7 +10,9 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Job } from '@/lib/job-data';
-import { currencies, Currency } from '@/lib/currencies';
+import { currencies } from '@/lib/currencies';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -30,6 +32,7 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { CurrencySelector } from '@/components/currency-selector';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters long.'),
@@ -41,9 +44,12 @@ const formSchema = z.object({
   currency: z.string().min(1, 'Currency is required.'),
   salaryMin: z.coerce.number().min(0).optional(),
   salaryMax: z.coerce.number().min(0).optional(),
+  salaryPeriod: z.enum(['month', 'hour']),
   applicationMethod: z.enum(['email', 'whatsapp'], { required_error: 'Please select an application method.' }),
-  applicationEmail: z.string().email('Please enter a valid email.').optional(),
-  applicationWhatsapp: z.string().min(10, 'Please enter a valid WhatsApp number.').optional(),
+  applicationEmail: z.string().email('Please enter a valid email.').optional().or(z.literal('')),
+  applicationWhatsapp: z.string().min(10, 'Please enter a valid WhatsApp number.').optional().or(z.literal('')),
+  listingStartDate: z.string().min(1, 'Start date is required.'),
+  listingEndDate: z.string().min(1, 'End date is required.'),
 }).refine((data) => {
     if (data.applicationMethod === 'email') return !!data.applicationEmail;
     return true;
@@ -68,7 +74,7 @@ export default function EditJobPage() {
   const params = useParams();
   const id = params.id as string;
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const jobDocRef = useMemo(() => {
     if (!firestore || !id) return null;
@@ -88,9 +94,12 @@ export default function EditJobPage() {
         currency: 'USD',
         salaryMin: undefined,
         salaryMax: undefined,
+        salaryPeriod: 'month',
         applicationMethod: 'email',
         applicationEmail: '',
         applicationWhatsapp: '',
+        listingStartDate: '',
+        listingEndDate: '',
     },
   });
 
@@ -107,8 +116,9 @@ export default function EditJobPage() {
         ...job,
         applicationEmail: job.applicationEmail || '',
         applicationWhatsapp: job.applicationWhatsapp || '',
-        country: (job as any).country || '',
+        country: job.country || '',
         currency: job.salaryCurrency || 'USD',
+        salaryPeriod: job.salaryPeriod || 'month',
       });
     }
   }, [job, user, router, form, toast]);
@@ -116,37 +126,37 @@ export default function EditJobPage() {
   const onSubmit = async (data: EditJobFormValues) => {
     if (!user || !jobDocRef) return;
 
-    setIsLoading(true);
+    setIsSubmitting(true);
     
     const selectedCurrency = currencies.find(c => c.code === data.currency);
     const salaryCurrency = selectedCurrency?.code || 'USD';
     const salaryCurrencySymbol = selectedCurrency?.symbol || '$';
 
-    try {
-      const jobData = {
-          ...data,
-          salaryCurrency,
-          salaryCurrencySymbol,
-          applicationEmail: data.applicationMethod === 'email' ? data.applicationEmail : null,
-          applicationWhatsapp: data.applicationMethod === 'whatsapp' ? data.applicationWhatsapp : null,
-      };
+    const jobData = {
+        ...data,
+        salaryCurrency,
+        salaryCurrencySymbol,
+        applicationEmail: data.applicationMethod === 'email' ? data.applicationEmail : null,
+        applicationWhatsapp: data.applicationMethod === 'whatsapp' ? data.applicationWhatsapp : null,
+    };
 
-      await updateDoc(jobDocRef, jobData);
-      toast({
-        title: 'Job Updated!',
-        description: 'Your job listing has been successfully updated.',
+    // Pattern 1: Non-blocking mutation with .catch chain
+    updateDoc(jobDocRef, jobData)
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: jobDocRef.path,
+          operation: 'update',
+          requestResourceData: jobData,
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+        setIsSubmitting(false);
       });
-      router.push('/dashboard');
-    } catch (error: any) {
-      console.error('Error updating job:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Update Failed',
-        description: error.message || 'Could not update your job.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+
+    toast({
+      title: 'Job Updated!',
+      description: 'Your job listing has been successfully updated.',
+    });
+    router.push('/dashboard');
   };
   
   if (isUserLoading || isJobLoading) {
@@ -244,8 +254,8 @@ export default function EditJobPage() {
                   name="type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Job Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormLabel>Employment Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a job type" />
@@ -270,53 +280,113 @@ export default function EditJobPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Currency</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a currency" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {currencies.map(currency => (
-                            <SelectItem key={currency.code} value={currency.code}>
-                              {currency.code} - {currency.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <CurrencySelector 
+                          value={field.value} 
+                          onValueChange={field.onChange} 
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
+                <h3 className="font-semibold text-sm">Salary & Payment</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="salaryMin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Minimum Salary (Optional)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="70000" {...field} value={field.value ?? ''} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="salaryMax"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Maximum Salary (Optional)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="120000" {...field} value={field.value ?? ''} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <FormField
                   control={form.control}
-                  name="salaryMin"
+                  name="salaryPeriod"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Minimum Salary (Optional)</FormLabel>
+                    <FormItem className="space-y-3">
+                      <FormLabel>Pay Period</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="70000" {...field} value={field.value ?? ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="salaryMax"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Maximum Salary (Optional)</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="120000" {...field} value={field.value ?? ''} />
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          className="flex flex-row space-x-4"
+                        >
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="month" id="month" />
+                            </FormControl>
+                            <Label htmlFor="month" className="font-normal cursor-pointer">
+                              Per Month
+                            </Label>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="hour" id="hour" />
+                            </FormControl>
+                            <Label htmlFor="hour" className="font-normal cursor-pointer">
+                              Per Hour
+                            </Label>
+                          </FormItem>
+                        </RadioGroup>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="listingStartDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Listing Start Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="listingEndDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Listing End Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
               <FormField
                 control={form.control}
                 name="description"
@@ -353,13 +423,13 @@ export default function EditJobPage() {
                           <FormControl>
                             <RadioGroupItem value="email" id="email" />
                           </FormControl>
-                          <Label htmlFor="email" className="font-normal">Email</Label>
+                          <Label htmlFor="email" className="font-normal cursor-pointer">Email</Label>
                         </FormItem>
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
                             <RadioGroupItem value="whatsapp" id="whatsapp" />
                           </FormControl>
-                          <Label htmlFor="whatsapp" className="font-normal">WhatsApp</Label>
+                          <Label htmlFor="whatsapp" className="font-normal cursor-pointer">WhatsApp</Label>
                         </FormItem>
                       </RadioGroup>
                     </FormControl>
@@ -376,7 +446,7 @@ export default function EditJobPage() {
                     <FormItem>
                       <FormLabel>Application Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="recruiting@example.com" {...field} value={field.value ?? ''} />
+                        <Input placeholder="recruiting@example.com" {...field} value={field.value || ''} />
                       </FormControl>
                       <FormDescription>
                         Job seekers will send their applications to this email address.
@@ -395,7 +465,7 @@ export default function EditJobPage() {
                     <FormItem>
                       <FormLabel>Application WhatsApp Number</FormLabel>
                       <FormControl>
-                        <Input placeholder="+1234567890" {...field} value={field.value ?? ''} />
+                        <Input placeholder="+1234567890" {...field} value={field.value || ''} />
                       </FormControl>
                       <FormDescription>
                         Job seekers will contact this WhatsApp number. Include the country code.
@@ -405,8 +475,8 @@ export default function EditJobPage() {
                   )}
                 />
               )}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Changes'}
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Changes'}
               </Button>
             </form>
           </Form>

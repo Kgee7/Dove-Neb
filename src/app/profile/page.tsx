@@ -4,11 +4,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useDoc, useFirestore, setDoc } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useDoc, useFirestore } from '@/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-
+import { fileToBase64, compressImage } from '@/lib/image-utils';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -44,15 +44,6 @@ const profileSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   preferredName: z.string().optional(),
-});
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-
-const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(new Error('Failed to read file: ' + (error.target?.error?.message || 'Unknown error')));
-    reader.readAsDataURL(file);
 });
 
 export default function ProfilePage() {
@@ -111,15 +102,6 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file || !user || !userDocRef) return;
     
-    if (file.size > MAX_FILE_SIZE) {
-        toast({
-            variant: 'destructive',
-            title: 'File Too Large',
-            description: `The profile picture must be under ${MAX_FILE_SIZE / 1024 / 1024}MB.`,
-        });
-        return;
-    }
-
     if (!file.type.startsWith('image/')) {
         toast({
             variant: 'destructive',
@@ -131,23 +113,20 @@ export default function ProfilePage() {
 
     setUploading(true);
     try {
-      const photoURL = await fileToBase64(file);
+      const b64 = await fileToBase64(file);
+      const photoURL = await compressImage(b64, 400, 400, 0.7);
+      
       await setDoc(userDocRef, { photoURL }, { merge: true });
       toast({
         title: 'Profile Picture Updated',
         description: 'Your new avatar has been saved.',
       });
     } catch (error: any) {
-      let description = 'Could not update profile picture.';
-      if (error.message && error.message.includes('longer than 1048487 bytes')) {
-        description = 'Your image exceed the limit';
-      } else {
-        description = error.message || description;
-      }
+      console.error(error);
       toast({
         variant: 'destructive',
         title: 'Upload Failed',
-        description: description,
+        description: error.message || 'Could not update profile picture.',
       });
     } finally {
       setUploading(false);
@@ -157,15 +136,6 @@ export default function ProfilePage() {
   const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user || !userDocRef) return;
-
-    if (file.size > MAX_FILE_SIZE) {
-        toast({
-            variant: 'destructive',
-            title: 'File Too Large',
-            description: `The resume file must be under ${MAX_FILE_SIZE / 1024 / 1024}MB.`,
-        });
-        return;
-    }
 
     const allowedResumeTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!allowedResumeTypes.includes(file.type)) {
@@ -180,22 +150,23 @@ export default function ProfilePage() {
     setUploadingResume(true);
     try {
       const resumeURL = await fileToBase64(file);
+      
+      // Resumes can be large, so we check size to avoid Firestore limit
+      if (resumeURL.length > 800000) {
+          throw new Error('File is too large for database storage. Please use a smaller PDF (under 500KB).');
+      }
+
       await setDoc(userDocRef, { resumeURL }, { merge: true });
       toast({
         title: 'Resume Uploaded',
         description: 'Your resume has been saved successfully.',
       });
     } catch (error: any) {
-      let description = 'Could not upload resume.';
-      if (error.message && error.message.includes('longer than 1048487 bytes')) {
-        description = 'Your resume file exceeds the size limit.';
-      } else {
-        description = error.message || description;
-      }
+      console.error(error);
       toast({
         variant: 'destructive',
         title: 'Upload Failed',
-        description: description,
+        description: error.message || 'Could not upload resume.',
       });
     } finally {
       setUploadingResume(false);
@@ -247,7 +218,10 @@ export default function ProfilePage() {
         return;
     }
     try {
-        window.open(userProfile.resumeURL, '_blank');
+        const win = window.open();
+        if (win) {
+            win.document.write('<iframe src="' + userProfile.resumeURL + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
+        }
     } catch (error) {
         toast({ variant: 'destructive', title: 'Could not open resume.'});
         console.error(error);
@@ -356,21 +330,21 @@ export default function ProfilePage() {
                 
                 {userProfile?.userType === 'seeker' && (
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="p-4 pb-2">
                             <CardTitle className='text-lg'>Resume</CardTitle>
                             <CardDescription>Your resume is used for job applications.</CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-4">
                             <div className="flex flex-col items-start gap-4">
                                <div className="flex items-center gap-4">
                                 {userProfile.resumeURL ? (
-                                    <Button type="button" variant="link" onClick={viewResume}>
+                                    <Button type="button" variant="link" className="p-0 h-auto" onClick={viewResume}>
                                         View Current Resume
                                     </Button>
                                 ) : (
                                     <p className="text-sm text-muted-foreground">No resume uploaded.</p>
                                 )}
-                                <Button type="button" onClick={() => resumeInputRef.current?.click()} disabled={uploadingResume}>
+                                <Button type="button" variant="outline" size="sm" onClick={() => resumeInputRef.current?.click()} disabled={uploadingResume}>
                                     {uploadingResume ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                                     {userProfile.resumeURL ? 'Replace Resume' : 'Upload Resume'}
                                 </Button>
@@ -387,7 +361,7 @@ export default function ProfilePage() {
                     </Card>
                 )}
               
-              <div className="flex justify-end">
+              <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={loading || uploading || uploadingResume}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {loading ? 'Saving...' : 'Save Changes'}

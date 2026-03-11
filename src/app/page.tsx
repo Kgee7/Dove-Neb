@@ -16,7 +16,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, limit } from 'firebase/firestore';
+import { collection, query, limit, where } from 'firebase/firestore';
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +52,7 @@ export default function HomePage() {
 
   const roomsQuery = useMemo(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'rooms'), limit(6));
+    return query(collection(firestore, 'rooms'), where('status', '==', 'active'), limit(6));
   }, [firestore]);
   
   const { data: rooms, isLoading: roomsLoading } = useCollection<Room>(
@@ -61,7 +61,7 @@ export default function HomePage() {
 
   const jobsQuery = useMemo(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'jobs'), limit(6));
+    return query(collection(firestore, 'jobs'), where('status', '==', 'active'), limit(6));
   }, [firestore]);
 
   const { data: jobs, isLoading: jobsLoading } = useCollection<Job>(
@@ -118,28 +118,26 @@ export default function HomePage() {
                 </TabsList>
                 <TabsContent value="jobs" className="mt-0">
                   <CardContent className="p-1 sm:p-1.5">
-                    <form className="flex flex-col sm:flex-row items-center gap-1" onSubmit={handleJobSearch}>
-                      <div className="flex flex-1 w-full items-center bg-muted/30 rounded-md sm:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden">
-                        <div className="flex flex-1 items-center px-2 w-full border-r border-muted-foreground/20">
-                          <Search className="h-3 w-3 text-muted-foreground shrink-0" />
-                          <Input
-                            placeholder="Job title"
-                            className="border-none bg-transparent focus-visible:ring-0 h-7 sm:h-8 text-[10px] sm:text-xs w-full px-2"
-                            value={jobSearch}
-                            onChange={(e) => setJobSearch(e.target.value)}
-                          />
-                        </div>
-                        <div className="flex flex-1 items-center px-2 w-full">
-                          <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-                          <Input
-                            placeholder="Location"
-                            className="border-none bg-transparent focus-visible:ring-0 h-7 sm:h-8 text-[10px] sm:text-xs w-full px-2"
-                            value={jobLoc}
-                            onChange={(e) => setJobLoc(e.target.value)}
-                          />
-                        </div>
+                    <form className="flex items-center gap-1 bg-muted/30 rounded-md sm:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden pr-1" onSubmit={handleJobSearch}>
+                      <div className="flex flex-1 items-center px-2 border-r border-muted-foreground/20 h-8 sm:h-9">
+                        <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <Input
+                          placeholder="Job title"
+                          className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2 shadow-none"
+                          value={jobSearch}
+                          onChange={(e) => setJobSearch(e.target.value)}
+                        />
                       </div>
-                      <Button type="submit" className="w-full sm:w-auto h-7 sm:h-8 px-4 rounded-md sm:rounded-full font-bold text-[10px] sm:text-xs">
+                      <div className="flex flex-1 items-center px-2 h-8 sm:h-9">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <Input
+                          placeholder="Location"
+                          className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2 shadow-none"
+                          value={jobLoc}
+                          onChange={(e) => setJobLoc(e.target.value)}
+                        />
+                      </div>
+                      <Button type="submit" className="h-7 sm:h-8 px-4 rounded-md sm:rounded-full font-bold text-[10px] sm:text-xs">
                         Search
                       </Button>
                     </form>
@@ -147,28 +145,26 @@ export default function HomePage() {
                 </TabsContent>
                 <TabsContent value="rooms" className="mt-0">
                    <CardContent className="p-1 sm:p-1.5">
-                    <form className="flex flex-col sm:flex-row items-center gap-1" onSubmit={handleRoomSearch}>
-                      <div className="flex flex-1 w-full items-center bg-muted/30 rounded-md sm:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden">
-                        <div className="flex flex-1 items-center px-2 w-full border-r border-muted-foreground/20">
-                          <Home className="h-3 w-3 text-muted-foreground shrink-0" />
-                          <Input
-                            placeholder="Type of space"
-                            className="border-none bg-transparent focus-visible:ring-0 h-7 sm:h-8 text-[10px] sm:text-xs w-full px-2"
-                            value={roomSearch}
-                            onChange={(e) => setRoomSearch(e.target.value)}
-                          />
-                        </div>
-                        <div className="flex flex-1 items-center px-2 w-full">
-                          <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-                          <Input
-                            placeholder="Location"
-                            className="border-none bg-transparent focus-visible:ring-0 h-7 sm:h-8 text-[10px] sm:text-xs w-full px-2"
-                            value={roomLoc}
-                            onChange={(e) => setRoomLoc(e.target.value)}
-                          />
-                        </div>
+                    <form className="flex items-center gap-1 bg-muted/30 rounded-md sm:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden pr-1" onSubmit={handleRoomSearch}>
+                      <div className="flex flex-1 items-center px-2 border-r border-muted-foreground/20 h-8 sm:h-9">
+                        <Home className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <Input
+                          placeholder="Type of space"
+                          className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2 shadow-none"
+                          value={roomSearch}
+                          onChange={(e) => setRoomSearch(e.target.value)}
+                        />
                       </div>
-                      <Button type="submit" className="w-full sm:w-auto h-7 sm:h-8 px-4 rounded-md sm:rounded-full font-bold text-[10px] sm:text-xs">
+                      <div className="flex flex-1 items-center px-2 h-8 sm:h-9">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <Input
+                          placeholder="Location"
+                          className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2 shadow-none"
+                          value={roomLoc}
+                          onChange={(e) => setRoomLoc(e.target.value)}
+                        />
+                      </div>
+                      <Button type="submit" className="h-7 sm:h-8 px-4 rounded-md sm:rounded-full font-bold text-[10px] sm:text-xs">
                         Search
                       </Button>
                     </form>
@@ -202,17 +198,20 @@ export default function HomePage() {
             <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {jobs?.map((job) => {
                 const salarySymbol = job.salaryCurrencySymbol || '$';
+                const salaryPeriod = job.salaryPeriod === 'hour' ? '/ hr' : '/ mo';
                 return (
                 <Card
                   key={job.id}
                   className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-lg bg-muted/30 border-muted/50"
                 >
                   <div className="p-4 sm:p-6 pb-2 sm:pb-3">
-                    <h3 className="text-sm sm:text-base font-bold line-clamp-1">
-                        <Link href={`/jobs/${job.id}`} className="hover:underline">
-                          {job.title}
-                        </Link>
-                    </h3>
+                    <div className="flex justify-between items-start gap-2 mb-1">
+                        <h3 className="text-sm sm:text-base font-bold line-clamp-1">
+                            <Link href={`/jobs/${job.id}`} className="hover:underline">
+                            {job.title}
+                            </Link>
+                        </h3>
+                    </div>
                     <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center pt-1">
                         <Building2 className="h-3 w-3 mr-1.5 shrink-0" />
                         <span className="truncate">{job.companyName}</span>
@@ -228,7 +227,7 @@ export default function HomePage() {
                         <Badge variant="secondary" className="text-[8px] sm:text-[10px] py-0 h-5">{job.type}</Badge>
                         {(job.salaryMin && job.salaryMax) && (
                           <p className="text-xs sm:text-sm font-semibold">
-                              {salarySymbol}{job.salaryMin/1000}k - {salarySymbol}{job.salaryMax/1000}k
+                              {salarySymbol}{job.salaryMin/1000}k - {salarySymbol}{job.salaryMax/1000}k {salaryPeriod}
                           </p>
                         )}
                     </div>
@@ -321,7 +320,9 @@ export default function HomePage() {
                                 </>
                             ) : null}
                         </p>
-                        <Badge variant={room.listingType === 'sale' ? 'default' : 'outline'} className="capitalize text-[8px] sm:text-[9px] py-0 px-2 h-5">{room.listingType}</Badge>
+                        <Badge variant={room.listingType === 'sale' ? 'default' : 'outline'} className="capitalize text-[8px] sm:text-[9px] py-0 px-2 h-5">
+                          {room.listingType === 'sale' ? 'For Sale' : 'For Rent'}
+                        </Badge>
                     </div>
                   </div>
                 </Card>

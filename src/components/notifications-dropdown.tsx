@@ -1,9 +1,10 @@
+
 'use client';
 
 import React, { useMemo } from 'react';
-import { Bell, Check, Trash2, Info, HelpCircle } from 'lucide-react';
+import { Bell, Trash2, Info, HelpCircle } from 'lucide-react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
-import { collection, query, orderBy, limit, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, orderBy, limit, doc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,18 +17,21 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
-import { incrementRoomRating } from '@/app/rooms/[id]/actions';
+import { formatDistanceToNow, addHours } from 'date-fns';
+import { incrementRoomRating } from '@/app/rooms/[id]/room-actions';
 import { useToast } from '@/hooks/use-toast';
+import { v4 as uuidv4 } from 'uuid';
 
 export type Notification = {
   id: string;
   title: string;
   message: string;
-  type: 'info' | 'survey';
+  type: 'info' | 'survey' | 'expiry_check';
   surveyQuestion?: string;
   surveyAnswer?: 'yes' | 'no' | null;
   roomId?: string; // Optional reference to a room for rating
+  relatedListingId?: string;
+  relatedListingType?: 'job' | 'room';
   read: boolean;
   createdAt: { toDate: () => Date };
 };
@@ -73,21 +77,47 @@ export default function NotificationsDropdown() {
     }
   };
 
-  const handleSurvey = async (e: React.MouseEvent, id: string, answer: 'yes' | 'no', roomId?: string) => {
+  const handleSurvey = async (e: React.MouseEvent, n: Notification, answer: 'yes' | 'no') => {
     e.stopPropagation();
     if (!user || !firestore) return;
+    
+    const { id, type, relatedListingId, relatedListingType, roomId, title } = n;
+
     try {
       await updateDoc(doc(firestore, 'users', user.uid, 'notifications', id), {
         surveyAnswer: answer,
         read: true,
-        message: `You answered "${answer}" to the survey.`
+        message: `Survey complete: You answered "${answer}".`
       });
 
-      if (answer === 'yes' && roomId) {
+      if (type === 'expiry_check' && answer === 'yes' && relatedListingId) {
+          const collectionName = relatedListingType === 'job' ? 'jobs' : 'rooms';
+          const listingRef = doc(firestore, collectionName, relatedListingId);
+          
+          const removalDate = addHours(new Date(), 24);
+          await updateDoc(listingRef, { 
+              status: 'pending_removal',
+              removalDate: removalDate
+          });
+
+          const followUpId = uuidv4();
+          await setDoc(doc(firestore, 'users', user.uid, 'notifications', followUpId), {
+              id: followUpId,
+              title: title,
+              message: `"${title}" will automatically be removed from public view within 24 hours.`,
+              type: 'info',
+              read: false,
+              createdAt: new Date()
+          });
+
+          toast({ title: 'Listing Scheduled', description: 'Your listing will be removed from public view within 24 hours.' });
+      } else if (answer === 'yes' && roomId) {
           const result = await incrementRoomRating(roomId);
           if (result.success) {
               toast({ title: 'Feedback Noted', description: 'Your high rating for this room has been recorded!' });
           }
+      } else {
+          toast({ title: 'Response Saved', description: 'Thank you for your feedback!' });
       }
     } catch (error) {
       console.error('Error answering survey:', error);
@@ -127,7 +157,7 @@ export default function NotificationsDropdown() {
               >
                 <div className="flex w-full items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    {n.type === 'survey' ? <HelpCircle className="h-4 w-4 text-primary" /> : <Info className="h-4 w-4 text-muted-foreground" />}
+                    {n.type === 'survey' || n.type === 'expiry_check' ? <HelpCircle className="h-4 w-4 text-primary" /> : <Info className="h-4 w-4 text-muted-foreground" />}
                     <span className="font-semibold text-xs">{n.title}</span>
                   </div>
                   <button 
@@ -137,16 +167,16 @@ export default function NotificationsDropdown() {
                     <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
                   </button>
                 </div>
-                <p className="text-xs text-muted-foreground line-clamp-2">
+                <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
                   {n.message}
                 </p>
-                {n.type === 'survey' && !n.surveyAnswer && (
-                  <div className="flex gap-2 mt-2 w-full">
-                    <Button size="sm" className="h-7 px-2 text-[10px] flex-1" onClick={(e) => handleSurvey(e, n.id, 'yes', n.roomId)}>Yes</Button>
-                    <Button size="sm" variant="outline" className="h-7 px-2 text-[10px] flex-1" onClick={(e) => handleSurvey(e, n.id, 'no')}>No</Button>
+                {(n.type === 'survey' || n.type === 'expiry_check') && !n.surveyAnswer && (
+                  <div className="flex gap-2 mt-3 w-full">
+                    <Button size="sm" className="h-7 px-2 text-[10px] flex-1 font-bold" onClick={(e) => handleSurvey(e, n, 'yes')}>Yes</Button>
+                    <Button size="sm" variant="outline" className="h-7 px-2 text-[10px] flex-1 font-bold" onClick={(e) => handleSurvey(e, n, 'no')}>No</Button>
                   </div>
                 )}
-                <span className="text-[10px] text-muted-foreground mt-1">
+                <span className="text-[10px] text-muted-foreground mt-2">
                   {formatDistanceToNow(n.createdAt.toDate(), { addSuffix: true })}
                 </span>
               </DropdownMenuItem>

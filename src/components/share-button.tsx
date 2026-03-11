@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -12,7 +13,7 @@ import { Share2, Link as LinkIcon, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-// Inline SVG for WhatsApp icon to avoid dependency issues
+// Inline SVG for WhatsApp icon
 const WhatsAppIcon = () => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -44,7 +45,10 @@ export default function ShareButton({ title, text, className }: ShareButtonProps
     if (typeof window === 'undefined') return;
 
     const url = window.location.href;
-    const encodedText = encodeURIComponent(`${text}\n\n${url}`);
+    
+    // Structured format: Message Body -> Check it out: URL
+    const fullMessageText = `${text}\n\nCheck it out: ${url}`;
+    const encodedText = encodeURIComponent(fullMessageText);
 
     switch (platform) {
       case 'whatsapp':

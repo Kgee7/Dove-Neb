@@ -13,16 +13,16 @@
       "imageHint": "cozy bedroom"
     },
     {
-      "id": "room-2",
-      "description": "A modern apartment with a view of the city skyline.",
-      "imageUrl": "https://images.unsplash.com/photo-1484154218962-a197022b5858?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBhcGFydG1lbnR8ZW58MHx8fHwxNzYxMTg3NDE4fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "modern apartment"
+      "id": "blog-getting-started",
+      "description": "A bright office space representing professional beginnings.",
+      "imageUrl": "https://images.unsplash.com/photo-1497215728101-856f4ea42174?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxicmlnaHQlMjBvZmZpY2V8ZW58MHx8fHwxNzYxMjg4ODAwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "bright office"
     },
     {
-      "id": "room-3",
-      "description": "A rustic cabin bedroom with wooden walls.",
-      "imageUrl": "https://images.unsplash.com/photo-1679147047283-fa6e49ae914d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxydXN0aWMlMjBjYWJpbnxlbnwwfHx8fDE3NjExNjc3NDh8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "rustic cabin"
+      "id": "blog-ai-tools",
+      "description": "Abstract visualization of AI and digital intelligence.",
+      "imageUrl": "https://images.unsplash.com/photo-1677442136019-21780ecad995?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxhcnRpZmljaWFsJTIwaW50ZWxsaWdlbmNlfGVufDB8fHx8MTc2MTI4ODgwMHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "artificial intelligence"
     },
     {
       "id": "job-1",
@@ -35,12 +35,6 @@
       "description": "A team collaborating in a modern office.",
       "imageUrl": "https://images.unsplash.com/photo-1681949103006-70066fb25dfe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx0ZWFtJTIwbWVldGluZ3xlbnwwfHx8fDE3NjEyMTA4MDN8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "team meeting"
-    },
-    {
-      "id": "job-3",
-      "description": "A developer coding at a multi-monitor setup.",
-      "imageUrl": "https://images.unsplash.com/photo-1549692520-acc6669e2f0c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzb2Z0d2FyZSUyMGRldmVsb3BlcnxlbnwwfHx8fDE3NjEyNDk1NzZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "software developer"
     }
   ]
 }

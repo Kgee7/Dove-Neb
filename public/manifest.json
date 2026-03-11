@@ -1,7 +1,7 @@
 {
   "name": "Dove Neb",
   "short_name": "Dove Neb",
-  "description": "Where Opportunities Take Flight - Find jobs and rooms in one modern platform.",
+  "description": "Where Opportunities Take Flight - Job and Room Marketplace",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -10,7 +10,8 @@
     {
       "src": "/logo.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/logo.png",

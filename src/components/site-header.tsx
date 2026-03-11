@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, User as UserIcon, Loader2, Menu, X } from "lucide-react";
+import { LogOut, User as UserIcon, Loader2, Menu, X, HelpCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import NotificationsDropdown from "./notifications-dropdown";
 
@@ -71,6 +71,7 @@ export function SiteHeader() {
   const navLinks = [
     { href: "/jobs", label: "Jobs" },
     { href: "/rooms", label: "Rooms" },
+    { href: "/blog", label: "Blog" },
     { href: "/dashboard", label: "Dashboard", protected: true },
   ];
 
@@ -94,7 +95,7 @@ export function SiteHeader() {
                 href={link.href}
                 className={cn(
                   "transition-colors hover:text-foreground font-medium",
-                  pathname?.startsWith(link.href)
+                  pathname === link.href || pathname?.startsWith(link.href + "/")
                     ? "text-foreground"
                     : "text-foreground/60"
                 )}
@@ -195,6 +196,7 @@ export function SiteHeader() {
           ) : (
             <>
                <div className="hidden lg:flex items-center space-x-2">
+                <Link href="/blog" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors mr-4">Blog</Link>
                 <Link href="/dashboard/list-room">
                     <Button variant="outline" size="sm" className="h-8 px-3 text-xs">
                         Lodge Now
@@ -251,6 +253,7 @@ export function SiteHeader() {
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-3">Explore</p>
                                 <Link href="/jobs" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 text-sm font-medium hover:bg-muted rounded-md">Jobs</Link>
                                 <Link href="/rooms" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 text-sm font-medium hover:bg-muted rounded-md">Rooms</Link>
+                                <Link href="/blog" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 text-sm font-medium hover:bg-muted rounded-md">Blog</Link>
                             </div>
                             <Separator />
                             <div className="space-y-3">

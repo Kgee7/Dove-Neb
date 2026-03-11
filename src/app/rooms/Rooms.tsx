@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -7,15 +6,15 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useCollection, useFirestore } from '@/firebase';
 import { Room } from '@/lib/data';
 import { useState, useMemo, useEffect } from 'react';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, limit } from 'firebase/firestore';
 import FavoriteButton from '@/components/favorite-button';
+import { isWithinInterval, parseISO } from 'date-fns';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Loader2, Search, Star, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function Rooms() {
   const firestore = useFirestore();
@@ -24,7 +23,6 @@ export default function Rooms() {
 
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
   const [locationTerm, setLocationTerm] = useState(searchParams.get('l') || '');
-  const [listingTypeFilter, setListingTypeFilter] = useState(searchParams.get('type') || 'all');
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -33,17 +31,15 @@ export default function Rooms() {
 
   const roomsQuery = useMemo(() => {
     if (!firestore) return null;
-    let q = query(collection(firestore, 'rooms'));
-    if (listingTypeFilter !== 'all') {
-      q = query(q, where('listingType', '==', listingTypeFilter));
-    }
-    return q;
-  }, [firestore, listingTypeFilter]);
+    return query(collection(firestore, 'rooms'), where('status', '==', 'active'), limit(100));
+  }, [firestore]);
   
   const { data: rooms, isLoading } = useCollection<Room>(roomsQuery);
 
   const filteredRooms = useMemo(() => {
     if (!rooms) return [];
+    const today = new Date();
+
     return rooms.filter(room => {
       const searchLower = searchTerm.toLowerCase();
       const locLower = locationTerm.toLowerCase();
@@ -56,16 +52,28 @@ export default function Rooms() {
         (room.location && room.location.toLowerCase().includes(locLower)) ||
         (room.country && room.country.toLowerCase().includes(locLower));
 
-      return matchesSearch && matchesLocation;
+      // Expiry filtering for sales
+      let dateMatch = true;
+      if (room.listingType === 'sale' && room.listingStartDate && room.listingEndDate) {
+          try {
+              dateMatch = isWithinInterval(today, {
+                  start: parseISO(room.listingStartDate),
+                  end: parseISO(room.listingEndDate)
+              });
+          } catch (e) {
+              dateMatch = true;
+          }
+      }
+
+      return matchesSearch && matchesLocation && dateMatch && room.status === 'active';
     });
   }, [rooms, searchTerm, locationTerm]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams(searchParams);
-    if (searchTerm) params.set('q', searchTerm); else params.delete('q');
-    if (locationTerm) params.set('l', locationTerm); else params.delete('l');
-    if (listingTypeFilter !== 'all') params.set('type', listingTypeFilter); else params.delete('type');
+    const params = new URLSearchParams();
+    if (searchTerm) params.set('q', searchTerm);
+    if (locationTerm) params.set('l', locationTerm);
     router.push(`/rooms?${params.toString()}`);
   };
 
@@ -80,46 +88,33 @@ export default function Rooms() {
         </p>
       </div>
 
-       <Card className="mx-auto mb-8 sm:mb-12 max-w-3xl shadow-md bg-background/95 backdrop-blur-sm">
+       <Card className="mx-auto mb-8 sm:mb-12 max-w-2xl shadow-md bg-background/95 backdrop-blur-sm border-none overflow-hidden">
           <CardContent className="p-1 sm:p-1.5">
             {isClient && (
-              <form className="flex flex-col md:flex-row gap-1.5 items-center" onSubmit={handleSearch}>
-                <div className="flex flex-1 w-full items-center bg-muted/30 rounded-md sm:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden">
-                  <div className="flex flex-1 items-center px-2 w-full border-r border-muted-foreground/20">
+              <form className="flex items-center gap-1" onSubmit={handleSearch}>
+                <div className="flex flex-1 items-center bg-muted/30 rounded-md sm:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden h-8 sm:h-9">
+                  <div className="flex flex-1 items-center px-2 border-r border-muted-foreground/20 h-full">
                     <Home className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     <Input
                       placeholder="Space type"
-                      className="border-none bg-transparent focus-visible:ring-0 h-8 sm:h-9 text-[10px] sm:text-xs px-2"
+                      className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
-                  <div className="flex flex-1 items-center px-2 w-full">
+                  <div className="flex flex-1 items-center px-2 h-full">
                     <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     <Input
                       placeholder="Location"
-                      className="border-none bg-transparent focus-visible:ring-0 h-8 sm:h-9 text-[10px] sm:text-xs px-2"
+                      className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2"
                       value={locationTerm}
                       onChange={(e) => setLocationTerm(e.target.value)}
                     />
                   </div>
                 </div>
-                
-                <div className="flex w-full md:w-auto gap-1.5">
-                  <Select value={listingTypeFilter} onValueChange={setListingTypeFilter}>
-                      <SelectTrigger className="h-8 sm:h-9 text-[10px] sm:text-xs rounded-md sm:rounded-full px-3 flex-1 md:w-28">
-                          <SelectValue placeholder="Type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                          <SelectItem value="all">All Types</SelectItem>
-                          <SelectItem value="rent">For Rent</SelectItem>
-                          <SelectItem value="sale">For Sale</SelectItem>
-                      </SelectContent>
-                  </Select>
-                  <Button type="submit" className='h-8 sm:h-9 px-5 rounded-md sm:rounded-full font-bold shrink-0 text-[10px] sm:text-xs'>
-                      Search
-                  </Button>
-                </div>
+                <Button type="submit" className='h-8 sm:h-9 px-5 rounded-md sm:rounded-full font-bold shrink-0 text-[10px] sm:text-xs'>
+                    Search
+                </Button>
               </form>
             )}
           </CardContent>
@@ -188,7 +183,9 @@ export default function Rooms() {
                                 </>
                             ) : 'Contact'}
                         </p>
-                        <Badge variant={room.listingType === 'sale' ? 'default' : 'outline'} className="capitalize text-[8px] sm:text-[9px] py-0 px-2 h-5">{room.listingType}</Badge>
+                        <Badge variant={room.listingType === 'sale' ? 'default' : 'outline'} className="capitalize text-[8px] sm:text-[9px] py-0 px-2 h-5">
+                          {room.listingType === 'sale' ? 'For Sale' : 'For Rent'}
+                        </Badge>
                      </div>
                   </CardContent>
               </Card>
@@ -199,7 +196,6 @@ export default function Rooms() {
               <Button variant="link" size="sm" onClick={() => {
                   setSearchTerm('');
                   setLocationTerm('');
-                  setListingTypeFilter('all');
                   router.push('/rooms');
               }}>Clear all filters</Button>
             </div>

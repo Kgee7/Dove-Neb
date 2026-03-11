@@ -12,11 +12,28 @@
         "lastName": { "type": "string", "description": "The last name of the user." },
         "preferredName": { "type": "string", "description": "The user's preferred name for display." },
         "email": { "type": "string", "format": "email", "description": "The email address of the user." },
-        "photoURL": { "type": "string", "description": "URL of the user's profile picture." },
-        "resumeURL": { "type": "string", "description": "URL of the user's resume." },
+        "photoURL": { "type": "string", "description": "Base64 encoded string of the user's profile picture." },
+        "resumeURL": { "type": "string", "description": "Base64 encoded string of the user's resume." },
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of account creation." }
       },
       "required": ["id", "userType", "firstName", "lastName", "email"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["info", "survey", "expiry_check"] },
+        "surveyQuestion": { "type": "string" },
+        "surveyAnswer": { "type": "string", "enum": ["yes", "no", null] },
+        "relatedListingId": { "type": "string" },
+        "relatedListingType": { "type": "string", "enum": ["job", "room"] },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "message", "type", "read", "createdAt"]
     },
     "Job": {
       "title": "Job",
@@ -35,11 +52,17 @@
         "salaryMax": { "type": "number", "description": "Maximum salary for the position." },
         "salaryCurrency": { "type": "string", "description": "The currency for the salary." },
         "salaryCurrencySymbol": { "type": "string", "description": "The symbol for the salary currency." },
-        "applicationMethod": { "type": "string", "description": "How job seekers should apply. Always 'email'."},
-        "applicationEmail": { "type": "string", "format": "email", "description": "Email for applications."},
+        "salaryPeriod": { "type": "string", "enum": ["month", "hour"], "description": "The pay period for the salary." },
+        "applicationMethod": { "type": "string", "enum": ["email", "whatsapp"], "description": "How job seekers should apply."},
+        "applicationEmail": { "type": "string", "format": "email", "description": "Email for applications. Required if method is 'email'."},
+        "applicationWhatsapp": { "type": "string", "description": "WhatsApp number for applications. Required if method is 'whatsapp'." },
+        "listingStartDate": { "type": "string", "format": "date" },
+        "listingEndDate": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["active", "pending_removal", "archived"], "default": "active" },
+        "removalDate": { "type": "string", "format": "date-time" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "employerId", "companyName", "title", "description", "country", "location", "type", "applicationEmail"]
+      "required": ["id", "employerId", "companyName", "title", "description", "country", "location", "type", "applicationMethod", "listingStartDate", "listingEndDate"]
     },
     "JobApplication": {
         "title": "Job Application",
@@ -52,7 +75,9 @@
             "companyName": { "type": "string" },
             "seekerId": { "type": "string" },
             "status": { "type": "string", "enum": ["pending", "reviewed", "rejected", "hired"] },
-            "appliedAt": { "type": "string", "format": "date-time" }
+            "appliedAt": { "type": "string", "format": "date-time" },
+            "applicationMethod": { "type": "string", "enum": ["email", "whatsapp"] },
+            "applicationContact": { "type": "string" }
         },
         "required": ["id", "jobId", "jobTitle", "companyName", "seekerId", "status", "appliedAt"]
     },
@@ -65,8 +90,8 @@
         "seekerId": { "type": "string" },
         "seekerName": { "type": "string" },
         "seekerEmail": { "type": "string", "format": "email" },
-        "resumeURL": { "type": "string", "format": "uri" },
-        "photoURL": { "type": "string", "format": "uri" },
+        "resumeURL": { "type": "string", "description": "Base64 encoded string of the user's resume." },
+        "photoURL": { "type": "string", "description": "Base64 encoded string of the user's profile picture." },
         "status": { "type": "string", "enum": ["pending", "reviewed", "rejected", "hired"] },
         "appliedAt": { "type": "string", "format": "date-time" }
       },
@@ -90,10 +115,15 @@
         "salePrice": { "type": "number", "description": "Total price if for sale." },
         "currency": { "type": "string" },
         "currencySymbol": { "type": "string" },
-        "contactPhone": { "type": "string" },
+        "contactEmail": { "type": "string", "format": "email" },
         "contactWhatsapp": { "type": "string" },
-        "images": { "type": "array", "items": { "type": "string", "format": "uri" } },
-        "amenities": { "type": "array", "items": { "type": "string" } }
+        "images": { "type": "array", "items": { "type": "string", "description": "Base64 encoded string of a room image." } },
+        "amenities": { "type": "array", "items": { "type": "string" } },
+        "listingStartDate": { "type": "string", "format": "date" },
+        "listingEndDate": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["active", "pending_removal", "archived"], "default": "active" },
+        "removalDate": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "ownerId", "ownerName", "listingType", "title", "description", "country", "location", "images"]
     },
@@ -137,7 +167,7 @@
         "title": { "type": "string" },
         "location": { "type": "string" },
         "country": { "type": "string" },
-        "image": { "type": "string" },
+        "image": { "type": "string", "description": "Base64 encoded string of the room's primary image." },
         "addedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "roomId", "title", "location", "country", "image", "addedAt"]
@@ -151,6 +181,10 @@
       {
         "path": "/users/{userId}",
         "definition": { "schema": { "$ref": "#/entities/User" }, "description": "Stores user profiles." }
+      },
+      {
+        "path": "/users/{userId}/notifications/{notificationId}",
+        "definition": { "schema": { "$ref": "#/entities/Notification" }, "description": "In-app notifications for the user." }
       },
       {
         "path": "/users/{userId}/favoriteJobs/{favoriteId}",

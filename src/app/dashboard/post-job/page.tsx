@@ -6,10 +6,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser } from '@/firebase';
-import { addDoc, collection } from 'firebase/firestore';
+import { collection, doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { currencies, Currency } from '@/lib/currencies';
+import { currencies } from '@/lib/currencies';
+import { format } from 'date-fns';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -28,6 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2 } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { CurrencySelector } from '@/components/currency-selector';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters long.'),
@@ -39,9 +43,12 @@ const formSchema = z.object({
   currency: z.string().min(1, 'Currency is required.'),
   salaryMin: z.coerce.number().min(0).optional(),
   salaryMax: z.coerce.number().min(0).optional(),
+  salaryPeriod: z.enum(['month', 'hour']),
   applicationMethod: z.enum(['email', 'whatsapp'], { required_error: 'Please select an application method.' }),
-  applicationEmail: z.string().email('Please enter a valid email.').optional(),
-  applicationWhatsapp: z.string().min(10, 'Please enter a valid WhatsApp number.').optional(),
+  applicationEmail: z.string().email('Please enter a valid email.').optional().or(z.literal('')),
+  applicationWhatsapp: z.string().min(10, 'Please enter a valid WhatsApp number.').optional().or(z.literal('')),
+  listingStartDate: z.string().min(1, 'Start date is required.'),
+  listingEndDate: z.string().min(1, 'End date is required.'),
 }).refine((data) => {
     if (data.applicationMethod === 'email') return !!data.applicationEmail;
     return true;
@@ -65,7 +72,7 @@ export default function PostJobPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<PostJobFormValues>({
     resolver: zodResolver(formSchema),
@@ -78,9 +85,12 @@ export default function PostJobPage() {
       currency: 'USD',
       salaryMin: undefined,
       salaryMax: undefined,
+      salaryPeriod: 'month',
       applicationMethod: 'email',
       applicationEmail: '',
       applicationWhatsapp: '',
+      listingStartDate: format(new Date(), 'yyyy-MM-dd'),
+      listingEndDate: format(new Date(new Date().setMonth(new Date().getMonth() + 1)), 'yyyy-MM-dd'),
     },
   });
 
@@ -93,48 +103,51 @@ export default function PostJobPage() {
   }, [isUserLoading, user, router]);
 
   const onSubmit = async (data: PostJobFormValues) => {
-    if (!user) {
+    if (!user || !firestore) {
       toast({
         variant: 'destructive',
-        title: 'Authentication Error',
-        description: 'You must be logged in as an employer to post a job.',
+        title: 'Error',
+        description: 'You must be logged in to post a job.',
       });
       return;
     }
-    setIsLoading(true);
+    
+    setIsSubmitting(true);
 
     const selectedCurrency = currencies.find(c => c.code === data.currency);
     const salaryCurrency = selectedCurrency?.code || 'USD';
     const salaryCurrencySymbol = selectedCurrency?.symbol || '$';
 
-    try {
-      const jobData = {
-        ...data,
-        salaryCurrency,
-        salaryCurrencySymbol,
-        applicationEmail: data.applicationMethod === 'email' ? data.applicationEmail : null,
-        applicationWhatsapp: data.applicationMethod === 'whatsapp' ? data.applicationWhatsapp : null,
-        employerId: user.uid,
-        createdAt: new Date(),
-      };
+    const newJobRef = doc(collection(firestore, 'jobs'));
+    const jobData = {
+      ...data,
+      id: newJobRef.id,
+      salaryCurrency,
+      salaryCurrencySymbol,
+      applicationEmail: data.applicationMethod === 'email' ? data.applicationEmail : null,
+      applicationWhatsapp: data.applicationMethod === 'whatsapp' ? data.applicationWhatsapp : null,
+      employerId: user.uid,
+      status: 'active',
+      createdAt: new Date(),
+    };
 
-      await addDoc(collection(firestore, 'jobs'), jobData);
+    // Pattern 1: Non-blocking mutation with .catch chain
+    setDoc(newJobRef, jobData)
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: `jobs/${newJobRef.id}`,
+          operation: 'create',
+          requestResourceData: jobData,
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+        setIsSubmitting(false);
+      });
 
-      toast({
-        title: 'Job Posted!',
-        description: 'Your job listing is now live.',
-      });
-      router.push('/dashboard');
-    } catch (error: any) {
-      console.error('Error posting job:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Posting Failed',
-        description: error.message || 'Could not post your job.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    toast({
+      title: 'Job Posted!',
+      description: 'Your job listing is now live.',
+    });
+    router.push('/dashboard');
   };
   
   if (isUserLoading || !user) {
@@ -147,7 +160,7 @@ export default function PostJobPage() {
 
   return (
     <div className="flex min-h-[calc(100vh-8rem)] w-full items-center justify-center">
-      <div className="container max-w-3xl py-12">
+      <div className="container max-w-3xl py-12 px-4">
         <Card>
           <CardHeader>
             <CardTitle>Post a New Job</CardTitle>
@@ -216,7 +229,7 @@ export default function PostJobPage() {
                     name="type"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Job Type</FormLabel>
+                        <FormLabel>Employment Type</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
@@ -242,53 +255,115 @@ export default function PostJobPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Currency</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a currency" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {currencies.map(currency => (
-                              <SelectItem key={currency.code} value={currency.code}>
-                                {currency.code} - {currency.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <CurrencySelector 
+                            value={field.value} 
+                            onValueChange={field.onChange} 
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
+
+                <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
+                  <h3 className="font-semibold text-sm">Salary & Payment</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="salaryMin"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Minimum Salary (Optional)</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="70000" {...field} value={field.value ?? ''} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="salaryMax"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Maximum Salary (Optional)</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="120000" {...field} value={field.value ?? ''} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="salaryPeriod"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>Pay Period</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-row space-x-4"
+                          >
+                            <FormItem className="flex items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="month" id="month" />
+                              </FormControl>
+                              <Label htmlFor="month" className="font-normal cursor-pointer">
+                                Per Month
+                              </Label>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="hour" id="hour" />
+                              </FormControl>
+                              <Label htmlFor="hour" className="font-normal cursor-pointer">
+                                Per Hour
+                              </Label>
+                            </FormItem>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
-                    name="salaryMin"
+                    name="listingStartDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Minimum Salary (Optional)</FormLabel>
+                        <FormLabel>Listing Start Date</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="70000" {...field} value={field.value ?? ''} />
+                          <Input type="date" {...field} />
                         </FormControl>
+                        <FormDescription>When the listing becomes public.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <FormField
                     control={form.control}
-                    name="salaryMax"
+                    name="listingEndDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Maximum Salary (Optional)</FormLabel>
+                        <FormLabel>Listing End Date</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="120000" {...field} value={field.value ?? ''} />
+                          <Input type="date" {...field} />
                         </FormControl>
+                        <FormDescription>When the listing expires automatically.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
+
                 <FormField
                   control={form.control}
                   name="description"
@@ -303,7 +378,7 @@ export default function PostJobPage() {
                         />
                       </FormControl>
                       <FormDescription>
-                          Use Markdown for formatting.
+                          Use Markdown for formatting. Supports 5,000+ words.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -326,13 +401,13 @@ export default function PostJobPage() {
                             <FormControl>
                               <RadioGroupItem value="email" id="email" />
                             </FormControl>
-                            <Label htmlFor="email" className="font-normal">Email</Label>
+                            <Label htmlFor="email" className="font-normal cursor-pointer">Email</Label>
                           </FormItem>
                           <FormItem className="flex items-center space-x-2">
                             <FormControl>
                               <RadioGroupItem value="whatsapp" id="whatsapp" />
                             </FormControl>
-                            <Label htmlFor="whatsapp" className="font-normal">WhatsApp</Label>
+                            <Label htmlFor="whatsapp" className="font-normal cursor-pointer">WhatsApp</Label>
                           </FormItem>
                         </RadioGroup>
                       </FormControl>
@@ -349,7 +424,7 @@ export default function PostJobPage() {
                       <FormItem>
                         <FormLabel>Application Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="recruiting@example.com" {...field} />
+                          <Input placeholder="recruiting@example.com" {...field} value={field.value || ''} />
                         </FormControl>
                         <FormDescription>
                           Job seekers will send their applications to this email address.
@@ -368,7 +443,7 @@ export default function PostJobPage() {
                       <FormItem>
                         <FormLabel>Application WhatsApp Number</FormLabel>
                         <FormControl>
-                          <Input placeholder="+1234567890" {...field} />
+                          <Input placeholder="+1234567890" {...field} value={field.value || ''} />
                         </FormControl>
                         <FormDescription>
                           Job seekers will contact this WhatsApp number. Include the country code.
@@ -379,8 +454,8 @@ export default function PostJobPage() {
                   />
                 )}
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Post Job'}
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Post Job'}
                 </Button>
               </form>
             </Form>

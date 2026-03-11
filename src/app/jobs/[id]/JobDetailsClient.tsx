@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -15,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase, Mail, CheckCircle, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 type UserProfile = {
   firstName: string;
@@ -73,13 +75,12 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
 
     if (isProfileLoading) return;
 
-    if (userProfile?.userType !== 'seeker') {
-        toast({ variant: 'destructive', title: 'Only Job Seekers can apply.'});
-        return;
-    }
-    
-    if (!userProfile.resumeURL) {
-        toast({ variant: 'destructive', title: 'Resume Required', description: 'Please upload a resume to your profile before applying.'});
+    if (!userProfile?.resumeURL) {
+        toast({ 
+            variant: 'destructive', 
+            title: 'Resume Required', 
+            description: 'Please upload a resume to your profile before applying.'
+        });
         router.push('/profile');
         return;
     }
@@ -142,18 +143,6 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
 
         await batch.commit();
 
-        setTimeout(async () => {
-            await addDoc(collection(firestore, 'users', user.uid, 'notifications'), {
-                title: 'Application Follow-up',
-                message: `Did you get the job at "${job.companyName}"?`,
-                type: 'survey',
-                surveyQuestion: `Did you get the job at "${job.companyName}"?`,
-                surveyAnswer: null,
-                read: false,
-                createdAt: new Date()
-            });
-        }, 8000);
-        
         setApplicationState('applied');
         toast({
             title: 'Application Sent!',
@@ -189,11 +178,34 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
   }
   
   const salarySymbol = job.salaryCurrencySymbol || '$';
+  const salaryFrequency = job.salaryPeriod === 'hour' ? '/ hour' : '/ month';
+  const salaryInfo = job.salaryMin && job.salaryMax 
+    ? `${salarySymbol}${job.salaryMin.toLocaleString()} - ${salarySymbol}${job.salaryMax.toLocaleString()} ${salaryFrequency}` 
+    : 'Competitive Salary';
+
+  const shareText = `*${job.title}*\n${job.companyName}\n\n📍 ${job.location}, ${job.country}\n💼 ${job.type}\n💰 ${salaryInfo}`;
 
   const renderApplySection = () => {
-    if (userProfile && userProfile.userType !== 'seeker') {
-        return null;
+    const isJobPoster = user && job && job.employerId === user.uid;
+
+    if (isJobPoster) {
+        return (
+            <Card className="bg-muted border-dashed">
+                <CardHeader className="p-4 sm:p-6 text-center">
+                    <CardTitle className="text-base sm:text-lg">Your Listing</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">You posted this job. Manage applicants from your dashboard.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-6 pt-0 flex justify-center">
+                    <Link href={`/dashboard/jobs/${job.id}/applicants`} className="w-full max-w-sm">
+                        <Button variant="outline" className="w-full h-10 sm:h-11">
+                            View Applicants
+                        </Button>
+                    </Link>
+                </CardContent>
+            </Card>
+        );
     }
+
     if (hasAlreadyApplied) {
         return (
             <Card className="bg-secondary/10 border-secondary/20">
@@ -210,6 +222,7 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
             </Card>
         );
     }
+
     if (applicationState === 'applied') {
         return (
             <Card className="bg-green-50/50 border-green-100 text-center">
@@ -218,7 +231,7 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
                 </CardHeader>
                 <CardContent className="p-4 sm:p-6 pt-0">
                     <CheckCircle className="mx-auto h-8 w-8 text-green-500 mb-4" />
-                    <p className="text-xs sm:text-sm font-semibold text-muted-foreground mb-3">To finish, please send your CV to:</p>
+                    <p className="text-xs sm:text-sm font-semibold text-muted-foreground mb-3">To finish, send your cv/cover letter to:</p>
                     <div className="flex items-center justify-center gap-2 font-mono p-3 bg-background border rounded-lg shadow-sm text-xs sm:text-sm break-all">
                         {job.applicationMethod === 'email' ? <Mail className="h-4 w-4 shrink-0" /> : <MessageSquare className="h-4 w-4 shrink-0" />}
                         <span>{job.applicationMethod === 'email' ? job.applicationEmail : job.applicationWhatsapp}</span>
@@ -227,6 +240,7 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
             </Card>
         );
     }
+
     return (
         <Card className="bg-primary/[0.02] border-primary/10 shadow-md">
             <CardHeader className="text-center p-4 sm:p-6">
@@ -234,8 +248,8 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
                 <CardDescription className="text-xs sm:text-sm">Your profile and resume will be shared with the employer.</CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center p-4 sm:p-6 pt-0">
-                <Button onClick={handleApplyClick} className="w-full max-w-sm h-11 sm:h-12 text-sm sm:text-base font-bold" disabled={applicationState === 'loading' || isProfileLoading}>
-                    {(applicationState === 'loading' || isProfileLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button onClick={handleApplyClick} className="w-full max-w-sm h-11 sm:h-12 text-sm sm:text-base font-bold" disabled={applicationState === 'loading' || (user && isProfileLoading)}>
+                    {(applicationState === 'loading' || (user && isProfileLoading)) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Apply Now
                 </Button>
             </CardContent>
@@ -258,10 +272,12 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
           <CardHeader className="p-5 sm:p-8">
             <div className='flex flex-col sm:flex-row justify-between items-start gap-4'>
               <div className="min-w-0 flex-1">
-                <CardTitle className="text-xl sm:text-3xl font-bold font-headline leading-tight">{job.title}</CardTitle>
+                <div className="flex items-center gap-3 mb-2">
+                    <CardTitle className="text-xl sm:text-3xl font-bold font-headline leading-tight">{job.title}</CardTitle>
+                </div>
                 <CardDescription className="text-base sm:text-lg text-primary font-medium mt-1">{job.companyName}</CardDescription>
               </div>
-              <ShareButton title={job.title} text={`Check out this job: ${job.title} at ${job.companyName}`} className="shrink-0" />
+              <ShareButton title={job.title} text={shareText} className="shrink-0" />
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-2 pt-4 text-xs sm:text-sm text-muted-foreground font-medium">
               <div className="flex items-center gap-1.5">
@@ -272,7 +288,7 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
               </div>
               {job.salaryMin && job.salaryMax && (
                 <div className="flex items-center gap-1.5">
-                  <DollarSign className="h-4 w-4 text-primary/60" /> {salarySymbol}{job.salaryMin.toLocaleString()} - {salarySymbol}{job.salaryMax.toLocaleString()}
+                  <DollarSign className="h-4 w-4 text-primary/60" /> {salarySymbol}{job.salaryMin.toLocaleString()} - {salarySymbol}{job.salaryMax.toLocaleString()} {salaryFrequency}
                 </div>
               )}
             </div>

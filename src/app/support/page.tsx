@@ -2,7 +2,7 @@
 
 import React, { useState, FormEvent, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Mail, MessageCircle, Send, Bot, User, Loader2, ImagePlus, Download, X, ImageIcon, Sparkles, MessageSquare, Wand2 } from 'lucide-react';
+import { Mail, MessageCircle, Send, Bot, User, Loader2, ImagePlus, Download, X, ImageIcon, MessageSquare, Sparkles, Wand2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supportAgent } from '@/ai/flows/support-agent-flow';
@@ -63,6 +63,7 @@ export default function SupportPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'generate' | 'recreate'>('chat');
+  const [isMounted, setIsMounted] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -71,6 +72,10 @@ export default function SupportPage() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
@@ -113,7 +118,6 @@ export default function SupportPage() {
     e.preventDefault();
     if (!input.trim() && !selectedImage) return;
 
-    // Validation for recreate mode
     if (activeTab === 'recreate' && !selectedImage) {
         toast({ variant: 'destructive', title: 'Image Required', description: 'Please upload an image to optimize.' });
         return;
@@ -183,6 +187,8 @@ export default function SupportPage() {
     }
   };
 
+  if (!isMounted) return null;
+
   return (
     <div className="container mx-auto max-w-2xl py-12 px-4">
       <Card className="h-[80vh] flex flex-col shadow-xl border-t-4 border-t-primary overflow-hidden">
@@ -200,9 +206,18 @@ export default function SupportPage() {
             
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full sm:w-auto">
                 <TabsList className="grid grid-cols-3 h-9">
-                    <TabsTrigger value="chat" className="text-xs"><MessageSquare className="h-3 w-3 mr-1 sm:hidden" /> <span className="hidden sm:inline">Support</span></TabsTrigger>
-                    <TabsTrigger value="generate" className="text-xs"><Sparkles className="h-3 w-3 mr-1" /> <span className="hidden sm:inline">New Image</span></TabsTrigger>
-                    <TabsTrigger value="recreate" className="text-xs"><Wand2 className="h-3 w-3 mr-1" /> <span className="hidden sm:inline">Optimize</span></TabsTrigger>
+                    <TabsTrigger value="chat" className="text-xs">
+                        <MessageSquare className="h-3 w-3 mr-1 sm:hidden" /> 
+                        <span className="hidden sm:inline">Support</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="generate" className="text-xs">
+                        <Sparkles className="h-3 w-3 mr-1" /> 
+                        <span className="hidden sm:inline">New Image</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="recreate" className="text-xs">
+                        <Wand2 className="h-3 w-3 mr-1" /> 
+                        <span className="hidden sm:inline">Optimize</span>
+                    </TabsTrigger>
                 </TabsList>
             </Tabs>
           </div>

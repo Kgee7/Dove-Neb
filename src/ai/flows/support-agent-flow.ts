@@ -2,124 +2,93 @@
 /**
  * @fileOverview A versatile AI support agent for Dove Neb.
  *
- * - supportAgent - Handles chat, image generation, optimization, and listing search.
+ * - supportAgent - Handles chat, search, image generation, and image optimization.
  * - SupportAgentInput - Input schema supporting mode-based operations.
  * - SupportAgentOutput - Output schema containing text response and optional media.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { getApps, initializeApp } from 'firebase-admin/app';
+import { getApps, initializeApp, App } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
 /**
- * Safe initialization for Firestore Admin.
- * Uses the project ID to ensure it connects to the correct database in production.
+ * Helper to get or initialize the Firebase Admin App for server-side search.
  */
-function getAdminDb() {
+function getAdminApp(): App {
   if (getApps().length === 0) {
-    initializeApp({
+    return initializeApp({
       projectId: 'studio-7235955659-7c316',
     });
   }
-  return getFirestore();
+  return getApps()[0];
 }
 
 /**
- * TOOL: Search for Job Listings
- * Allows the AI to search the live 'jobs' collection.
+ * Tool to search for active job listings.
  */
 const searchJobsTool = ai.defineTool(
   {
     name: 'searchJobs',
-    description: 'Searches for job listings based on keywords like title, company, or location.',
-    inputSchema: z.object({
-      query: z.string().describe('The search terms (e.g., "software engineer", "manager in London").'),
-    }),
+    description: 'Searches for active job listings based on a query (title, company, or category).',
+    inputSchema: z.object({ query: z.string().describe('Search terms for jobs.') }),
     outputSchema: z.array(z.object({
+      id: z.string(),
       title: z.string(),
       companyName: z.string(),
       location: z.string(),
-      url: z.string(),
     })),
   },
-  async (input) => {
-    try {
-      const db = getAdminDb();
-      const queryLower = input.query.toLowerCase();
-      // We perform a broad search and filter in memory for better keyword matching
-      const snapshot = await db.collection('jobs').limit(20).get();
-      
-      const results = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() } as any))
-        .filter(job => 
-          job.title?.toLowerCase().includes(queryLower) ||
-          job.companyName?.toLowerCase().includes(queryLower) ||
-          job.location?.toLowerCase().includes(queryLower) ||
-          job.description?.toLowerCase().includes(queryLower)
-        )
-        .slice(0, 5)
-        .map(job => ({
-          title: job.title,
-          companyName: job.companyName,
-          location: job.location,
-          url: `/jobs/${job.id}`,
-        }));
-        
-      return results;
-    } catch (error) {
-      console.error("Error in searchJobsTool:", error);
-      return [];
-    }
+  async ({ query }) => {
+    const db = getFirestore(getAdminApp());
+    const snapshot = await db.collection('jobs').where('status', '==', 'active').limit(50).get();
+    const jobs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+    
+    const lowerQuery = query.toLowerCase();
+    return jobs.filter(j => 
+      j.title?.toLowerCase().includes(lowerQuery) || 
+      j.companyName?.toLowerCase().includes(lowerQuery) ||
+      j.description?.toLowerCase().includes(lowerQuery)
+    ).slice(0, 5).map(j => ({
+      id: j.id,
+      title: j.title,
+      companyName: j.companyName,
+      location: j.location,
+    }));
   }
 );
 
 /**
- * TOOL: Search for Room Listings
- * Allows the AI to search the live 'rooms' collection.
+ * Tool to search for active room listings.
  */
 const searchRoomsTool = ai.defineTool(
   {
     name: 'searchRooms',
-    description: 'Searches for room or space listings based on location or type.',
-    inputSchema: z.object({
-      query: z.string().describe('The search terms (e.g., "apartment in Paris", "cozy room").'),
-    }),
+    description: 'Searches for room listings based on a query (title, location, or type).',
+    inputSchema: z.object({ query: z.string().describe('Search terms for rooms.') }),
     outputSchema: z.array(z.object({
+      id: z.string(),
       title: z.string(),
       location: z.string(),
       price: z.string(),
-      url: z.string(),
     })),
   },
-  async (input) => {
-    try {
-      const db = getAdminDb();
-      const queryLower = input.query.toLowerCase();
-      const snapshot = await db.collection('rooms').limit(20).get();
-      
-      const results = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() } as any))
-        .filter(room => 
-          room.title?.toLowerCase().includes(queryLower) ||
-          room.location?.toLowerCase().includes(queryLower) ||
-          room.description?.toLowerCase().includes(queryLower)
-        )
-        .slice(0, 5)
-        .map(room => ({
-          title: room.title,
-          location: room.location,
-          price: room.listingType === 'sale' 
-            ? `${room.currencySymbol || '$'}${room.salePrice?.toLocaleString()}` 
-            : `${room.currencySymbol || '$'}${room.priceNight || room.priceMonth}/period`,
-          url: `/rooms/${room.id}`,
-        }));
-        
-      return results;
-    } catch (error) {
-      console.error("Error in searchRoomsTool:", error);
-      return [];
-    }
+  async ({ query }) => {
+    const db = getFirestore(getAdminApp());
+    const snapshot = await db.collection('rooms').where('status', '==', 'active').limit(50).get();
+    const rooms = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+    
+    const lowerQuery = query.toLowerCase();
+    return rooms.filter(r => 
+      r.title?.toLowerCase().includes(lowerQuery) || 
+      r.location?.toLowerCase().includes(lowerQuery) ||
+      r.description?.toLowerCase().includes(lowerQuery)
+    ).slice(0, 5).map(r => ({
+      id: r.id,
+      title: r.title,
+      location: r.location,
+      price: `${r.currencySymbol || ''}${r.priceNight || r.priceMonth || r.salePrice || ''}`,
+    }));
   }
 );
 
@@ -143,34 +112,6 @@ export type SupportAgentOutput = z.infer<typeof SupportAgentOutputSchema>;
 export async function supportAgent(input: SupportAgentInput): Promise<SupportAgentOutput> {
   return supportAgentFlow(input);
 }
-
-const prompt = ai.definePrompt({
-  name: 'supportAgentPrompt',
-  input: {schema: SupportAgentInputSchema},
-  output: {schema: SupportAgentOutputSchema},
-  tools: [searchJobsTool, searchRoomsTool],
-  prompt: `You are a helpful and friendly support agent for a platform called "Dove Neb". Your name is Neb. 
-
-The platform helps users find jobs and book rooms.
-
-**Capabilities**
-1. **Search Listings**: If a user asks for a job, room, or recommendation (e.g., "I want an administrator job"), use the search tools to find relevant items. Summarize the results and provide clickable links in markdown format: [Listing Title](url).
-2. **New Image Generation**: You can create professional images for room listings from scratch (only in 'generate' mode).
-3. **Image Optimization**: You can recreate and optimize existing images to fit database limits (only in 'recreate' mode).
-4. **General Support**: Answer questions about site features. Refer users to the "Blog" page for comprehensive guides.
-
-Support Contact Information:
-- Email: dovenebinfo@gmail.com
-- WhatsApp: wa.me/+233500863382
-
-User's Question: {{{query}}}
-Mode: {{{mode}}}
-{{#if imageDataUri}}
-User has provided an image for processing.
-{{/if}}
-
-Respond professionally. If no listings are found for a search, suggest they try different keywords or check back later.`,
-});
 
 const supportAgentFlow = ai.defineFlow(
   {
@@ -213,8 +154,29 @@ const supportAgentFlow = ai.defineFlow(
       };
     }
 
-    // MODE 3: Standard Support Chat (with Tools)
-    const {output} = await prompt(input);
-    return output!;
+    // MODE 3: Standard Support Chat & Listing Search
+    const result = await ai.generate({
+      system: `You are a helpful and friendly support agent for a platform called "Dove Neb". Your name is Neb. 
+
+      The platform helps users find jobs and book rooms.
+
+      **Capabilities:**
+      1. **Search Jobs**: If a user is looking for work (e.g., "I want administrator jobs"), use the 'searchJobs' tool.
+      2. **Search Rooms**: If a user is looking for a place to stay or buy, use the 'searchRooms' tool.
+      3. **Provide Links**: When listing search results, you MUST provide the title and a markdown link.
+         - Format for Jobs: [Job Title](/jobs/[id])
+         - Format for Rooms: [Room Title](/rooms/[id])
+      4. **Image Services**: Mention that you can generate new listing photos or optimize existing ones.
+
+      **Support Contact Information:**
+      - Email: dovenebinfo@gmail.com
+      - WhatsApp: wa.me/+233500863382`,
+      prompt: input.query,
+      tools: [searchJobsTool, searchRoomsTool],
+    });
+
+    return {
+      response: result.text,
+    };
   }
 );

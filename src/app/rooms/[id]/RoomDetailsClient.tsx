@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
 import { useDoc, useFirestore, useUser } from '@/firebase';
@@ -12,17 +13,19 @@ import ShareButton from '@/components/share-button';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Loader2, Wifi, Tv, Utensils, Wind, Star, Phone, MessageSquare, Maximize, Mail, Lock, MapPin } from 'lucide-react';
+import { ArrowLeft, Loader2, Wifi, Tv, Utensils, Wind, Star, Phone, MessageSquare, Maximize, Mail, Lock, MapPin, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 const amenityIcons: { [key: string]: React.ReactNode } = {
     'Wifi': <Wifi className="h-4 w-4" />,
@@ -45,15 +48,32 @@ export default function RoomDetailsClient({ id }: RoomDetailsClientProps) {
   const pathname = usePathname();
   const { toast } = useToast();
 
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
   const [showContact, setShowContact] = useState(false);
   
+  const [zoomApi, setZoomApi] = useState<CarouselApi>();
+
   const roomDocRef = useMemo(() => {
     if (!firestore || !id) return null;
     return doc(firestore, 'rooms', id);
   }, [firestore, id]);
 
   const { data: room, isLoading } = useDoc<Room>(roomDocRef);
+
+  // Sync index when zoom carousel is used
+  useEffect(() => {
+    if (!zoomApi) return;
+
+    const onSelect = () => {
+      setActiveImageIndex(zoomApi.selectedScrollSnap());
+    };
+
+    zoomApi.on("select", onSelect);
+    return () => {
+      zoomApi.off("select", onSelect);
+    };
+  }, [zoomApi]);
 
   const handleInterestClick = async () => {
     if (!user) {
@@ -121,6 +141,17 @@ export default function RoomDetailsClient({ id }: RoomDetailsClientProps) {
     }
   };
 
+  const openZoom = (index: number) => {
+    setActiveImageIndex(index);
+    setIsZoomOpen(true);
+    // Embla needs a moment to mount in the Dialog before scrolling
+    setTimeout(() => {
+        if (zoomApi) {
+            zoomApi.scrollTo(index, true);
+        }
+    }, 100);
+  };
+
   if (isLoading || isUserLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -141,6 +172,12 @@ export default function RoomDetailsClient({ id }: RoomDetailsClientProps) {
     );
   }
 
+  const price = room.listingType === 'sale' 
+    ? `${room.currencySymbol}${room.salePrice?.toLocaleString()}` 
+    : `${room.currencySymbol}${room.priceNight?.toLocaleString() || room.priceMonth?.toLocaleString()}${room.priceNight ? '/night' : '/month'}`;
+
+  const shareText = `*${room.title}*\n\n📍 ${room.location}, ${room.country}\n🏠 ${room.listingType === 'sale' ? 'For Sale' : 'For Rent'}\n💰 ${price}`;
+
   const ownerDisplayName = room.ownerName && room.ownerName.trim() && !room.ownerName.includes('undefined')
     ? `Hosted by ${room.ownerName}` 
     : 'Hosted by a verified owner';
@@ -158,7 +195,12 @@ export default function RoomDetailsClient({ id }: RoomDetailsClientProps) {
             <div className="mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="min-w-0">
-                        <h1 className="text-xl sm:text-3xl font-bold font-headline mb-1 line-clamp-2">{room.title}</h1>
+                        <div className="flex items-center gap-3 mb-1">
+                            <h1 className="text-xl sm:text-3xl font-bold font-headline line-clamp-2">{room.title}</h1>
+                            <Badge variant={room.listingType === 'sale' ? 'default' : 'outline'} className="h-6 whitespace-nowrap">
+                                {room.listingType === 'sale' ? 'For Sale' : 'For Rent'}
+                            </Badge>
+                        </div>
                         <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                             <MapPin className="h-3.5 w-3.5 shrink-0" />
                             <p className="truncate">{room.location}, {room.country}</p>
@@ -180,33 +222,51 @@ export default function RoomDetailsClient({ id }: RoomDetailsClientProps) {
                 </div>
             </div>
 
-            <Carousel className="w-full relative shadow-xl rounded-xl overflow-hidden bg-background">
-                {room && <FavoriteButton item={room} itemType="room" />}
-                {room && <ShareButton title={room.title} text={`Check out this space: ${room.title}`} className="absolute top-2 right-12 z-10 h-8 w-8 rounded-full bg-black/30 hover:bg-black/50 border-none text-white transition-colors" />}
-                <CarouselContent>
-                    {room.images.map((img, index) => (
-                    <CarouselItem key={index}>
-                        <div className="relative aspect-[4/3] sm:aspect-video cursor-pointer group" onClick={() => setSelectedImage(img)}>
-                            <Image
-                                src={img}
-                                alt={`${room.title} image ${index + 1}`}
-                                fill
-                                className="object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Maximize className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+            {/* Gallery Section */}
+            <div className="space-y-4">
+                <div className="relative aspect-[4/3] sm:aspect-video rounded-xl overflow-hidden shadow-2xl bg-background group">
+                    {room && <FavoriteButton item={room} itemType="room" />}
+                    {room && <ShareButton title={room.title} text={shareText} className="absolute top-2 right-12 z-10 h-8 w-8 rounded-full bg-black/30 hover:bg-black/50 border-none text-white transition-colors" />}
+                    
+                    <div className="relative w-full h-full cursor-pointer" onClick={() => openZoom(activeImageIndex)}>
+                        <Image
+                            src={room.images[activeImageIndex]}
+                            alt={`${room.title} featured image`}
+                            fill
+                            className="object-cover transition-transform duration-700 hover:scale-105"
+                            priority
+                        />
+                        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div className="bg-black/40 backdrop-blur-md p-4 rounded-full">
+                                <Maximize className="h-8 w-8 text-white" />
                             </div>
                         </div>
-                    </CarouselItem>
-                    ))}
-                </CarouselContent>
+                    </div>
+                </div>
+
+                {/* Thumbnails */}
                 {room.images.length > 1 && (
-                    <>
-                        <CarouselPrevious className="left-4 bg-background/80" />
-                        <CarouselNext className="right-4 bg-background/80" />
-                    </>
+                    <div className="flex gap-2 sm:gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                        {room.images.map((img, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => setActiveImageIndex(idx)}
+                                className={cn(
+                                    "relative flex-shrink-0 w-20 h-16 sm:w-32 sm:h-24 rounded-lg overflow-hidden border-2 transition-all",
+                                    activeImageIndex === idx ? "border-primary scale-95" : "border-transparent opacity-70 hover:opacity-100"
+                                )}
+                            >
+                                <Image
+                                    src={img}
+                                    alt={`Thumbnail ${idx + 1}`}
+                                    fill
+                                    className="object-cover"
+                                />
+                            </button>
+                        ))}
+                    </div>
                 )}
-            </Carousel>
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
                 <div className="md:col-span-2">
@@ -295,20 +355,52 @@ export default function RoomDetailsClient({ id }: RoomDetailsClientProps) {
             </div>
         </div>
 
-        <Dialog open={!!selectedImage} onOpenChange={(isOpen) => !isOpen && setSelectedImage(null)}>
-            <DialogContent className="w-[95%] max-w-4xl max-h-[85vh] p-0 overflow-hidden bg-black rounded-lg border-none">
+        {/* Zoomed Gallery Dialog */}
+        <Dialog open={isZoomOpen} onOpenChange={setIsZoomOpen}>
+            <DialogContent className="max-w-none w-screen h-screen p-0 m-0 border-none bg-black/95 rounded-none flex flex-col items-center justify-center overflow-hidden">
                 <DialogHeader className="sr-only">
-                    <DialogTitle>View Room Image</DialogTitle>
+                    <DialogTitle>Zoomed View</DialogTitle>
                 </DialogHeader>
-                <div className="relative aspect-[4/3] sm:aspect-video w-full h-full">
-                    {selectedImage && (
-                        <Image
-                            src={selectedImage}
-                            alt="Full screen room image"
-                            fill
-                            className="object-contain"
-                        />
-                    )}
+                
+                <div className="relative w-full h-full flex items-center justify-center">
+                    <Carousel setApi={setZoomApi} className="w-full h-full flex items-center justify-center">
+                        <CarouselContent className="h-screen w-screen -ml-0">
+                            {room.images.map((img, idx) => (
+                                <CarouselItem key={idx} className="h-full w-full pl-0 flex items-center justify-center">
+                                    <div className="relative w-full h-full flex items-center justify-center">
+                                        <Image
+                                            src={img}
+                                            alt={`Zoomed image ${idx + 1}`}
+                                            fill
+                                            className="object-contain p-2 sm:p-8"
+                                            priority
+                                        />
+                                    </div>
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                        {room.images.length > 1 && (
+                            <>
+                                <CarouselPrevious className="left-4 sm:left-10 bg-white/10 hover:bg-white/20 border-none text-white h-12 w-12 rounded-full" />
+                                <CarouselNext className="right-4 sm:right-10 bg-white/10 hover:bg-white/20 border-none text-white h-12 w-12 rounded-full" />
+                            </>
+                        )}
+                    </Carousel>
+
+                    {/* Close Button Overlay */}
+                    <button 
+                        onClick={() => setIsZoomOpen(false)}
+                        className="absolute top-4 right-4 z-50 p-2 bg-black/40 hover:bg-black/60 rounded-full text-white transition-colors"
+                    >
+                        <X className="h-6 w-6" />
+                    </button>
+
+                    {/* Index Counter */}
+                    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-50">
+                        <div className="bg-black/40 backdrop-blur-md px-4 py-1.5 rounded-full text-white text-sm font-medium border border-white/10">
+                            {activeImageIndex + 1} / {room.images.length}
+                        </div>
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>

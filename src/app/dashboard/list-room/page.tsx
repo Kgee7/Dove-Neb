@@ -1,16 +1,16 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, useDoc } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { currencies } from '@/lib/currencies';
-
+import { fileToBase64, compressImage } from '@/lib/image-utils';
+import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -31,20 +31,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { useDoc } from '@/firebase';
+import { CurrencySelector } from '@/components/currency-selector';
 
 const amenitiesList = ["Wifi", "TV", "Kitchen", "Air Conditioning", "Heating", "Washer", "Dryer"];
 
 const MAX_IMAGES = 12;
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB per image
-const FIRESTORE_MAX_DOC_SIZE = 1048576; // 1MB
-
-const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(new Error('Failed to read file: ' + (error.target?.error?.message || 'Unknown error')));
-    reader.readAsDataURL(file);
-});
 
 const formSchema = z.object({
   listingType: z.enum(['rent', 'sale'], { required_error: 'Please select a listing type.' }),
@@ -60,6 +51,8 @@ const formSchema = z.object({
   contactWhatsapp: z.string().optional(),
   images: z.array(z.any()).min(1, 'At least one image is required.').max(MAX_IMAGES, `You can upload a maximum of ${MAX_IMAGES} images.`),
   amenities: z.array(z.string()).optional(),
+  listingStartDate: z.string().optional(),
+  listingEndDate: z.string().optional(),
 }).refine(data => {
     if (data.listingType === 'rent') return data.priceNight || data.priceMonth;
     return true;
@@ -67,13 +60,12 @@ const formSchema = z.object({
     message: 'For rentals, you must provide at least a nightly or monthly price.',
     path: ['priceNight'],
 }).refine(data => {
-    if (data.listingType === 'sale') return data.salePrice;
+    if (data.listingType === 'sale') return data.salePrice && data.listingStartDate && data.listingEndDate;
     return true;
 }, {
-    message: 'For sales, you must provide a price.',
+    message: 'For sales, you must provide a price and listing dates.',
     path: ['salePrice'],
 });
-
 
 type ListRoomFormValues = z.infer<typeof formSchema>;
 
@@ -114,6 +106,8 @@ export default function ListRoomPage() {
       amenities: [],
       contactEmail: '',
       contactWhatsapp: '',
+      listingStartDate: format(new Date(), 'yyyy-MM-dd'),
+      listingEndDate: format(new Date(new Date().setMonth(new Date().getMonth() + 1)), 'yyyy-MM-dd'),
     },
   });
 
@@ -132,12 +126,14 @@ export default function ListRoomPage() {
         if (file instanceof File) {
           return URL.createObjectURL(file);
         }
-        return '';
+        return file; 
       }).filter(Boolean);
       setImagePreviews(urls);
       
       return () => {
-        urls.forEach(url => URL.revokeObjectURL(url));
+        urls.forEach(url => {
+            if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+        });
       };
     }
   }, [watchedImages]);
@@ -165,16 +161,6 @@ export default function ListRoomPage() {
         return;
     }
 
-    const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE);
-    if (oversizedFiles.length > 0) {
-        toast({
-            variant: 'destructive',
-            title: 'Some Files Too Large',
-            description: `One or more images are larger than ${MAX_FILE_SIZE / 1024 / 1024}MB. Please upload smaller files.`,
-        });
-        return;
-    }
-
     form.setValue('images', [...currentImages, ...files], { shouldValidate: true });
   };
   
@@ -188,8 +174,8 @@ export default function ListRoomPage() {
     if (!user || !firestore || !userProfile) {
       toast({
         variant: 'destructive',
-        title: 'Authentication Error',
-        description: 'You must be logged in to list a room.',
+        title: 'Initialization Error',
+        description: 'Services are not ready. Please try again in a moment.',
       });
       return;
     }
@@ -207,8 +193,11 @@ export default function ListRoomPage() {
         const imageBase64s: string[] = [];
         for (const file of data.images) {
             if (file instanceof File) {
-                const base64 = await fileToBase64(file);
-                imageBase64s.push(base64);
+                const b64 = await fileToBase64(file);
+                const compressed = await compressImage(b64, 800, 800, 0.5); 
+                imageBase64s.push(compressed);
+            } else if (typeof file === 'string') {
+                imageBase64s.push(file);
             }
         }
 
@@ -231,21 +220,12 @@ export default function ListRoomPage() {
           images: imageBase64s,
           amenities: data.amenities || [],
           interestCount: 0,
+          status: 'active',
+          listingStartDate: data.listingType === 'sale' ? data.listingStartDate : null,
+          listingEndDate: data.listingType === 'sale' ? data.listingEndDate : null,
           createdAt: new Date(),
         };
         
-        // Firestore document size check
-        const estimatedSize = new TextEncoder().encode(JSON.stringify(roomData)).length;
-        if (estimatedSize >= FIRESTORE_MAX_DOC_SIZE) {
-            toast({
-                variant: 'destructive',
-                title: 'Listing Too Large',
-                description: 'The combined size of your listing details and images is too large for the database. Please use fewer or smaller images.'
-            });
-            setIsLoading(false);
-            return;
-        }
-
         await setDoc(newRoomRef, roomData);
         
         toast({
@@ -274,7 +254,7 @@ export default function ListRoomPage() {
   }
   
   return (
-    <div className="flex min-h-[calc(100vh-8rem)] w-full items-center justify-center">
+    <div className="flex min-h-[calc(100vh-8rem)] w-full items-center justify-center px-4">
       <div className="container max-w-3xl py-12">
         <Card>
           <CardHeader>
@@ -351,6 +331,9 @@ export default function ListRoomPage() {
                           {...field}
                         />
                       </FormControl>
+                      <FormDescription>
+                          Provide as much detail as you like (5,000+ words supported).
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -391,20 +374,12 @@ export default function ListRoomPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Currency</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a currency" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {currencies.map(currency => (
-                            <SelectItem key={currency.code} value={currency.code}>
-                              {currency.code} - {currency.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <CurrencySelector 
+                          value={field.value} 
+                          onValueChange={field.onChange} 
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -442,6 +417,7 @@ export default function ListRoomPage() {
               )}
 
               {listingType === 'sale' && (
+                  <>
                   <FormField
                     control={form.control}
                     name="salePrice"
@@ -455,6 +431,35 @@ export default function ListRoomPage() {
                       </FormItem>
                     )}
                   />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                        control={form.control}
+                        name="listingStartDate"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Listing Start Date</FormLabel>
+                            <FormControl>
+                            <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="listingEndDate"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Listing End Date</FormLabel>
+                            <FormControl>
+                            <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                  </div>
+                  </>
               )}
                 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -511,14 +516,14 @@ export default function ListRoomPage() {
                           </div>
                       </label>
                       <FormDescription>
-                          Up to {MAX_IMAGES} images. Each under {MAX_FILE_SIZE / 1024 / 1024}MB.
+                          Up to {MAX_IMAGES} images. Each optimized for direct storage.
                       </FormDescription>
                       {fieldState.error && <FormMessage />}
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
                           {imagePreviews.map((previewUrl, index) => (
                             <div key={index} className="relative group">
                                   <img src={previewUrl} alt={`preview ${index}`} className="w-full h-24 object-cover rounded-md" />
-                                  <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveImage(index)}>
+                                  <Button variant="destructive" size="icon" type="button" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveImage(index)}>
                                       <Trash2 className="h-4 w-4" />
                                   </Button>
                             </div>

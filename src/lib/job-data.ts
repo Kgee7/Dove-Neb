@@ -11,10 +11,16 @@ export type Job = {
   salaryMax?: number;
   salaryCurrency?: string;
   salaryCurrencySymbol?: string;
+  salaryPeriod?: 'month' | 'hour';
   applicationMethod: 'email' | 'whatsapp';
   applicationEmail?: string;
   applicationWhatsapp?: string;
   employerId: string;
+  listingStartDate: string;
+  listingEndDate: string;
+  status: 'active' | 'pending_removal' | 'archived';
+  removalDate?: any;
+  createdAt: any;
 };
 
 export type JobApplicant = {
