@@ -12,7 +12,7 @@ import ShareButton from '@/components/share-button';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Loader2, Wifi, Tv, Utensils, Wind, Star, Phone, MessageSquare, Maximize, Mail, Lock, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Loader2, Wifi, Tv, Utensils, Wind, Star, Phone, MessageSquare, Maximize, Mail, Lock, MapPin, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
@@ -144,7 +144,11 @@ export default function RoomDetailsClient({ id }: RoomDetailsClientProps) {
     setActiveImageIndex(index);
     setIsZoomOpen(true);
     // Embla needs a moment to mount in the Dialog before scrolling
-    setTimeout(() => zoomApi?.scrollTo(index, true), 50);
+    setTimeout(() => {
+        if (zoomApi) {
+            zoomApi.scrollTo(index, true);
+        }
+    }, 100);
   };
 
   if (isLoading || isUserLoading) {
@@ -346,43 +350,49 @@ export default function RoomDetailsClient({ id }: RoomDetailsClientProps) {
 
         {/* Zoomed Gallery Dialog */}
         <Dialog open={isZoomOpen} onOpenChange={setIsZoomOpen}>
-            <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 overflow-hidden bg-black/95 border-none rounded-none sm:rounded-none flex flex-col">
+            <DialogContent className="max-w-none w-screen h-screen p-0 m-0 border-none bg-black/95 rounded-none flex flex-col items-center justify-center overflow-hidden">
                 <DialogHeader className="sr-only">
                     <DialogTitle>Zoomed View</DialogTitle>
                 </DialogHeader>
                 
-                <div className="relative flex-1 w-full overflow-hidden">
-                    <Carousel setApi={setZoomApi} className="w-full h-full">
-                        <CarouselContent className="h-full">
+                <div className="relative w-full h-full flex items-center justify-center">
+                    <Carousel setApi={setZoomApi} className="w-full h-full flex items-center justify-center">
+                        <CarouselContent className="h-screen w-screen -ml-0">
                             {room.images.map((img, idx) => (
-                                <CarouselItem key={idx} className="h-full w-full">
-                                    <div className="relative w-full h-full p-4 sm:p-12 flex items-center justify-center">
-                                        <div className="relative w-full h-full max-w-full max-h-full">
-                                            <Image
-                                                src={img}
-                                                alt={`Zoomed image ${idx + 1}`}
-                                                fill
-                                                className="object-contain"
-                                                priority
-                                            />
-                                        </div>
+                                <CarouselItem key={idx} className="h-full w-full pl-0 flex items-center justify-center">
+                                    <div className="relative w-full h-full flex items-center justify-center">
+                                        <Image
+                                            src={img}
+                                            alt={`Zoomed image ${idx + 1}`}
+                                            fill
+                                            className="object-contain p-2 sm:p-8"
+                                            priority
+                                        />
                                     </div>
                                 </CarouselItem>
                             ))}
                         </CarouselContent>
                         {room.images.length > 1 && (
                             <>
-                                <CarouselPrevious className="left-4 sm:left-8 bg-white/10 hover:bg-white/20 border-none text-white h-12 w-12" />
-                                <CarouselNext className="right-4 sm:right-8 bg-white/10 hover:bg-white/20 border-none text-white h-12 w-12" />
+                                <CarouselPrevious className="left-4 sm:left-10 bg-white/10 hover:bg-white/20 border-none text-white h-12 w-12 rounded-full" />
+                                <CarouselNext className="right-4 sm:right-10 bg-white/10 hover:bg-white/20 border-none text-white h-12 w-12 rounded-full" />
                             </>
                         )}
                     </Carousel>
-                </div>
 
-                {/* Index Counter */}
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
-                    <div className="bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full text-white text-sm font-medium border border-white/10">
-                        {activeImageIndex + 1} / {room.images.length}
+                    {/* Close Button Overlay */}
+                    <button 
+                        onClick={() => setIsZoomOpen(false)}
+                        className="absolute top-4 right-4 z-50 p-2 bg-black/40 hover:bg-black/60 rounded-full text-white transition-colors"
+                    >
+                        <X className="h-6 w-6" />
+                    </button>
+
+                    {/* Index Counter */}
+                    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-50">
+                        <div className="bg-black/40 backdrop-blur-md px-4 py-1.5 rounded-full text-white text-sm font-medium border border-white/10">
+                            {activeImageIndex + 1} / {room.images.length}
+                        </div>
                     </div>
                 </div>
             </DialogContent>
