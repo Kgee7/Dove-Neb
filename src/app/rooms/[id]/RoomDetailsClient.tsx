@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
 import { useDoc, useFirestore, useUser } from '@/firebase';
@@ -21,7 +21,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/dialog"
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -59,6 +59,20 @@ export default function RoomDetailsClient({ id }: RoomDetailsClientProps) {
   }, [firestore, id]);
 
   const { data: room, isLoading } = useDoc<Room>(roomDocRef);
+
+  // Sync index when zoom carousel is used
+  useEffect(() => {
+    if (!zoomApi) return;
+
+    const onSelect = () => {
+      setActiveImageIndex(zoomApi.selectedScrollSnap());
+    };
+
+    zoomApi.on("select", onSelect);
+    return () => {
+      zoomApi.off("select", onSelect);
+    };
+  }, [zoomApi]);
 
   const handleInterestClick = async () => {
     if (!user) {
@@ -129,8 +143,8 @@ export default function RoomDetailsClient({ id }: RoomDetailsClientProps) {
   const openZoom = (index: number) => {
     setActiveImageIndex(index);
     setIsZoomOpen(true);
-    // Give Carousel a moment to mount before scrolling
-    setTimeout(() => zoomApi?.scrollTo(index), 10);
+    // Embla needs a moment to mount in the Dialog before scrolling
+    setTimeout(() => zoomApi?.scrollTo(index, true), 50);
   };
 
   if (isLoading || isUserLoading) {
@@ -203,20 +217,18 @@ export default function RoomDetailsClient({ id }: RoomDetailsClientProps) {
                     {room && <FavoriteButton item={room} itemType="room" />}
                     {room && <ShareButton title={room.title} text={`Check out this space: ${room.title}`} className="absolute top-2 right-12 z-10 h-8 w-8 rounded-full bg-black/30 hover:bg-black/50 border-none text-white transition-colors" />}
                     
-                    <Image
-                        src={room.images[activeImageIndex]}
-                        alt={`${room.title} featured image`}
-                        fill
-                        className="object-cover transition-transform duration-700 hover:scale-105"
-                        priority
-                    />
-                    
-                    <div 
-                        className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                        onClick={() => openZoom(activeImageIndex)}
-                    >
-                        <div className="bg-black/40 backdrop-blur-md p-4 rounded-full">
-                            <Maximize className="h-8 w-8 text-white" />
+                    <div className="relative w-full h-full cursor-pointer" onClick={() => openZoom(activeImageIndex)}>
+                        <Image
+                            src={room.images[activeImageIndex]}
+                            alt={`${room.title} featured image`}
+                            fill
+                            className="object-cover transition-transform duration-700 hover:scale-105"
+                            priority
+                        />
+                        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div className="bg-black/40 backdrop-blur-md p-4 rounded-full">
+                                <Maximize className="h-8 w-8 text-white" />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -334,37 +346,44 @@ export default function RoomDetailsClient({ id }: RoomDetailsClientProps) {
 
         {/* Zoomed Gallery Dialog */}
         <Dialog open={isZoomOpen} onOpenChange={setIsZoomOpen}>
-            <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 overflow-hidden bg-black/95 border-none rounded-none sm:rounded-none">
+            <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 overflow-hidden bg-black/95 border-none rounded-none sm:rounded-none flex flex-col">
                 <DialogHeader className="sr-only">
                     <DialogTitle>Zoomed View</DialogTitle>
                 </DialogHeader>
                 
-                <Carousel setApi={setZoomApi} className="w-full h-full flex items-center justify-center">
-                    <CarouselContent className="h-full">
-                        {room.images.map((img, idx) => (
-                            <CarouselItem key={idx} className="h-full flex items-center justify-center">
-                                <div className="relative w-full h-full p-4 sm:p-12">
-                                    <Image
-                                        src={img}
-                                        alt={`Zoomed image ${idx + 1}`}
-                                        fill
-                                        className="object-contain"
-                                    />
-                                </div>
-                            </CarouselItem>
-                        ))}
-                    </CarouselContent>
-                    {room.images.length > 1 && (
-                        <>
-                            <CarouselPrevious className="left-4 sm:left-8 bg-white/10 hover:bg-white/20 border-none text-white h-12 w-12" />
-                            <CarouselNext className="right-4 sm:right-8 bg-white/10 hover:bg-white/20 border-none text-white h-12 w-12" />
-                        </>
-                    )}
-                </Carousel>
+                <div className="relative flex-1 w-full overflow-hidden">
+                    <Carousel setApi={setZoomApi} className="w-full h-full">
+                        <CarouselContent className="h-full">
+                            {room.images.map((img, idx) => (
+                                <CarouselItem key={idx} className="h-full w-full">
+                                    <div className="relative w-full h-full p-4 sm:p-12 flex items-center justify-center">
+                                        <div className="relative w-full h-full max-w-full max-h-full">
+                                            <Image
+                                                src={img}
+                                                alt={`Zoomed image ${idx + 1}`}
+                                                fill
+                                                className="object-contain"
+                                                priority
+                                            />
+                                        </div>
+                                    </div>
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                        {room.images.length > 1 && (
+                            <>
+                                <CarouselPrevious className="left-4 sm:left-8 bg-white/10 hover:bg-white/20 border-none text-white h-12 w-12" />
+                                <CarouselNext className="right-4 sm:right-8 bg-white/10 hover:bg-white/20 border-none text-white h-12 w-12" />
+                            </>
+                        )}
+                    </Carousel>
+                </div>
 
                 {/* Index Counter */}
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full text-white text-sm font-medium">
-                    {activeImageIndex + 1} / {room.images.length}
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
+                    <div className="bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full text-white text-sm font-medium border border-white/10">
+                        {activeImageIndex + 1} / {room.images.length}
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>
