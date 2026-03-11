@@ -46,8 +46,8 @@ const formSchema = z.object({
   salaryMax: z.coerce.number().min(0).optional(),
   salaryPeriod: z.enum(['month', 'hour']),
   applicationMethod: z.enum(['email', 'whatsapp'], { required_error: 'Please select an application method.' }),
-  applicationEmail: z.string().email('Please enter a valid email.').optional(),
-  applicationWhatsapp: z.string().min(10, 'Please enter a valid WhatsApp number.').optional(),
+  applicationEmail: z.string().email('Please enter a valid email.').optional().or(z.literal('')),
+  applicationWhatsapp: z.string().min(10, 'Please enter a valid WhatsApp number.').optional().or(z.literal('')),
   listingStartDate: z.string().min(1, 'Start date is required.'),
   listingEndDate: z.string().min(1, 'End date is required.'),
 }).refine((data) => {
@@ -149,6 +149,7 @@ export default function EditJobPage() {
           requestResourceData: jobData,
         } satisfies SecurityRuleContext);
         errorEmitter.emit('permission-error', permissionError);
+        setIsSubmitting(false);
       });
 
     toast({

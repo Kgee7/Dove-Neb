@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { currencies } from '@/lib/currencies';
@@ -45,8 +45,8 @@ const formSchema = z.object({
   salaryMax: z.coerce.number().min(0).optional(),
   salaryPeriod: z.enum(['month', 'hour']),
   applicationMethod: z.enum(['email', 'whatsapp'], { required_error: 'Please select an application method.' }),
-  applicationEmail: z.string().email('Please enter a valid email.').optional(),
-  applicationWhatsapp: z.string().min(10, 'Please enter a valid WhatsApp number.').optional(),
+  applicationEmail: z.string().email('Please enter a valid email.').optional().or(z.literal('')),
+  applicationWhatsapp: z.string().min(10, 'Please enter a valid WhatsApp number.').optional().or(z.literal('')),
   listingStartDate: z.string().min(1, 'Start date is required.'),
   listingEndDate: z.string().min(1, 'End date is required.'),
 }).refine((data) => {
@@ -118,8 +118,10 @@ export default function PostJobPage() {
     const salaryCurrency = selectedCurrency?.code || 'USD';
     const salaryCurrencySymbol = selectedCurrency?.symbol || '$';
 
+    const newJobRef = doc(collection(firestore, 'jobs'));
     const jobData = {
       ...data,
+      id: newJobRef.id,
       salaryCurrency,
       salaryCurrencySymbol,
       applicationEmail: data.applicationMethod === 'email' ? data.applicationEmail : null,
@@ -130,14 +132,15 @@ export default function PostJobPage() {
     };
 
     // Pattern 1: Non-blocking mutation with .catch chain
-    addDoc(collection(firestore, 'jobs'), jobData)
+    setDoc(newJobRef, jobData)
       .catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
-          path: 'jobs',
+          path: `jobs/${newJobRef.id}`,
           operation: 'create',
           requestResourceData: jobData,
         } satisfies SecurityRuleContext);
         errorEmitter.emit('permission-error', permissionError);
+        setIsSubmitting(false);
       });
 
     toast({
