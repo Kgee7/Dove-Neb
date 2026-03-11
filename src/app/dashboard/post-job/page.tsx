@@ -6,11 +6,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser } from '@/firebase';
-import { addDoc, collection } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { currencies } from '@/lib/currencies';
 import { format } from 'date-fns';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -70,7 +72,7 @@ export default function PostJobPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<PostJobFormValues>({
     resolver: zodResolver(formSchema),
@@ -101,49 +103,48 @@ export default function PostJobPage() {
   }, [isUserLoading, user, router]);
 
   const onSubmit = async (data: PostJobFormValues) => {
-    if (!user) {
+    if (!user || !firestore) {
       toast({
         variant: 'destructive',
-        title: 'Authentication Error',
-        description: 'You must be logged in as an employer to post a job.',
+        title: 'Error',
+        description: 'You must be logged in to post a job.',
       });
       return;
     }
-    setIsLoading(true);
+    
+    setIsSubmitting(true);
 
     const selectedCurrency = currencies.find(c => c.code === data.currency);
     const salaryCurrency = selectedCurrency?.code || 'USD';
     const salaryCurrencySymbol = selectedCurrency?.symbol || '$';
 
-    try {
-      const jobData = {
-        ...data,
-        salaryCurrency,
-        salaryCurrencySymbol,
-        applicationEmail: data.applicationMethod === 'email' ? data.applicationEmail : null,
-        applicationWhatsapp: data.applicationMethod === 'whatsapp' ? data.applicationWhatsapp : null,
-        employerId: user.uid,
-        status: 'active',
-        createdAt: new Date(),
-      };
+    const jobData = {
+      ...data,
+      salaryCurrency,
+      salaryCurrencySymbol,
+      applicationEmail: data.applicationMethod === 'email' ? data.applicationEmail : null,
+      applicationWhatsapp: data.applicationMethod === 'whatsapp' ? data.applicationWhatsapp : null,
+      employerId: user.uid,
+      status: 'active',
+      createdAt: new Date(),
+    };
 
-      await addDoc(collection(firestore!, 'jobs'), jobData);
+    // Pattern 1: Non-blocking mutation with .catch chain
+    addDoc(collection(firestore, 'jobs'), jobData)
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: 'jobs',
+          operation: 'create',
+          requestResourceData: jobData,
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+      });
 
-      toast({
-        title: 'Job Posted!',
-        description: 'Your job listing is now live.',
-      });
-      router.push('/dashboard');
-    } catch (error: any) {
-      console.error('Error posting job:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Posting Failed',
-        description: error.message || 'Could not post your job.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    toast({
+      title: 'Job Posted!',
+      description: 'Your job listing is now live.',
+    });
+    router.push('/dashboard');
   };
   
   if (isUserLoading || !user) {
@@ -420,7 +421,7 @@ export default function PostJobPage() {
                       <FormItem>
                         <FormLabel>Application Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="recruiting@example.com" {...field} />
+                          <Input placeholder="recruiting@example.com" {...field} value={field.value || ''} />
                         </FormControl>
                         <FormDescription>
                           Job seekers will send their applications to this email address.
@@ -439,7 +440,7 @@ export default function PostJobPage() {
                       <FormItem>
                         <FormLabel>Application WhatsApp Number</FormLabel>
                         <FormControl>
-                          <Input placeholder="+1234567890" {...field} />
+                          <Input placeholder="+1234567890" {...field} value={field.value || ''} />
                         </FormControl>
                         <FormDescription>
                           Job seekers will contact this WhatsApp number. Include the country code.
@@ -450,8 +451,8 @@ export default function PostJobPage() {
                   />
                 )}
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Post Job'}
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Post Job'}
                 </Button>
               </form>
             </Form>

@@ -11,6 +11,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Job } from '@/lib/job-data';
 import { currencies } from '@/lib/currencies';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -72,7 +74,7 @@ export default function EditJobPage() {
   const params = useParams();
   const id = params.id as string;
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const jobDocRef = useMemo(() => {
     if (!firestore || !id) return null;
@@ -124,37 +126,36 @@ export default function EditJobPage() {
   const onSubmit = async (data: EditJobFormValues) => {
     if (!user || !jobDocRef) return;
 
-    setIsLoading(true);
+    setIsSubmitting(true);
     
     const selectedCurrency = currencies.find(c => c.code === data.currency);
     const salaryCurrency = selectedCurrency?.code || 'USD';
     const salaryCurrencySymbol = selectedCurrency?.symbol || '$';
 
-    try {
-      const jobData = {
-          ...data,
-          salaryCurrency,
-          salaryCurrencySymbol,
-          applicationEmail: data.applicationMethod === 'email' ? data.applicationEmail : null,
-          applicationWhatsapp: data.applicationMethod === 'whatsapp' ? data.applicationWhatsapp : null,
-      };
+    const jobData = {
+        ...data,
+        salaryCurrency,
+        salaryCurrencySymbol,
+        applicationEmail: data.applicationMethod === 'email' ? data.applicationEmail : null,
+        applicationWhatsapp: data.applicationMethod === 'whatsapp' ? data.applicationWhatsapp : null,
+    };
 
-      await updateDoc(jobDocRef, jobData);
-      toast({
-        title: 'Job Updated!',
-        description: 'Your job listing has been successfully updated.',
+    // Pattern 1: Non-blocking mutation with .catch chain
+    updateDoc(jobDocRef, jobData)
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: jobDocRef.path,
+          operation: 'update',
+          requestResourceData: jobData,
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
       });
-      router.push('/dashboard');
-    } catch (error: any) {
-      console.error('Error updating job:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Update Failed',
-        description: error.message || 'Could not update your job.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+
+    toast({
+      title: 'Job Updated!',
+      description: 'Your job listing has been successfully updated.',
+    });
+    router.push('/dashboard');
   };
   
   if (isUserLoading || isJobLoading) {
@@ -444,7 +445,7 @@ export default function EditJobPage() {
                     <FormItem>
                       <FormLabel>Application Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="recruiting@example.com" {...field} value={field.value ?? ''} />
+                        <Input placeholder="recruiting@example.com" {...field} value={field.value || ''} />
                       </FormControl>
                       <FormDescription>
                         Job seekers will send their applications to this email address.
@@ -463,7 +464,7 @@ export default function EditJobPage() {
                     <FormItem>
                       <FormLabel>Application WhatsApp Number</FormLabel>
                       <FormControl>
-                        <Input placeholder="+1234567890" {...field} value={field.value ?? ''} />
+                        <Input placeholder="+1234567890" {...field} value={field.value || ''} />
                       </FormControl>
                       <FormDescription>
                         Job seekers will contact this WhatsApp number. Include the country code.
@@ -473,8 +474,8 @@ export default function EditJobPage() {
                   )}
                 />
               )}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Changes'}
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Changes'}
               </Button>
             </form>
           </Form>

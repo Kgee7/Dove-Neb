@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Briefcase, Loader2, MapPin, Search } from 'lucide-react';
 import FavoriteButton from '@/components/favorite-button';
 import { useSearchParams } from 'next/navigation';
-import { isWithinInterval, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
 function JobsPageClient() {
@@ -40,7 +40,8 @@ function JobsPageClient() {
 
   const filteredJobs = useMemo(() => {
     if (!jobs) return [];
-    const today = new Date();
+    // Use string comparison for timezone-robust filtering
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
 
     return allJobs.filter(job => {
       const term = searchTerm.toLowerCase();
@@ -49,18 +50,10 @@ function JobsPageClient() {
       const titleMatch = job.title?.toLowerCase().includes(term) || job.companyName?.toLowerCase().includes(term);
       const locationMatch = !lTerm || job.location?.toLowerCase().includes(lTerm) || job.country?.toLowerCase().includes(lTerm);
       
-      // Date and Status Filtering
-      let dateMatch = true;
-      if (job.listingStartDate && job.listingEndDate) {
-          try {
-              dateMatch = isWithinInterval(today, {
-                  start: parseISO(job.listingStartDate),
-                  end: parseISO(job.listingEndDate)
-              });
-          } catch (e) {
-              dateMatch = true;
-          }
-      }
+      // Robust Date Filtering using string comparison
+      const isStarted = !job.listingStartDate || todayStr >= job.listingStartDate;
+      const isNotExpired = !job.listingEndDate || todayStr <= job.listingEndDate;
+      const dateMatch = isStarted && isNotExpired;
 
       return titleMatch && locationMatch && dateMatch && job.status === 'active';
     });
