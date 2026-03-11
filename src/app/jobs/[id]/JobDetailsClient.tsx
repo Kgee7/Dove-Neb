@@ -178,6 +178,7 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
   }
   
   const salarySymbol = job.salaryCurrencySymbol || '$';
+  const salaryFrequency = job.salaryPeriod === 'hour' ? '/ hour' : '/ month';
 
   const renderApplySection = () => {
     const isJobPoster = user && job && job.employerId === user.uid;
@@ -282,7 +283,7 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
               </div>
               {job.salaryMin && job.salaryMax && (
                 <div className="flex items-center gap-1.5">
-                  <DollarSign className="h-4 w-4 text-primary/60" /> {salarySymbol}{job.salaryMin.toLocaleString()} - {salarySymbol}{job.salaryMax.toLocaleString()}
+                  <DollarSign className="h-4 w-4 text-primary/60" /> {salarySymbol}{job.salaryMin.toLocaleString()} - {salarySymbol}{job.salaryMax.toLocaleString()} {salaryFrequency}
                 </div>
               )}
             </div>

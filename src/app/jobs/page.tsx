@@ -130,6 +130,7 @@ function JobsPageClient() {
 
 function JobCard({ job }: { job: Job }) {
   const salarySymbol = job.salaryCurrencySymbol || '$';
+  const salaryFrequency = job.salaryPeriod === 'hour' ? '/ hr' : '/ mo';
   return (
     <Card className="hover:shadow-lg transition-all duration-300 h-full flex flex-col relative bg-muted/30">
       <FavoriteButton item={job} itemType="job" />
@@ -161,7 +162,9 @@ function JobCard({ job }: { job: Job }) {
         <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
                 {job.salaryMin && job.salaryMax ? (
-                    <p className="font-semibold text-[10px] sm:text-base truncate">{salarySymbol}{Math.floor(job.salaryMin/1000)}k - {salarySymbol}{Math.floor(job.salaryMax/1000)}k</p>
+                    <p className="font-semibold text-[10px] sm:text-base truncate">
+                      {salarySymbol}{Math.floor(job.salaryMin/1000)}k - {salarySymbol}{Math.floor(job.salaryMax/1000)}k {salaryFrequency}
+                    </p>
                 ) : (
                      <p className="font-semibold text-[10px] sm:text-base">Competitive</p>
                 )}

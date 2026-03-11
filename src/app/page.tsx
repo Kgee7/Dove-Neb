@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from "next/image";
@@ -197,6 +198,7 @@ export default function HomePage() {
             <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {jobs?.map((job) => {
                 const salarySymbol = job.salaryCurrencySymbol || '$';
+                const salaryPeriod = job.salaryPeriod === 'hour' ? '/ hr' : '/ mo';
                 return (
                 <Card
                   key={job.id}
@@ -225,7 +227,7 @@ export default function HomePage() {
                         <Badge variant="secondary" className="text-[8px] sm:text-[10px] py-0 h-5">{job.type}</Badge>
                         {(job.salaryMin && job.salaryMax) && (
                           <p className="text-xs sm:text-sm font-semibold">
-                              {salarySymbol}{job.salaryMin/1000}k - {salarySymbol}{job.salaryMax/1000}k
+                              {salarySymbol}{job.salaryMin/1000}k - {salarySymbol}{job.salaryMax/1000}k {salaryPeriod}
                           </p>
                         )}
                     </div>

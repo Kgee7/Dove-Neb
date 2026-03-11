@@ -52,6 +52,7 @@
         "salaryMax": { "type": "number", "description": "Maximum salary for the position." },
         "salaryCurrency": { "type": "string", "description": "The currency for the salary." },
         "salaryCurrencySymbol": { "type": "string", "description": "The symbol for the salary currency." },
+        "salaryPeriod": { "type": "string", "enum": ["month", "hour"], "description": "The pay period for the salary." },
         "applicationMethod": { "type": "string", "enum": ["email", "whatsapp"], "description": "How job seekers should apply."},
         "applicationEmail": { "type": "string", "format": "email", "description": "Email for applications. Required if method is 'email'."},
         "applicationWhatsapp": { "type": "string", "description": "WhatsApp number for applications. Required if method is 'whatsapp'." },

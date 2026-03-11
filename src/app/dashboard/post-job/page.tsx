@@ -41,6 +41,7 @@ const formSchema = z.object({
   currency: z.string().min(1, 'Currency is required.'),
   salaryMin: z.coerce.number().min(0).optional(),
   salaryMax: z.coerce.number().min(0).optional(),
+  salaryPeriod: z.enum(['month', 'hour']),
   applicationMethod: z.enum(['email', 'whatsapp'], { required_error: 'Please select an application method.' }),
   applicationEmail: z.string().email('Please enter a valid email.').optional(),
   applicationWhatsapp: z.string().min(10, 'Please enter a valid WhatsApp number.').optional(),
@@ -82,6 +83,7 @@ export default function PostJobPage() {
       currency: 'USD',
       salaryMin: undefined,
       salaryMax: undefined,
+      salaryPeriod: 'month',
       applicationMethod: 'email',
       applicationEmail: '',
       applicationWhatsapp: '',
@@ -260,28 +262,66 @@ export default function PostJobPage() {
                     )}
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
+                  <h3 className="font-semibold text-sm">Salary & Payment</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="salaryMin"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Minimum Salary (Optional)</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="70000" {...field} value={field.value ?? ''} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="salaryMax"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Maximum Salary (Optional)</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="120000" {...field} value={field.value ?? ''} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   <FormField
                     control={form.control}
-                    name="salaryMin"
+                    name="salaryPeriod"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Minimum Salary (Optional)</FormLabel>
+                      <FormItem className="space-y-3">
+                        <FormLabel>Pay Period</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="70000" {...field} value={field.value ?? ''} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="salaryMax"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Maximum Salary (Optional)</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="120000" {...field} value={field.value ?? ''} />
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-row space-x-4"
+                          >
+                            <FormItem className="flex items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="month" id="month" />
+                              </FormControl>
+                              <Label htmlFor="month" className="font-normal cursor-pointer">
+                                Per Month
+                              </Label>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="hour" id="hour" />
+                              </FormControl>
+                              <Label htmlFor="hour" className="font-normal cursor-pointer">
+                                Per Hour
+                              </Label>
+                            </FormItem>
+                          </RadioGroup>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
