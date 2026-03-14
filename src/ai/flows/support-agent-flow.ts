@@ -93,7 +93,7 @@ const searchRoomsTool = ai.defineTool(
 );
 
 const SupportAgentInputSchema = z.object({
-  query: z.string().describe('The user\'s support question or image generation prompt.'),
+  query: z.string().describe('The user\'s support question, image generation prompt, or search request.'),
   imageDataUri: z.string().optional().describe('An optional image to process (required for "recreate" mode).'),
   mode: z.enum(['chat', 'generate', 'recreate']).optional().default('chat').describe('The operation mode.'),
 });
@@ -105,6 +105,10 @@ const SupportAgentOutputSchema = z.object({
 });
 export type SupportAgentOutput = z.infer<typeof SupportAgentOutputSchema>;
 
+/**
+ * Entry point for the Support Agent AI.
+ * Handles the logic-branching for different support modes.
+ */
 export async function supportAgent(input: SupportAgentInput): Promise<SupportAgentOutput> {
   return supportAgentFlow(input);
 }

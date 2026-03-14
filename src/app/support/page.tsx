@@ -146,6 +146,8 @@ export default function SupportPage() {
         mode: currentMode
       });
       
+      if (!result) throw new Error("Empty response from AI");
+
       let finalMedia = result.recreatedImage;
 
       if (finalMedia) {
@@ -165,11 +167,11 @@ export default function SupportPage() {
         recreatedImage: finalMedia
       };
       setMessages(prev => [...prev, botMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI agent error:', error);
       const errorMessage: Message = {
         sender: 'bot',
-        text: 'I hit a snag. Please try again or check your internet connection.',
+        text: `I hit a snag. ${error?.message?.includes('API key') ? 'Service is temporarily unavailable.' : 'Please try again or check your internet connection.'}`,
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
@@ -181,7 +183,7 @@ export default function SupportPage() {
     switch (activeTab) {
         case 'generate': return "Describe the image you want to create...";
         case 'recreate': return "Describe how you want to optimize this image...";
-        default: return "Ask Neb anything or upload an image to optimize...";
+        default: return "Ask Neb anything or find a job/room...";
     }
   };
 
@@ -230,7 +232,7 @@ export default function SupportPage() {
                   <div className="max-w-xs">
                     <h3 className="font-semibold text-lg">Hi, I'm Neb!</h3>
                     <p className="text-sm text-muted-foreground">
-                        I can help you with support questions, generate brand new listing photos, or optimize your existing images to fit platform limits.
+                        I can help you find jobs and rooms, generate brand new listing photos, or optimize your existing images.
                     </p>
                   </div>
               </div>
