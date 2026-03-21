@@ -1,4 +1,4 @@
-name: Deploy to Firebase
+name: Deploy
 
 on:
   push:
@@ -8,27 +8,23 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v2
         with:
-          node-version: '18'
+          node-version: '14'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Build Next.js app
+      - name: Build
         run: npm run build
-        env:
-          GOOGLE_GENAI_API_KEY: ${{ secrets.GOOGLE_GENAI_API_KEY }}
 
-      - name: Deploy to Firebase
-        run: |
-          npm install -g firebase-tools
-          firebase deploy --token "${{ secrets.FIREBASE_TOKEN }}"
-        env:
-          GOOGLE_GENAI_API_KEY: ${{ secrets.GOOGLE_GENAI_API_KEY }}
+      - name: Expose GOOGLE_GENAI_API_KEY
+        run: echo "NEXT_PUBLIC_GOOGLE_GENAI_API_KEY=${{ secrets.GOOGLE_GENAI_API_KEY }}" >> $GITHUB_ENV
+
+      - name: Deploy to production
+        run: npm run deploy
