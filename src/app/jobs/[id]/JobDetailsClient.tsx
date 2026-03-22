@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -13,10 +12,19 @@ import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase, Mail, CheckCircle, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase, Mail, CheckCircle, MessageSquare, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type UserProfile = {
   firstName: string;
@@ -39,6 +47,7 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
   
   const [applicationState, setApplicationState] = useState<'idle' | 'loading' | 'applied'>('idle');
   const [hasAlreadyApplied, setHasAlreadyApplied] = useState(false);
+  const [showSafetyNotice, setShowSafetyNotice] = useState(false);
 
   const jobDocRef = useMemo(() => {
     if (!firestore || !id) return null;
@@ -85,10 +94,17 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
         return;
     }
 
+    // Show safety notice before proceeding
+    setShowSafetyNotice(true);
+  };
+
+  const processApplication = async () => {
+    setShowSafetyNotice(false);
     setApplicationState('loading');
-    if (!firestore || !job) {
+    
+    if (!firestore || !job || !userProfile) {
         setApplicationState('idle');
-        toast({ variant: 'destructive', title: 'Error', description: 'Job data is not available.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Necessary information is missing.' });
         return;
     }
     
@@ -309,6 +325,27 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={showSafetyNotice} onOpenChange={setShowSafetyNotice}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Job Application Safety Notice
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4 pt-4 text-foreground">
+              <p className="font-bold">For your safety, please do not pay any money to any employer or recruiter when applying for a job on this platform.</p>
+              <p>Legitimate employers should not request application fees, processing fees, or any form of payment from job seekers.</p>
+              <p>If any employer asks you to send money, please decline and report the job listing immediately.</p>
+              <p className="italic">Stay safe and protect yourself from job scams.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={processApplication} className="font-bold">Got it</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
