@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -83,7 +82,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center px-4 sm:px-8">
         <Link href="/" className="mr-4 sm:mr-6 flex items-center space-x-2 shrink-0">
-          <Image src="/logo.png" alt="Dove Neb Logo" width={24} height={24} className="text-primary" priority />
+          <Image src="/logo.png" alt="Dove Neb Logo" width={32} height={32} className="text-primary rounded-[5px] overflow-hidden" priority />
           <span className="font-bold text-sm sm:text-base hidden xs:inline-block">Dove Neb</span>
         </Link>
         <nav className="hidden flex-1 items-center gap-4 sm:gap-6 text-sm lg:flex">
@@ -165,7 +164,7 @@ export function SiteHeader() {
                     <SheetContent side="right" className="w-[85%] max-w-xs p-0">
                         <SheetHeader className="p-6 border-b text-left">
                             <SheetTitle className="text-lg font-bold flex items-center gap-2">
-                                <Image src="/logo.png" alt="Logo" width={24} height={24} />
+                                <Image src="/logo.png" alt="Logo" width={32} height={32} className="text-primary rounded-[5px] overflow-hidden" />
                                 Dove Neb
                             </SheetTitle>
                         </SheetHeader>
@@ -178,7 +177,7 @@ export function SiteHeader() {
                                     </Link>
                                 ))}
                             </div>
-                            <Separator />
+                             <Separator />
                             <div className="space-y-3">
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Postings</p>
                                 <Link href="/dashboard/list-room" onClick={() => setIsMobileMenuOpen(false)} className="block py-2">
@@ -236,7 +235,7 @@ export function SiteHeader() {
                 <SheetContent side="right" className="w-[85%] max-w-xs p-0">
                     <SheetHeader className="flex flex-row justify-between items-center py-4 px-6 border-b">
                          <Link href="/" className="flex items-center space-x-2" onClick={() => setIsMobileMenuOpen(false)}>
-                            <Image src="/logo.png" alt="Dove Neb Logo" width={24} height={24} className="text-primary" />
+                            <Image src="/logo.png" alt="Dove Neb Logo" width={32} height={32} className="text-primary rounded-[5px] overflow-hidden" />
                             <span className="font-bold">Dove Neb</span>
                         </Link>
                         <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
