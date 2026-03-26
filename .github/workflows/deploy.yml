@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    environment:
+    env:
       GOOGLE_GENAI_API_KEY: ${{ secrets.GOOGLE_GENAI_API_KEY }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
