@@ -44,7 +44,7 @@ export type JobApplicant = {
  * 1,000,000 and above: 'M' format.
  */
 export function formatSalaryAmount(amount: number): string {
-  if (amount < 1000) return amount.toString();
+  if (amount < 1000) return amount.toLocaleString();
   
   if (amount >= 1000000) {
     const millions = amount / 1000000;
@@ -53,5 +53,7 @@ export function formatSalaryAmount(amount: number): string {
   
   const kilos = amount / 1000;
   return kilos % 1 === 0 ? `${kilos}k` : `${kilos.toFixed(1)}k`;
+}
+
 }
 
