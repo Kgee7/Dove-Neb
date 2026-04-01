@@ -1,4 +1,4 @@
-# Deploy Workflow
+# This is the updated deploy workflow
 
 name: Deploy
 
@@ -11,32 +11,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      GOOGLE_GENAI_API_KEY: ${{ secrets.GOOGLE_GENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-        with:
-          submodules: true  # Initialize submodules
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '18'  # Use Node.js version 18
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
 
-      - name: Install dependencies
-        run: npm install
+    - name: Install dependencies
+      run: npm install
 
-      - name: Build
-        run: npm run build
-
-      - name: Deploy
-        run: npm run deploy
-        env:
-          NODE_ENV: production
-
-      - name: Log deployment errors
-        if: failure()
-        run: |
-          echo "Deployment failed at $(date)" >> deploy-errors.log
-          echo "$GITHUB_SHA" >> deploy-errors.log
-          echo "Error details:
-$GITHUB_ENV" >> deploy-errors.log
+    - name: Build
+      run: npm run build

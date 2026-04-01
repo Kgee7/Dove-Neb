@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Room } from "@/lib/data";
-import { Job } from "@/lib/job-data";
+import { Job, formatSalaryAmount } from "@/lib/job-data";
 import data from "@/lib/placeholder-images.json";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -227,7 +227,7 @@ export default function HomePage() {
                         <Badge variant="secondary" className="text-[8px] sm:text-[10px] py-0 h-5">{job.type}</Badge>
                         {(job.salaryMin && job.salaryMax) && (
                           <p className="text-xs sm:text-sm font-semibold">
-                              {salarySymbol}{job.salaryMin/1000}k - {salarySymbol}{job.salaryMax/1000}k {salaryPeriod}
+                              {salarySymbol}{formatSalaryAmount(job.salaryMin)} - {salarySymbol}{formatSalaryAmount(job.salaryMax)} {salaryPeriod}
                           </p>
                         )}
                     </div>

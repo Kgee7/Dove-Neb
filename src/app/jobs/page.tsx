@@ -8,9 +8,9 @@ import { collection, query, where, limit } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Job } from '@/lib/job-data';
+import { Job, formatSalaryAmount } from '@/lib/job-data';
 import { Separator } from '@/components/ui/separator';
-import { Briefcase, Loader2, MapPin, Search } from 'lucide-react';
+import { Briefcase, Loader2, MapPin, Search, Users } from 'lucide-react';
 import FavoriteButton from '@/components/favorite-button';
 import { useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
@@ -150,13 +150,19 @@ function JobCard({ job }: { job: Job }) {
                 <Briefcase className="h-3 w-3 mr-2 shrink-0" />
                 <span>{job.type}</span>
             </div>
+            {job.positionsAvailable && (
+              <div className="flex items-center">
+                <Users className="h-3 w-3 mr-2 shrink-0" />
+                <span>{job.positionsAvailable} Position{job.positionsAvailable > 1 ? 's' : ''} Available</span>
+              </div>
+            )}
         </div>
         <Separator className="my-3 sm:my-4" />
         <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
                 {job.salaryMin && job.salaryMax ? (
                     <p className="font-semibold text-[10px] sm:text-base truncate">
-                      {salarySymbol}{Math.floor(job.salaryMin/1000)}k - {salarySymbol}{Math.floor(job.salaryMax/1000)}k {salaryFrequency}
+                      {salarySymbol}{formatSalaryAmount(job.salaryMin)} - {salarySymbol}{formatSalaryAmount(job.salaryMax)} {salaryFrequency}
                     </p>
                 ) : (
                      <p className="font-semibold text-[10px] sm:text-base">Competitive</p>
