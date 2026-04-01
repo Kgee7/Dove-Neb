@@ -48,6 +48,7 @@
         "country": { "type": "string", "description": "Country where the job is located." },
         "location": { "type": "string", "description": "Location of the job (e.g., City, State)." },
         "type": { "type": "string", "enum": ["Full-time", "Part-time", "Contract", "Internship", "Remote", "Hybrid"], "description": "Type of employment." },
+        "positionsAvailable": { "type": "integer", "description": "Number of vacancies for this position.", "default": 1 },
         "salaryMin": { "type": "number", "description": "Minimum salary for the position." },
         "salaryMax": { "type": "number", "description": "Maximum salary for the position." },
         "salaryCurrency": { "type": "string", "description": "The currency for the salary." },
