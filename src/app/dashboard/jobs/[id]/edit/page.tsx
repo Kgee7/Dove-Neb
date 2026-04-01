@@ -28,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Users } from 'lucide-react';
 import Link from 'next/link';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -40,6 +40,7 @@ const formSchema = z.object({
   country: z.string().min(2, 'Country is required.'),
   location: z.string().min(2, 'City/State is required.'),
   type: z.enum(["Full-time", "Part-time", "Contract", "Internship", "Remote", "Hybrid"]),
+  positionsAvailable: z.coerce.number().min(1, 'At least 1 position is required.'),
   description: z.string().min(20, 'Description must be at least 20 characters long.'),
   currency: z.string().min(1, 'Currency is required.'),
   salaryMin: z.coerce.number().min(0).optional(),
@@ -91,6 +92,7 @@ export default function EditJobPage() {
         country: '',
         location: '',
         description: '',
+        positionsAvailable: 1,
         currency: 'USD',
         salaryMin: undefined,
         salaryMax: undefined,
@@ -114,6 +116,7 @@ export default function EditJobPage() {
       }
       form.reset({
         ...job,
+        positionsAvailable: job.positionsAvailable || 1,
         applicationEmail: job.applicationEmail || '',
         applicationWhatsapp: job.applicationWhatsapp || '',
         country: job.country || '',
@@ -276,6 +279,25 @@ export default function EditJobPage() {
                 />
                 <FormField
                   control={form.control}
+                  name="positionsAvailable"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Number of Positions Needed</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input type="number" className="pl-10" {...field} />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
                   name="currency"
                   render={({ field }) => (
                     <FormItem>
@@ -285,6 +307,40 @@ export default function EditJobPage() {
                           value={field.value} 
                           onValueChange={field.onChange} 
                         />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="salaryPeriod"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Pay Period</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          className="flex flex-row space-x-4"
+                        >
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="month" id="month" />
+                            </FormControl>
+                            <Label htmlFor="month" className="font-normal cursor-pointer">
+                              Per Month
+                            </Label>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="hour" id="hour" />
+                            </FormControl>
+                            <Label htmlFor="hour" className="font-normal cursor-pointer">
+                              Per Hour
+                            </Label>
+                          </FormItem>
+                        </RadioGroup>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -322,40 +378,6 @@ export default function EditJobPage() {
                     )}
                   />
                 </div>
-                <FormField
-                  control={form.control}
-                  name="salaryPeriod"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Pay Period</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          className="flex flex-row space-x-4"
-                        >
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="month" id="month" />
-                            </FormControl>
-                            <Label htmlFor="month" className="font-normal cursor-pointer">
-                              Per Month
-                            </Label>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="hour" id="hour" />
-                            </FormControl>
-                            <Label htmlFor="hour" className="font-normal cursor-pointer">
-                              Per Hour
-                            </Label>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
