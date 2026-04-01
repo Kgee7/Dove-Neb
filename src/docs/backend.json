@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "User": {
@@ -28,6 +27,8 @@
         "type": { "type": "string", "enum": ["info", "survey", "expiry_check"] },
         "surveyQuestion": { "type": "string" },
         "surveyAnswer": { "type": "string", "enum": ["yes", "no", null] },
+        "relatedListingId": { "type": "string" },
+        "relatedListingType": { "type": "string", "enum": ["job", "room"] },
         "read": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
@@ -46,6 +47,7 @@
         "country": { "type": "string", "description": "Country where the job is located." },
         "location": { "type": "string", "description": "Location of the job (e.g., City, State)." },
         "type": { "type": "string", "enum": ["Full-time", "Part-time", "Contract", "Internship", "Remote", "Hybrid"], "description": "Type of employment." },
+        "positionsAvailable": { "type": "integer", "description": "Number of vacancies for this position.", "default": 1 },
         "salaryMin": { "type": "number", "description": "Minimum salary for the position." },
         "salaryMax": { "type": "number", "description": "Maximum salary for the position." },
         "salaryCurrency": { "type": "string", "description": "The currency for the salary." },
@@ -57,6 +59,7 @@
         "listingStartDate": { "type": "string", "format": "date" },
         "listingEndDate": { "type": "string", "format": "date" },
         "status": { "type": "string", "enum": ["active", "pending_removal", "archived"], "default": "active" },
+        "removalDate": { "type": "string", "format": "date-time" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "employerId", "companyName", "title", "description", "country", "location", "type", "applicationMethod", "listingStartDate", "listingEndDate"]
@@ -73,8 +76,8 @@
             "seekerId": { "type": "string" },
             "status": { "type": "string", "enum": ["pending", "reviewed", "rejected", "hired"] },
             "appliedAt": { "type": "string", "format": "date-time" },
-            "applicationMethod": { "type": "string", "enum": ["email", "whatsapp"], "description": "The method of application (e.g., 'email', 'whatsapp')." },
-            "applicationContact": { "type": "string", "description": "The contact detail for the application." }
+            "applicationMethod": { "type": "string", "enum": ["email", "whatsapp"] },
+            "applicationContact": { "type": "string" }
         },
         "required": ["id", "jobId", "jobTitle", "companyName", "seekerId", "status", "appliedAt"]
     },
@@ -118,7 +121,9 @@
         "amenities": { "type": "array", "items": { "type": "string" } },
         "listingStartDate": { "type": "string", "format": "date" },
         "listingEndDate": { "type": "string", "format": "date" },
-        "status": { "type": "string", "enum": ["active", "pending_removal", "archived"], "default": "active" }
+        "status": { "type": "string", "enum": ["active", "pending_removal", "archived"], "default": "active" },
+        "removalDate": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "ownerId", "ownerName", "listingType", "title", "description", "country", "location", "images"]
     },
@@ -216,3 +221,4 @@
     ]
   }
 }
+
