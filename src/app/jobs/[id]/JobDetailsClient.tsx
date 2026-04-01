@@ -1,10 +1,11 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { doc, writeBatch, query, collection, where, getDocs, addDoc } from 'firebase/firestore';
 import { useDoc, useFirestore, useUser } from '@/firebase';
-import { Job } from '@/lib/job-data';
+import { Job, formatSalaryAmount } from '@/lib/job-data';
 import Link from 'next/link';
 import FavoriteButton from '@/components/favorite-button';
 import ShareButton from '@/components/share-button';
@@ -12,7 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase, Mail, CheckCircle, MessageSquare, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Loader2, MapPin, DollarSign, Briefcase, Mail, CheckCircle, MessageSquare, AlertTriangle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -94,7 +95,6 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
         return;
     }
 
-    // Show safety notice before proceeding
     setShowSafetyNotice(true);
   };
 
@@ -196,7 +196,7 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
   const salarySymbol = job.salaryCurrencySymbol || '$';
   const salaryFrequency = job.salaryPeriod === 'hour' ? '/ hour' : '/ month';
   const salaryInfo = job.salaryMin && job.salaryMax 
-    ? `${salarySymbol}${job.salaryMin.toLocaleString()} - ${salarySymbol}${job.salaryMax.toLocaleString()} ${salaryFrequency}` 
+    ? `${salarySymbol} ${formatSalaryAmount(job.salaryMin)} – ${formatSalaryAmount(job.salaryMax)} ${salaryFrequency}` 
     : 'Competitive Salary';
 
   const shareText = `*${job.title}*\n${job.companyName}\n\n📍 ${job.location}, ${job.country}\n💼 ${job.type}\n💰 ${salaryInfo}`;
@@ -302,9 +302,14 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
               <div className="flex items-center gap-1.5">
                 <Briefcase className="h-4 w-4 text-primary/60" /> {job.type}
               </div>
+              {job.positionsAvailable && (
+                <div className="flex items-center gap-1.5">
+                  <Users className="h-4 w-4 text-primary/60" /> {job.positionsAvailable} Position{job.positionsAvailable > 1 ? 's' : ''} Available
+                </div>
+              )}
               {job.salaryMin && job.salaryMax && (
                 <div className="flex items-center gap-1.5">
-                  <DollarSign className="h-4 w-4 text-primary/60" /> {salarySymbol}{job.salaryMin.toLocaleString()} - {salarySymbol}{job.salaryMax.toLocaleString()} {salaryFrequency}
+                  <DollarSign className="h-4 w-4 text-primary/60" /> {salarySymbol} {formatSalaryAmount(job.salaryMin)} – {formatSalaryAmount(job.salaryMax)} {salaryFrequency}
                 </div>
               )}
             </div>
@@ -348,4 +353,3 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
     </div>
   );
 }
-
