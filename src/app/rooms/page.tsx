@@ -1,8 +1,6 @@
-
-
 import { Metadata } from 'next';
-import { getRoom } from './actions';
-import RoomDetailsClient from './RoomDetailsClient';
+import { getRoom } from './[id]/actions';
+import RoomDetailsClient from './[id]/RoomDetailsClient';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
