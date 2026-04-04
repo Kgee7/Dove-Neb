@@ -32,6 +32,7 @@ import { Loader2, Users } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { CurrencySelector } from '@/components/currency-selector';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters long.'),
@@ -44,6 +45,7 @@ const formSchema = z.object({
   currency: z.string().min(1, 'Currency is required.'),
   salaryMin: z.coerce.number().min(0).optional(),
   salaryMax: z.coerce.number().min(0).optional(),
+  salaryNegotiable: z.boolean().default(false),
   salaryPeriod: z.enum(['month', 'hour']),
   applicationMethod: z.enum(['email', 'whatsapp'], { required_error: 'Please select an application method.' }),
   applicationEmail: z.string().email('Please enter a valid email.').optional().or(z.literal('')),
@@ -87,6 +89,7 @@ export default function PostJobPage() {
       currency: 'USD',
       salaryMin: undefined,
       salaryMax: undefined,
+      salaryNegotiable: false,
       salaryPeriod: 'month',
       applicationMethod: 'email',
       applicationEmail: '',
@@ -130,6 +133,9 @@ export default function PostJobPage() {
       applicationWhatsapp: data.applicationMethod === 'whatsapp' ? data.applicationWhatsapp : null,
       employerId: user.uid,
       status: 'active',
+      salaryNegotiable: !!data.salaryNegotiable,
+      salaryMin: data.salaryNegotiable ? null : (data.salaryMin ?? null),
+      salaryMax: data.salaryNegotiable ? null : (data.salaryMax ?? null),
       createdAt: new Date(),
     };
 
@@ -323,35 +329,61 @@ export default function PostJobPage() {
                 </div>
 
                 <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
-                  <h3 className="font-semibold text-sm">Salary & Payment</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <h3 className="font-semibold text-sm">Salary & Payment</h3>
                     <FormField
                       control={form.control}
-                      name="salaryMin"
+                      name="salaryNegotiable"
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Minimum Salary (Optional)</FormLabel>
+                        <FormItem className="flex flex-row items-center space-x-2 space-y-0">
                           <FormControl>
-                            <Input type="number" placeholder="70000" {...field} value={field.value ?? ''} />
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                if (checked) {
+                                  form.setValue('salaryMin', null as any);
+                                  form.setValue('salaryMax', null as any);
+                                }
+                              }}
+                            />
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="salaryMax"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Maximum Salary (Optional)</FormLabel>
-                          <FormControl>
-                            <Input type="number" placeholder="120000" {...field} value={field.value ?? ''} />
-                          </FormControl>
-                          <FormMessage />
+                          <FormLabel className="text-xs font-medium cursor-pointer">Salary is Negotiable</FormLabel>
                         </FormItem>
                       )}
                     />
                   </div>
+                  
+                  {!form.watch('salaryNegotiable') && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <FormField
+                        control={form.control}
+                        name="salaryMin"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Minimum Salary (Optional)</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="70000" {...field} value={field.value ?? ''} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="salaryMax"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Maximum Salary (Optional)</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="120000" {...field} value={field.value ?? ''} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

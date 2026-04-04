@@ -4,91 +4,103 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // HELPER FUNCTIONS
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
     function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isJobEmployer(jobId) {
+      return isAuthenticated() && get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid;
+    }
+
+    function isRoomOwner(roomId) {
+      return isAuthenticated() && get(/databases/$(database)/documents/rooms/$(roomId)).data.ownerId == request.auth.uid;
     }
 
     // USER PROFILES
-    // Users can read and write to their own profile.
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
-    }
-    
-    // USER SUBCOLLECTIONS
-    // A user can manage their own bookings and create their own applications.
-    match /users/{userId}/bookings/{docId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId) || (isAuthenticated() && resource.data.email == request.auth.token.email);
+      allow write: if isOwner(userId);
+      
+      // USER SUBCOLLECTIONS (Bookings, Applications, Favorites)
+      match /bookings/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /applications/{applicationId} {
+        allow read, create, delete: if isOwner(userId);
+        // The employer who owns the job can update the application status or delete it.
+        allow update, delete: if isAuthenticated() && get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.employerId == request.auth.uid;
+      }
+
+      match /favoriteJobs/{favoriteId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /favoriteRooms/{favoriteId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /notifications/{notifId} {
+        allow read, update, delete: if isOwner(userId);
+        
+        // Allowed for the owner, or for seekers creating a "job_application" notification for an employer.
+        allow create: if isOwner(userId) || (
+          isAuthenticated() && 
+          request.resource.data.type == 'job_application' &&
+          request.resource.data.jobId != null &&
+          request.resource.data.applicantId != null
+        );
+      }
     }
 
-    match /users/{userId}/applications/{applicationId} {
-      // A user can read, create, and delete their own applications.
-      allow read, create, delete: if isOwner(userId);
-      // The employer who owns the job can update the application status.
-      allow update: if get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.employerId == request.auth.uid;
-    }
-
-    match /users/{userId}/favoriteJobs/{favoriteId} {
-      // A user can read and write their own favorite jobs.
-      allow read, write: if isOwner(userId);
-    }
-
-    match /users/{userId}/favoriteRooms/{favoriteId} {
-       // A user can read and write their own favorite rooms.
-      allow read, write: if isOwner(userId);
-    }
-
-    // PUBLIC JOB LISTINGS
-    // Anyone can read job listings.
-    // Only authenticated employers can create jobs.
-    // Only the employer who created the job can update or delete it.
+    // JOB LISTINGS
     match /jobs/{jobId} {
       allow read: if true;
-      allow create: if request.auth != null && request.resource.data.employerId == request.auth.uid;
-      allow update, delete: if isOwner(resource.data.employerId);
-    }
-    
-    // JOB APPLICANTS COLLECTION
-    // Rule for listing the entire collection of applicants
-    match /jobs/{jobId}/applicants {
-        // The job owner can list all applicants.
-        allow list: if get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid;
-    }
+      allow create: if isAuthenticated() && request.resource.data.employerId == request.auth.uid;
+      allow update: if isOwner(resource.data.employerId) || (
+        isAuthenticated() && 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastApplicantAt'])
+      );
+      allow delete: if isOwner(resource.data.employerId);
 
-    // JOB APPLICANTS INDIVIDUAL DOCUMENT
-    // Rules for individual applicant documents
-    match /jobs/{jobId}/applicants/{applicantId} {
-        // The job owner can read individual applicant docs.
+      // JOB APPLICANTS (Nested subcollection)
+      match /applicants {
+        // The job owner can list all applicants.
+        allow list: if isJobEmployer(jobId);
+      }
+
+      match /applicants/{applicantId} {
+        // The job owner can read, update, and delete individual applicant docs.
+        allow read, delete, update: if isJobEmployer(jobId);
+        
         // A seeker can read their OWN application record to check the status.
-        allow get: if get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid ||
-                       (request.auth != null && resource.data.seekerId == request.auth.uid);
+        allow get: if isAuthenticated() && resource.data.seekerId == request.auth.uid;
         
         // An authenticated user (seeker) can create an application for a job.
-        allow create: if request.auth != null && request.resource.data.seekerId == request.auth.uid;
+        allow create: if isAuthenticated() && request.resource.data.seekerId == request.auth.uid;
         
-        // The employer who owns the job OR the seeker who created the application can delete it.
-        allow delete: if get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid ||
-                       (request.auth != null && resource.data.seekerId == request.auth.uid);
-
-        // Only the employer who owns the job can update applications.
-        allow update: if get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid;
+        // A seeker can also delete their own application.
+        allow delete: if isAuthenticated() && resource.data.seekerId == request.auth.uid;
+      }
     }
 
-    // PUBLIC ROOM LISTINGS
-    // Anyone can read room listings.
-    // Only authenticated users can create rooms.
-    // Only the user who created the room can update or delete it.
+    // ROOM LISTINGS
     match /rooms/{roomId} {
       allow read: if true;
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
       allow update, delete: if isOwner(resource.data.ownerId);
-    }
 
-    // RATINGS SUBCOLLECTION
-    // Anyone can read ratings.
-    match /rooms/{roomId}/ratings/{ratingId} {
+      // RATINGS SUBCOLLECTION
+      match /ratings/{ratingId} {
         allow read: if true;
-        // Only authenticated users can create, update, or delete their own interest marker/rating.
-        allow write: if request.auth != null && ratingId == request.auth.uid;
+        // Only authenticated users can write their own interest marker/rating.
+        allow write: if isAuthenticated() && ratingId == request.auth.uid;
+      }
     }
   }
 }

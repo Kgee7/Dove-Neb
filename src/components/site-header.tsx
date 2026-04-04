@@ -28,6 +28,7 @@ type UserProfile = {
   lastName: string;
   preferredName?: string;
   photoURL?: string | null;
+  userType?: 'seeker' | 'employer' | 'renter' | 'owner';
 };
 
 export function SiteHeader() {
@@ -69,7 +70,7 @@ export function SiteHeader() {
 
   const navLinks = [
     { href: "/jobs", label: "Jobs" },
-    { href: "/rooms", label: "Rooms" },
+    { href: "/rooms", label: "Lodge Now" },
     { href: "/blog", label: "Blog" },
     { href: "/dashboard", label: "Dashboard", protected: true },
   ];
@@ -181,11 +182,13 @@ export function SiteHeader() {
                             <div className="space-y-3">
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Postings</p>
                                 <Link href="/dashboard/list-room" onClick={() => setIsMobileMenuOpen(false)} className="block py-2">
-                                    <Button variant="outline" className="w-full justify-start h-10 text-xs">Lodge Now</Button>
+                                    <Button variant="outline" className="w-full justify-start h-10 text-xs">List Room</Button>
                                 </Link>
-                                <Link href="/dashboard/post-job" onClick={() => setIsMobileMenuOpen(false)} className="block py-2">
-                                    <Button variant="outline" className="w-full justify-start h-10 text-xs">Post a Job</Button>
-                                </Link>
+                                {userProfile?.userType === 'employer' && (
+                                  <Link href="/dashboard/post-job" onClick={() => setIsMobileMenuOpen(false)} className="block py-2">
+                                      <Button variant="outline" className="w-full justify-start h-10 text-xs">Post a Job</Button>
+                                  </Link>
+                                )}
                             </div>
                         </div>
                     </SheetContent>
@@ -198,7 +201,7 @@ export function SiteHeader() {
                 <Link href="/blog" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors mr-4">Blog</Link>
                 <Link href="/dashboard/list-room">
                     <Button variant="outline" size="sm" className="h-8 px-3 text-xs">
-                        Lodge Now
+                        List Room
                     </Button>
                 </Link>
                 <Link href="/dashboard/post-job">
@@ -251,13 +254,13 @@ export function SiteHeader() {
                             <div className="space-y-2">
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-3">Explore</p>
                                 <Link href="/jobs" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 text-sm font-medium hover:bg-muted rounded-md">Jobs</Link>
-                                <Link href="/rooms" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 text-sm font-medium hover:bg-muted rounded-md">Rooms</Link>
+                                <Link href="/rooms" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 text-sm font-medium hover:bg-muted rounded-md">Lodge Now</Link>
                                 <Link href="/blog" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 text-sm font-medium hover:bg-muted rounded-md">Blog</Link>
                             </div>
                             <Separator />
                             <div className="space-y-3">
                                 <Link href="/dashboard/list-room" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <Button variant="outline" className="w-full justify-start h-10 text-xs">Lodge Now</Button>
+                                    <Button variant="outline" className="w-full justify-start h-10 text-xs">List Room</Button>
                                 </Link>
                                 <Link href="/dashboard/post-job" onClick={() => setIsMobileMenuOpen(false)}>
                                     <Button variant="outline" className="w-full justify-start h-10 text-xs">Post a Job</Button>

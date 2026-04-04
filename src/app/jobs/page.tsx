@@ -25,7 +25,7 @@ function JobsPageClient() {
   useEffect(() => {
     setIsClient(true);
   }, []);
-  
+
   const firestore = useFirestore();
 
   const jobsQuery = useMemo(() => {
@@ -35,7 +35,7 @@ function JobsPageClient() {
   }, [firestore]);
 
   const { data: jobs, isLoading: jobsLoading } = useCollection<Job>(jobsQuery);
-  
+
   const allJobs = jobs || [];
 
   const filteredJobs = useMemo(() => {
@@ -46,10 +46,10 @@ function JobsPageClient() {
     return allJobs.filter(job => {
       const term = searchTerm.toLowerCase();
       const lTerm = locationTerm.toLowerCase();
-      
+
       const titleMatch = job.title?.toLowerCase().includes(term) || job.companyName?.toLowerCase().includes(term);
       const locationMatch = !lTerm || job.location?.toLowerCase().includes(lTerm) || job.country?.toLowerCase().includes(lTerm);
-      
+
       // Robust Date Filtering using string comparison
       const isStarted = !job.listingStartDate || todayStr >= job.listingStartDate;
       const isNotExpired = !job.listingEndDate || todayStr <= job.listingEndDate;
@@ -72,38 +72,38 @@ function JobsPageClient() {
 
       <Card className="mx-auto mb-8 sm:mb-12 max-w-2xl shadow-md bg-background/95 backdrop-blur-sm border-none overflow-hidden">
         {isClient && (
-        <form className="flex items-center gap-1 p-1 sm:p-1.5" onSubmit={handleSearch}>
-          <div className="flex flex-1 items-center bg-muted/30 rounded-md sm:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden h-8 sm:h-9">
-            <div className="flex flex-1 items-center px-2 border-r border-muted-foreground/20 h-full">
-              <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <Input 
-                placeholder='Job title'
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2"
-              />
+          <form className="flex items-center gap-1 p-1 sm:p-1.5" onSubmit={handleSearch}>
+            <div className="flex flex-1 items-center bg-muted/30 rounded-md sm:rounded-full border focus-within:ring-1 focus-within:ring-primary overflow-hidden h-8 sm:h-9">
+              <div className="flex flex-1 items-center px-2 border-r border-muted-foreground/20 h-full">
+                <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <Input
+                  placeholder='Job title'
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2"
+                />
+              </div>
+              <div className="flex flex-1 items-center px-2 h-full">
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <Input
+                  placeholder='Location'
+                  value={locationTerm}
+                  onChange={(e) => setLocationTerm(e.target.value)}
+                  className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2"
+                />
+              </div>
             </div>
-            <div className="flex flex-1 items-center px-2 h-full">
-              <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <Input 
-                placeholder='Location'
-                value={locationTerm}
-                onChange={(e) => setLocationTerm(e.target.value)}
-                className="border-none bg-transparent focus-visible:ring-0 h-full text-[10px] sm:text-xs px-2"
-              />
-            </div>
-          </div>
-          <Button type="submit" className="h-8 sm:h-9 px-5 rounded-md sm:rounded-full font-bold shrink-0 text-[10px] sm:text-xs">
-            Search
-          </Button>
-        </form>
+            <Button type="submit" className="h-8 sm:h-9 px-5 rounded-md sm:rounded-full font-bold shrink-0 text-[10px] sm:text-xs">
+              Search
+            </Button>
+          </form>
         )}
       </Card>
 
       <section>
         <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-center">All Jobs</h2>
         {jobsLoading ? (
-           <div className="flex justify-center items-center h-64"><Loader2 className="h-12 w-12 animate-spin" /></div>
+          <div className="flex justify-center items-center h-64"><Loader2 className="h-12 w-12 animate-spin" /></div>
         ) : filteredJobs.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredJobs.map(job => (
@@ -111,9 +111,9 @@ function JobsPageClient() {
             ))}
           </div>
         ) : (
-           <div className='text-center py-16 border-2 border-dashed rounded-lg'>
-              <h3 className="mt-2 text-lg font-medium">No jobs found.</h3>
-              <p className="mt-1 text-[10px] sm:text-sm text-muted-foreground">Try adjusting your search terms.</p>
+          <div className='text-center py-16 border-2 border-dashed rounded-lg'>
+            <h3 className="mt-2 text-lg font-medium">No jobs found.</h3>
+            <p className="mt-1 text-[10px] sm:text-sm text-muted-foreground">Try adjusting your search terms.</p>
           </div>
         )}
       </section>
@@ -129,48 +129,50 @@ function JobCard({ job }: { job: Job }) {
       <FavoriteButton item={job} itemType="job" />
       <CardHeader className="p-4 sm:p-6 pb-2">
         <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                    <CardTitle className="text-sm sm:text-lg font-bold leading-tight line-clamp-2">{job.title}</CardTitle>
-                </div>
-                <CardDescription className="text-[10px] sm:text-sm truncate">{job.companyName}</CardDescription>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <CardTitle className="text-sm sm:text-lg font-bold leading-tight line-clamp-2">{job.title}</CardTitle>
             </div>
-             <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg bg-muted flex items-center justify-center font-bold text-xs sm:text-lg shrink-0">
-                {job.companyName?.charAt(0) || '?'}
-            </div>
+            <CardDescription className="text-[10px] sm:text-sm truncate">{job.companyName}</CardDescription>
+          </div>
+          <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg bg-muted flex items-center justify-center font-bold text-xs sm:text-lg shrink-0">
+            {job.companyName?.charAt(0) || '?'}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col p-4 sm:p-6 pt-2">
         <div className="space-y-2 text-[10px] sm:text-sm text-muted-foreground flex-grow">
+          <div className="flex items-center">
+            <MapPin className="h-3 w-3 mr-2 shrink-0" />
+            <span className="truncate">{job.location}, {job.country}</span>
+          </div>
+          <div className="flex items-center">
+            <Briefcase className="h-3 w-3 mr-2 shrink-0" />
+            <span>{job.type}</span>
+          </div>
+          {job.positionsAvailable && (
             <div className="flex items-center">
-                <MapPin className="h-3 w-3 mr-2 shrink-0" />
-                <span className="truncate">{job.location}, {job.country}</span>
+              <Users className="h-3 w-3 mr-2 shrink-0" />
+              <span>{job.positionsAvailable} Position{job.positionsAvailable > 1 ? 's' : ''} Available</span>
             </div>
-             <div className="flex items-center">
-                <Briefcase className="h-3 w-3 mr-2 shrink-0" />
-                <span>{job.type}</span>
-            </div>
-            {job.positionsAvailable && (
-              <div className="flex items-center">
-                <Users className="h-3 w-3 mr-2 shrink-0" />
-                <span>{job.positionsAvailable} Position{job.positionsAvailable > 1 ? 's' : ''} Available</span>
-              </div>
-            )}
+          )}
         </div>
         <Separator className="my-3 sm:my-4" />
         <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0">
-                {job.salaryMin && job.salaryMax ? (
-                    <p className="font-semibold text-[10px] sm:text-base truncate">
-                      {salarySymbol}{formatSalaryAmount(job.salaryMin)} - {salarySymbol}{formatSalaryAmount(job.salaryMax)} {salaryFrequency}
-                    </p>
-                ) : (
-                     <p className="font-semibold text-[10px] sm:text-base">Competitive</p>
-                )}
-            </div>
-            <Link href={`/jobs/${job.id}`} passHref>
-                 <Button size='sm' className="h-7 sm:h-9 px-3 sm:px-4 text-[10px] sm:text-sm">View</Button>
-            </Link>
+          <div className="min-w-0">
+            {job.salaryNegotiable ? (
+              <p className="font-semibold text-[10px] sm:text-base truncate text-primary">Negotiable</p>
+            ) : job.salaryMin && job.salaryMax ? (
+              <p className="font-semibold text-[10px] sm:text-base truncate">
+                {salarySymbol}{formatSalaryAmount(job.salaryMin)} - {salarySymbol}{formatSalaryAmount(job.salaryMax)} {salaryFrequency}
+              </p>
+            ) : (
+              <p className="font-semibold text-[10px] sm:text-base">Competitive</p>
+            )}
+          </div>
+          <Link href={`/jobs/${job.id}`} passHref>
+            <Button size='sm' className="h-7 sm:h-9 px-3 sm:px-4 text-[10px] sm:text-sm">View</Button>
+          </Link>
         </div>
       </CardContent>
     </Card>

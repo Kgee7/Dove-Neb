@@ -26,11 +26,13 @@ export type Notification = {
   id: string;
   title: string;
   message: string;
-  type: 'info' | 'survey' | 'expiry_check';
+  type: 'info' | 'survey' | 'expiry_check' | 'hiring_check' | 'job_application';
   surveyQuestion?: string;
   surveyAnswer?: 'yes' | 'no' | null;
   roomId?: string; // Optional reference to a room for rating
   relatedListingId?: string;
+  jobId?: string; // Added for job context
+  applicantId?: string; // Added for job context
   relatedListingType?: 'job' | 'room';
   read: boolean;
   createdAt: { toDate: () => Date };
@@ -90,7 +92,7 @@ export default function NotificationsDropdown() {
         message: `Survey complete: You answered "${answer}".`
       });
 
-      if (type === 'expiry_check' && answer === 'yes' && relatedListingId) {
+      if ((type === 'expiry_check' || type === 'hiring_check') && answer === 'yes' && relatedListingId) {
           const collectionName = relatedListingType === 'job' ? 'jobs' : 'rooms';
           const listingRef = doc(firestore, collectionName, relatedListingId);
           
@@ -157,7 +159,7 @@ export default function NotificationsDropdown() {
               >
                 <div className="flex w-full items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    {n.type === 'survey' || n.type === 'expiry_check' ? <HelpCircle className="h-4 w-4 text-primary" /> : <Info className="h-4 w-4 text-muted-foreground" />}
+                    {n.type === 'survey' || n.type === 'expiry_check' || n.type === 'hiring_check' ? <HelpCircle className="h-4 w-4 text-primary" /> : <Info className="h-4 w-4 text-muted-foreground" />}
                     <span className="font-semibold text-xs">{n.title}</span>
                   </div>
                   <button 
@@ -170,7 +172,7 @@ export default function NotificationsDropdown() {
                 <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
                   {n.message}
                 </p>
-                {(n.type === 'survey' || n.type === 'expiry_check') && !n.surveyAnswer && (
+                {(n.type === 'survey' || n.type === 'expiry_check' || n.type === 'hiring_check') && !n.surveyAnswer && (
                   <div className="flex gap-2 mt-3 w-full">
                     <Button size="sm" className="h-7 px-2 text-[10px] flex-1 font-bold" onClick={(e) => handleSurvey(e, n, 'yes')}>Yes</Button>
                     <Button size="sm" variant="outline" className="h-7 px-2 text-[10px] flex-1 font-bold" onClick={(e) => handleSurvey(e, n, 'no')}>No</Button>

@@ -56,28 +56,35 @@ export default function ForgotPasswordPage() {
 
     setLoading(true);
     try {
+      // Diagnostic logging
+      console.log('Attempting password reset for:', values.email);
+      
       await sendPasswordResetEmail(auth, values.email);
       setEmailSent(true);
       toast({
-        title: 'Reset Link Sent',
-        description: `Check ${values.email} for instructions to reset your password.`,
+        title: 'Reset Link Processed',
+        description: `If an account exists for ${values.email}, a reset link has been sent.`,
       });
     } catch (error: any) {
-      let title = 'Reset Failed';
-      let description = 'We encountered an error sending the reset link. Please try again.';
+      console.error('Password reset detail error:', error);
+      let title = 'Reset Request Failed';
+      let description = 'We encountered an error processing your request. Please try again.';
 
       if (error instanceof FirebaseError) {
+        // Newer Firebase projects have enumeration protection enabled by default.
+        // auth/user-not-found may not be thrown.
         if (error.code === 'auth/user-not-found') {
           title = 'Account Not Found';
           description = 'No account exists with this email address.';
         } else if (error.code === 'auth/invalid-email') {
-          description = 'The email address provided is invalid.';
+          description = 'The email address provided is invalid. Please check for typos.';
+        } else if (error.code === 'auth/too-many-requests') {
+            description = 'Too many requests. Please wait a few minutes and try again.';
         } else {
-          description = error.message;
+          description = `Firebase Error: ${error.message}`;
         }
       }
       
-      console.error('Password reset error:', error);
       toast({
         variant: 'destructive',
         title: title,

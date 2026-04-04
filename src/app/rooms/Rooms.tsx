@@ -81,7 +81,7 @@ export default function Rooms() {
     <div className="container py-8 sm:py-12 px-4">
       <div className="mb-8 sm:mb-12 text-center">
         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight font-headline">
-          Explore Spaces
+          Lodge Now
         </h1>
         <p className="mt-2 text-[10px] sm:text-xs md:text-lg text-muted-foreground max-w-2xl mx-auto">
           Find your next home away from home, or your next permanent residence.
@@ -192,7 +192,7 @@ export default function Rooms() {
             ))
           ) : (
             <div className="col-span-full text-center py-20 border-2 border-dashed rounded-xl">
-              <p className="text-muted-foreground text-[10px] sm:text-base">No spaces found matching your criteria.</p>
+              <p className="text-muted-foreground text-[10px] sm:text-base">No Lodge Now found matching your criteria.</p>
               <Button variant="link" size="sm" onClick={() => {
                   setSearchTerm('');
                   setLocationTerm('');

@@ -225,8 +225,10 @@ export default function HomePage() {
                     <div className="mt-4 flex-grow" />
                     <div className="flex justify-between items-center mt-2 pt-3 border-t">
                         <Badge variant="secondary" className="text-[8px] sm:text-[10px] py-0 h-5">{job.type}</Badge>
-                        {(job.salaryMin && job.salaryMax) && (
-                          <p className="text-xs sm:text-sm font-semibold">
+                        {job.salaryNegotiable ? (
+                          <p className="text-xs sm:text-sm font-semibold text-primary truncate">Negotiable</p>
+                        ) : (job.salaryMin && job.salaryMax) && (
+                          <p className="text-xs sm:text-sm font-semibold truncate">
                               {salarySymbol}{formatSalaryAmount(job.salaryMin)} - {salarySymbol}{formatSalaryAmount(job.salaryMax)} {salaryPeriod}
                           </p>
                         )}
@@ -256,14 +258,14 @@ export default function HomePage() {
               Featured Stays
             </h2>
             <p className="mt-1 text-[10px] sm:text-sm text-muted-foreground max-w-2xl mx-auto">
-              Explore some of our most popular and highly-rated spaces.
+              Explore some of our most popular and highly-rated Lodge Now.
             </p>
           </div>
           {roomsLoading ? (
              <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin" /></div>
           ) : !rooms || rooms.length === 0 ? (
             <div className="text-center py-10">
-              <p className="text-xs sm:text-sm text-muted-foreground italic">No spaces available at the moment.</p>
+              <p className="text-xs sm:text-sm text-muted-foreground italic">No Lodge Now available at the moment.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -334,7 +336,7 @@ export default function HomePage() {
               href="/rooms"
               className={cn(buttonVariants({ size: "sm", className: "w-full sm:w-auto font-bold px-8 h-10" }))}
             >
-              Explore All Spaces
+              Explore All Lodge Now
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </div>

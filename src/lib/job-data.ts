@@ -1,57 +1,45 @@
+
 export type Job = {
   id: string;
   title: string;
   companyName: string;
   country: string;
   location: string;
-  type: 'Full-time' | 'Part-time' | 'Contract' | 'Internship' | 'Remote' | 'Hybrid';
-  positionsAvailable?: number;
+  type: "Full-time" | "Part-time" | "Contract" | "Internship" | "Remote" | "Hybrid";
+  positionsAvailable: number;
   description: string;
   salaryMin?: number;
   salaryMax?: number;
-  salaryCurrency?: string;
-  salaryCurrencySymbol?: string;
-  salaryPeriod?: 'month' | 'hour';
+  salaryPeriod: 'month' | 'hour';
+  salaryCurrency: string;
+  salaryCurrencySymbol: string;
+  salaryNegotiable?: boolean;
   applicationMethod: 'email' | 'whatsapp';
-  applicationEmail?: string;
-  applicationWhatsapp?: string;
-  employerId: string;
+  applicationEmail?: string | null;
+  applicationWhatsapp?: string | null;
   listingStartDate: string;
   listingEndDate: string;
-  status: 'active' | 'pending_removal' | 'archived';
-  removalDate?: any;
+  employerId: string;
+  status: 'active' | 'archived' | 'pending_removal';
   createdAt: any;
-};
-
-export type JobApplicant = {
-  id: string;
-  seekerId: string;
-  seekerName: string;
-  seekerEmail: string;
-  resumeURL?: string;
-  photoURL?: string;
-  status: 'pending' | 'reviewed' | 'rejected' | 'hired';
-  userApplicationId?: string;
-  appliedAt: {
-    toDate: () => Date;
-  };
+  lastApplicantAt?: any;
+  removalDate?: any;
 };
 
 /**
- * Formats a salary amount based on user requirements.
- * Below 1000: Full number.
- * 1000 and above: 'k' format (e.g. 1k, 1.1k).
- * 1,000,000 and above: 'M' format.
+ * Formats a numeric salary amount into a readable string.
+ * Values >= 1000 are converted to "k" format (e.g., 70000 -> 70k, 1500 -> 1.5k).
+ * Values < 1000 are shown as full numbers with commas (e.g., 900 -> 900).
  */
-export function formatSalaryAmount(amount: number): string {
-  if (amount < 1000) return amount.toLocaleString();
-
-  if (amount >= 1000000) {
-    const millions = amount / 1000000;
-    return millions % 1 === 0 ? `${millions}M` : `${millions.toFixed(1)}M`;
+export function formatSalaryAmount(amount: number | undefined | null): string {
+  if (amount === undefined || amount === null) return '';
+  
+  if (amount >= 1000) {
+    const formatted = (amount / 1000).toLocaleString(undefined, {
+      maximumFractionDigits: 1,
+    });
+    return formatted + 'k';
   }
-
-  const kilos = amount / 1000;
-  return kilos % 1 === 0 ? `${kilos}k` : `${kilos.toFixed(1)}k`;
+  
+  return amount.toLocaleString();
 }
-

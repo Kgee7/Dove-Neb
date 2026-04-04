@@ -193,7 +193,7 @@ export default function BlogPage() {
               </Link>
               <Link href="/rooms">
                 <Button size="lg" variant="secondary" className="w-full sm:w-auto h-12 px-8 font-bold">
-                  <Home className="mr-2 h-5 w-5" /> Explore Rooms
+                  <Home className="mr-2 h-5 w-5" /> Explore Lodge Now
                 </Button>
               </Link>
             </div>

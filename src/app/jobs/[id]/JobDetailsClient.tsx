@@ -109,7 +109,19 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
     }
     
     try {
-        const seekerName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
+        // Robust data extraction with fallbacks
+        const seekerEmail = userProfile.email || user?.email || "";
+        const seekerFirstName = userProfile.firstName || "";
+        const seekerLastName = userProfile.lastName || "";
+        const seekerName = `${seekerFirstName} ${seekerLastName}`.trim() || user?.displayName || "Anonymous Seeker";
+        const resumeURL = userProfile.resumeURL || "";
+        
+        if (!seekerEmail) {
+             setApplicationState('idle');
+             toast({ variant: 'destructive', title: 'Profile Incomplete', description: 'Please add an email address in your profile before applying.' });
+             return;
+        }
+
         const applicantId = uuidv4();
         const applicationId = uuidv4();
         const appliedAt = new Date();
@@ -118,9 +130,9 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
             id: applicantId,
             seekerId: user.uid,
             seekerName,
-            seekerEmail: userProfile.email,
-            resumeURL: userProfile.resumeURL,
-            photoURL: userProfile.photoURL || null,
+            seekerEmail,
+            resumeURL,
+            photoURL: userProfile.photoURL || user?.photoURL || null,
             status: 'pending',
             appliedAt,
             userApplicationId: applicationId,
@@ -141,6 +153,9 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
 
         const batch = writeBatch(firestore);
         
+        const jobRef = doc(firestore, 'jobs', job.id);
+        batch.update(jobRef, { lastApplicantAt: appliedAt });
+
         const applicantRef = doc(firestore, 'jobs', job.id, 'applicants', applicantId);
         batch.set(applicantRef, applicantData);
 
@@ -155,6 +170,19 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
             type: 'info',
             read: false,
             createdAt: new Date()
+        });
+
+        // Notify the Employer
+        const employerNotificationRef = doc(collection(firestore, 'users', job.employerId, 'notifications'));
+        batch.set(employerNotificationRef, {
+            id: employerNotificationRef.id,
+            title: 'New Applicant',
+            message: `${seekerName} (${seekerEmail}) has applied for the "${job.title}" position. Check your Email or WhatsApp to view the applicant's CV/Resume and Cover Letter.`,
+            type: 'job_application',
+            read: false,
+            createdAt: new Date(),
+            jobId: job.id,
+            applicantId: applicantId
         });
 
         await batch.commit();
@@ -195,9 +223,11 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
   
   const salarySymbol = job.salaryCurrencySymbol || '$';
   const salaryFrequency = job.salaryPeriod === 'hour' ? '/ hour' : '/ month';
-  const salaryInfo = job.salaryMin && job.salaryMax 
-    ? `${salarySymbol} ${formatSalaryAmount(job.salaryMin)} – ${formatSalaryAmount(job.salaryMax)} ${salaryFrequency}` 
-    : 'Competitive Salary';
+  const salaryInfo = job.salaryNegotiable 
+    ? 'Negotiable'
+    : job.salaryMin && job.salaryMax 
+        ? `${salarySymbol} ${formatSalaryAmount(job.salaryMin)} – ${formatSalaryAmount(job.salaryMax)} ${salaryFrequency}` 
+        : 'Competitive Salary';
 
   const shareText = `*${job.title}*\n${job.companyName}\n\n📍 ${job.location}, ${job.country}\n💼 ${job.type}\n💰 ${salaryInfo}`;
 
@@ -222,15 +252,33 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
         );
     }
 
+    const renderContactMethod = () => (
+        <div className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <p className="text-xs sm:text-sm font-semibold text-foreground mb-3">To finish, send your CV/Resume and Cover Letter to:</p>
+            <div className="flex items-center justify-center gap-3 font-mono p-4 bg-background border-2 border-primary/10 rounded-xl shadow-sm text-sm sm:text-base font-bold break-all">
+                {job.applicationMethod === 'email' ? (
+                    <Mail className="h-5 w-5 text-primary shrink-0" />
+                ) : (
+                    <MessageSquare className="h-5 w-5 text-primary shrink-0" />
+                )}
+                <span className="text-primary">{job.applicationMethod === 'email' ? job.applicationEmail : job.applicationWhatsapp}</span>
+            </div>
+        </div>
+    );
+
     if (hasAlreadyApplied) {
         return (
-            <Card className="bg-secondary/10 border-secondary/20">
-                <CardHeader className="p-4 sm:p-6 text-center">
-                    <CardTitle className="text-base sm:text-lg">Application Status</CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">You have already submitted an application for this role.</CardDescription>
+            <Card className="bg-green-50/50 border-green-100 shadow-sm overflow-hidden">
+                <CardHeader className="p-4 sm:p-6 text-center pb-2">
+                    <CardTitle className="text-lg sm:text-xl text-green-700 font-bold">Application Submitted!</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm font-medium">You have already submitted an application for this role.</CardDescription>
                 </CardHeader>
-                <CardContent className="p-4 sm:p-6 pt-0 flex justify-center">
-                    <Button disabled className="w-full max-w-sm h-10 sm:h-11">
+                <CardContent className="p-4 sm:p-6 pt-0 text-center">
+                    <div className="bg-green-100/50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-200">
+                        <CheckCircle className="h-7 w-7 text-green-600" />
+                    </div>
+                    {renderContactMethod()}
+                    <Button disabled className="mt-6 w-full max-w-xs h-10 sm:h-11 bg-green-600/10 text-green-700 hover:bg-green-600/10 border-green-200">
                         <CheckCircle className="mr-2 h-4 w-4" />
                         Application Sent
                     </Button>
@@ -241,17 +289,15 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
 
     if (applicationState === 'applied') {
         return (
-            <Card className="bg-green-50/50 border-green-100 text-center">
-                <CardHeader className="p-4 sm:p-6">
-                    <CardTitle className="text-base sm:text-lg text-green-800">Application Submitted!</CardTitle>
+            <Card className="bg-green-50/50 border-green-100 shadow-sm overflow-hidden">
+                <CardHeader className="p-4 sm:p-6 text-center pb-2">
+                    <CardTitle className="text-lg sm:text-xl text-green-800 font-bold">Application Successful!</CardTitle>
                 </CardHeader>
-                <CardContent className="p-4 sm:p-6 pt-0">
-                    <CheckCircle className="mx-auto h-8 w-8 text-green-500 mb-4" />
-                    <p className="text-xs sm:text-sm font-semibold text-muted-foreground mb-3">To finish, send your cv/cover letter to:</p>
-                    <div className="flex items-center justify-center gap-2 font-mono p-3 bg-background border rounded-lg shadow-sm text-xs sm:text-sm break-all">
-                        {job.applicationMethod === 'email' ? <Mail className="h-4 w-4 shrink-0" /> : <MessageSquare className="h-4 w-4 shrink-0" />}
-                        <span>{job.applicationMethod === 'email' ? job.applicationEmail : job.applicationWhatsapp}</span>
+                <CardContent className="p-4 sm:p-6 pt-0 text-center">
+                    <div className="bg-green-100/50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-200">
+                        <CheckCircle className="h-7 w-7 text-green-600" />
                     </div>
+                    {renderContactMethod()}
                 </CardContent>
             </Card>
         );
@@ -307,7 +353,11 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
                   <Users className="h-4 w-4 text-primary/60" /> {job.positionsAvailable} Position{job.positionsAvailable > 1 ? 's' : ''} Available
                 </div>
               )}
-              {job.salaryMin && job.salaryMax && (
+              {job.salaryNegotiable ? (
+                <div className="flex items-center gap-1.5 text-primary">
+                  <DollarSign className="h-4 w-4" /> Negotiable
+                </div>
+              ) : job.salaryMin && job.salaryMax && (
                 <div className="flex items-center gap-1.5">
                   <DollarSign className="h-4 w-4 text-primary/60" /> {salarySymbol} {formatSalaryAmount(job.salaryMin)} – {formatSalaryAmount(job.salaryMax)} {salaryFrequency}
                 </div>
@@ -338,11 +388,13 @@ export default function JobDetailsClient({ id }: JobDetailsClientProps) {
               <AlertTriangle className="h-5 w-5" />
               Job Application Safety Notice
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-4 pt-4 text-foreground">
-              <p className="font-bold">For your safety, please do not pay any money to any employer or recruiter when applying for a job on this platform.</p>
-              <p>Legitimate employers should not request application fees, processing fees, or any form of payment from job seekers.</p>
-              <p>If any employer asks you to send money, please decline and report the job listing immediately.</p>
-              <p className="italic">Stay safe and protect yourself from job scams.</p>
+            <AlertDialogDescription asChild className="space-y-4 pt-4 text-foreground text-sm">
+              <div>
+                <p className="font-bold">For your safety, please do not pay any money to any employer or recruiter when applying for a job on this platform.</p>
+                <p>Legitimate employers should not request application fees, processing fees, or any form of payment from job seekers.</p>
+                <p>If any employer asks you to send money, please decline and report the job listing immediately.</p>
+                <p className="italic">Stay safe and protect yourself from job scams.</p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

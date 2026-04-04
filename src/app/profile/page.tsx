@@ -9,6 +9,9 @@ import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { fileToBase64, compressImage } from '@/lib/image-utils';
+import { updatePassword, EmailAuthProvider, linkWithCredential, reauthenticateWithCredential } from 'firebase/auth';
+import { CardDescription as PasswordCardDescription } from '@/components/ui/card';
+import { Eye, EyeOff } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -25,6 +28,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Loader2, Edit, Upload, ArrowLeft } from 'lucide-react';
@@ -178,11 +182,16 @@ export default function ProfilePage() {
     if (!userDocRef) return;
     setLoading(true);
 
-    const dataToUpdate = {
+    const dataToUpdate: any = {
       firstName: values.firstName,
       lastName: values.lastName,
       preferredName: values.preferredName,
     };
+    
+    // Ensure email is also saved if it's missing (important for Google-only users)
+    if (!userProfile?.email && user?.email) {
+        dataToUpdate.email = user.email;
+    }
     
     try {
         await setDoc(userDocRef, dataToUpdate, { merge: true });
@@ -324,11 +333,12 @@ export default function ProfilePage() {
                 <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                        <Input value={userProfile?.email || ''} disabled />
+                        <Input value={userProfile?.email || user?.email || ''} disabled />
                     </FormControl>
+                    <FormDescription>Your email address is managed through your account provider.</FormDescription>
                 </FormItem>
                 
-                {userProfile?.userType === 'seeker' && (
+                {(userProfile?.userType === 'seeker' || !userProfile?.userType) && (
                     <Card>
                         <CardHeader className="p-4 pb-2">
                             <CardTitle className='text-lg'>Resume</CardTitle>
@@ -337,7 +347,7 @@ export default function ProfilePage() {
                         <CardContent className="p-4">
                             <div className="flex flex-col items-start gap-4">
                                <div className="flex items-center gap-4">
-                                {userProfile.resumeURL ? (
+                                {userProfile?.resumeURL ? (
                                     <Button type="button" variant="link" className="p-0 h-auto" onClick={viewResume}>
                                         View Current Resume
                                     </Button>
@@ -346,7 +356,7 @@ export default function ProfilePage() {
                                 )}
                                 <Button type="button" variant="outline" size="sm" onClick={() => resumeInputRef.current?.click()} disabled={uploadingResume}>
                                     {uploadingResume ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                                    {userProfile.resumeURL ? 'Replace Resume' : 'Upload Resume'}
+                                    {userProfile?.resumeURL ? 'Replace Resume' : 'Upload Resume'}
                                 </Button>
                                </div>
                             </div>
@@ -360,7 +370,7 @@ export default function ProfilePage() {
                         </CardContent>
                     </Card>
                 )}
-              
+
               <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={loading || uploading || uploadingResume}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -369,8 +379,135 @@ export default function ProfilePage() {
               </div>
             </form>
           </Form>
+
+          <PasswordSetupSection />
         </CardContent>
       </Card>
     </div>
   );
+}
+
+function PasswordSetupSection() {
+    const { user } = useUser();
+    const { toast } = useToast();
+    const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [hasPassword, setHasPassword] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            const isEmailPass = user.providerData.some(p => p.providerId === 'password');
+            setHasPassword(isEmailPass);
+        }
+    }, [user]);
+
+    const handleSetPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user) return;
+        if (password !== confirmPassword) {
+            toast({ variant: 'destructive', title: 'Passwords do not match.' });
+            return;
+        }
+        if (password.length < 6) {
+            toast({ variant: 'destructive', title: 'Password must be at least 6 characters.' });
+            return;
+        }
+
+        setLoading(true);
+        try {
+            // Re-verify if password provider exists in data (real-time check)
+            const isEmailPassUser = user.providerData.some(p => p.providerId === 'password');
+            
+            if (isEmailPassUser) {
+                await updatePassword(user, password);
+                toast({ title: 'Password Updated', description: 'You can now use your new password.' });
+            } else {
+                const credential = EmailAuthProvider.credential(user.email!, password);
+                await linkWithCredential(user, credential);
+                setHasPassword(true);
+                toast({ title: 'Password Set!', description: 'You can now log in with either Google or your email & password.' });
+            }
+            setPassword('');
+            setConfirmPassword('');
+        } catch (error: any) {
+            console.error('Password error:', error);
+            let message = error.message;
+            if (error.code === 'auth/requires-recent-login') {
+                message = 'For security, please sign out and sign back in before changing your password.';
+            } else if (error.code === 'auth/credential-already-in-use') {
+                message = 'This email is already associated with another account. Please contact support or try another email.';
+            } else if (error.code === 'auth/invalid-email') {
+                message = 'A valid email address is required to link a password.';
+            }
+            toast({ variant: 'destructive', title: 'Action Failed', description: message });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Card className="mt-8 border-primary/20 bg-primary/[0.01]">
+            <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-lg">Account Access</CardTitle>
+                <PasswordCardDescription>
+                    {hasPassword 
+                        ? 'Update your account password below.' 
+                        : 'Your account is currently linked only to Google. Set a password below to enable email login.'}
+                </PasswordCardDescription>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+                <form onSubmit={handleSetPassword} className="space-y-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">New Password</label>
+                        <div className="relative">
+                            <Input 
+                                type={showPassword ? "text" : "password"} 
+                                placeholder="••••••••" 
+                                value={password} 
+                                onChange={(e) => setPassword(e.target.value)} 
+                                required 
+                            />
+                            <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="sm" 
+                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                            </Button>
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Confirm Password</label>
+                        <div className="relative">
+                            <Input 
+                                type={showConfirmPassword ? "text" : "password"} 
+                                placeholder="••••••••" 
+                                value={confirmPassword} 
+                                onChange={(e) => setConfirmPassword(e.target.value)} 
+                                required 
+                            />
+                            <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="sm" 
+                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            >
+                                {showConfirmPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                            </Button>
+                        </div>
+                    </div>
+                    <Button type="submit" size="sm" disabled={loading || !password}>
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {hasPassword ? 'Update Password' : 'Set Password'}
+                    </Button>
+                </form>
+            </CardContent>
+        </Card>
+    );
 }

@@ -204,6 +204,43 @@ export default function DashboardPage() {
                     });
                 }
             }
+
+            // 3-day "Still hiring?" check for jobs (triggered 3 days after the most recent application)
+            if (listing.type === 'job') {
+                const jobListing = jobListings?.find(j => j.id === listing.id);
+                if (jobListing) {
+                    // Use lastApplicantAt if available, otherwise fallback to createdAt
+                    const anchorDateRaw = jobListing.lastApplicantAt || jobListing.createdAt;
+                    if (anchorDateRaw) {
+                        const anchorDate = typeof anchorDateRaw === 'string' ? parseISO(anchorDateRaw) : (anchorDateRaw as any).toDate ? (anchorDateRaw as any).toDate() : new Date(anchorDateRaw);
+                        const daysSinceTrigger = differenceInDays(today, anchorDate);
+                        
+                        if (daysSinceTrigger >= 3) {
+                            const alreadyReminded = notifications?.find(n => n.relatedListingId === listing.id && n.type === 'hiring_check');
+                            if (!alreadyReminded) {
+                                // If it's based on an application, the message is slightly different
+                                const message = jobListing.lastApplicantAt 
+                                    ? `It's been 3 days since you received an application for "${listing.title}". Have you found a worker for this position?`
+                                    : `It's been 3 days since you posted "${listing.title}". Have you found a worker for this position?`;
+                                    
+                                const notifId = uuidv4();
+                                setDoc(doc(firestore, 'users', user.uid, 'notifications', notifId), {
+                                    id: notifId,
+                                    title: 'Hiring Update',
+                                    message,
+                                    type: 'hiring_check',
+                                    surveyQuestion: message,
+                                    surveyAnswer: null,
+                                    relatedListingId: listing.id,
+                                    relatedListingType: 'job',
+                                    read: false,
+                                    createdAt: new Date()
+                                });
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         const pendingRemovals = [
@@ -236,7 +273,7 @@ export default function DashboardPage() {
             message: `Survey complete: You answered "${answer}".`
         });
 
-        if (notif?.type === 'expiry_check' && answer === 'yes' && notif.relatedListingId) {
+        if ((notif?.type === 'expiry_check' || notif?.type === 'hiring_check') && answer === 'yes' && notif.relatedListingId) {
             const collectionName = (notif as any).relatedListingType === 'job' ? 'jobs' : 'rooms';
             const listingRef = doc(firestore, collectionName, notif.relatedListingId);
             
@@ -382,7 +419,7 @@ export default function DashboardPage() {
   }
   
   const isEmployer = userProfile?.userType === 'employer';
-  const isSeeker = userProfile?.userType === 'seeker';
+  const isSeeker = userProfile?.userType === 'seeker' || !userProfile?.userType;
 
 
   return (
@@ -391,13 +428,13 @@ export default function DashboardPage() {
        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold font-headline transition-all">Welcome, {userProfile?.firstName}!</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Manage your jobs, rooms, and applications.</p>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage your jobs, Lodge Now, and applications.</p>
         </div>
         <div className='flex flex-wrap gap-2'>
             <Link href="/dashboard/list-room" className="flex-1 sm:flex-none">
                 <Button className="w-full h-9 sm:h-10 text-xs sm:text-sm">
                     <PlusCircle className="mr-2 h-4 w-4"/>
-                    List Space
+                    List Room
                 </Button>
             </Link>
             {isEmployer && (
@@ -417,7 +454,7 @@ export default function DashboardPage() {
                 <Card>
                     <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-4">
                         <CardTitle className="text-xl">My Favorites</CardTitle>
-                        <CardDescription className="text-xs sm:text-sm">Your saved jobs and spaces.</CardDescription>
+                        <CardDescription className="text-xs sm:text-sm">Your saved jobs and Lodge Now.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-4 sm:p-6">
                         <div className="grid gap-6 sm:gap-8 md:grid-cols-2">
@@ -439,7 +476,7 @@ export default function DashboardPage() {
                                 )}
                             </div>
                             <div>
-                                <h3 className="font-semibold text-sm sm:text-base mb-3 sm:mb-4 flex items-center gap-2"><BedDouble className="h-4 w-4" />Favorite Spaces</h3>
+                                <h3 className="font-semibold text-sm sm:text-base mb-3 sm:mb-4 flex items-center gap-2"><BedDouble className="h-4 w-4" />Favorite Lodge Now</h3>
                                 {favoriteRooms && favoriteRooms.length > 0 ? (
                                     <div className="space-y-3">
                                         {favoriteRooms.map(room => (
@@ -455,7 +492,7 @@ export default function DashboardPage() {
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-xs text-muted-foreground italic">No favorite spaces yet.</p>
+                                    <p className="text-xs text-muted-foreground italic">No favorite Lodge Now yet.</p>
                                 )}
                             </div>
                         </div>
@@ -638,7 +675,7 @@ export default function DashboardPage() {
                                 <h3 className="mt-2 text-sm font-medium">No bookings yet</h3>
                                 <p className="text-[10px] sm:text-xs text-muted-foreground mb-4">Discover your next stay.</p>
                                 <Link href="/rooms">
-                                    <Button variant="outline" size="sm">Explore Rooms</Button>
+                                    <Button variant="outline" size="sm">Explore Lodge Now</Button>
                                 </Link>
                             </div>
                         )}
@@ -722,7 +759,7 @@ export default function DashboardPage() {
                                     <div key={notif.id} className={cn("p-4 space-y-2 group transition-colors", !notif.read && "bg-primary/[0.04]")}>
                                         <div className="flex justify-between items-start gap-2">
                                             <div className="flex items-center gap-2 min-w-0">
-                                                {notif.type === 'survey' || (notif as any).type === 'expiry_check' ? <HelpCircle className="h-3.5 w-3.5 text-primary shrink-0" /> : <Bell className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                                                {notif.type === 'survey' || notif.type === 'expiry_check' || notif.type === 'hiring_check' ? <HelpCircle className="h-3.5 w-3.5 text-primary shrink-0" /> : <Bell className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
                                                 <h4 className="font-bold text-[11px] sm:text-xs truncate">{notif.title}</h4>
                                             </div>
                                             <div className="flex items-center gap-1 shrink-0">
@@ -738,7 +775,7 @@ export default function DashboardPage() {
                                         </div>
                                         <p className="text-[11px] leading-relaxed text-muted-foreground">{notif.message}</p>
                                         
-                                        {(notif.type === 'survey' || (notif as any).type === 'expiry_check') && !notif.surveyAnswer && (
+                                        {(notif.type === 'survey' || notif.type === 'expiry_check' || notif.type === 'hiring_check') && !notif.surveyAnswer && (
                                             <div className="flex gap-2 pt-1">
                                                 <Button size="sm" className="h-7 px-3 text-[10px] flex-1 bg-primary font-bold" onClick={() => handleSurveyAnswer(notif.id, 'yes', notif.roomId)}>
                                                     Yes

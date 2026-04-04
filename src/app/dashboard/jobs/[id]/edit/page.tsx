@@ -11,6 +11,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Job } from '@/lib/job-data';
 import { currencies } from '@/lib/currencies';
+import { Checkbox } from '@/components/ui/checkbox';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
@@ -44,8 +45,9 @@ const formSchema = z.object({
   description: z.string().min(20, 'Description must be at least 20 characters long.'),
   currency: z.string().min(1, 'Currency is required.'),
   salaryMin: z.coerce.number().min(0).optional(),
-  salaryMax: z.coerce.number().min(0).optional(),
+  salaryMax: z.coerce.number().min(0).optional().nullable(),
   salaryPeriod: z.enum(['month', 'hour']),
+  salaryNegotiable: z.boolean().default(false),
   applicationMethod: z.enum(['email', 'whatsapp'], { required_error: 'Please select an application method.' }),
   applicationEmail: z.string().email('Please enter a valid email.').optional().or(z.literal('')),
   applicationWhatsapp: z.string().min(10, 'Please enter a valid WhatsApp number.').optional().or(z.literal('')),
@@ -97,6 +99,7 @@ export default function EditJobPage() {
         salaryMin: undefined,
         salaryMax: undefined,
         salaryPeriod: 'month',
+        salaryNegotiable: false,
         applicationMethod: 'email',
         applicationEmail: '',
         applicationWhatsapp: '',
@@ -122,6 +125,7 @@ export default function EditJobPage() {
         country: job.country || '',
         currency: job.salaryCurrency || 'USD',
         salaryPeriod: job.salaryPeriod || 'month',
+        salaryNegotiable: !!job.salaryNegotiable,
       });
     }
   }, [job, user, router, form, toast]);
@@ -139,6 +143,9 @@ export default function EditJobPage() {
         ...data,
         salaryCurrency,
         salaryCurrencySymbol,
+        salaryNegotiable: !!data.salaryNegotiable,
+        salaryMin: data.salaryNegotiable ? null : (data.salaryMin ?? null),
+        salaryMax: data.salaryNegotiable ? null : (data.salaryMax ?? null),
         applicationEmail: data.applicationMethod === 'email' ? data.applicationEmail : null,
         applicationWhatsapp: data.applicationMethod === 'whatsapp' ? data.applicationWhatsapp : null,
     };
@@ -349,35 +356,61 @@ export default function EditJobPage() {
               </div>
 
               <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
-                <h3 className="font-semibold text-sm">Salary & Payment</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex items-center justify-between gap-4">
+                  <h3 className="font-semibold text-sm">Salary & Payment</h3>
                   <FormField
                     control={form.control}
-                    name="salaryMin"
+                    name="salaryNegotiable"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Minimum Salary (Optional)</FormLabel>
+                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
                         <FormControl>
-                          <Input type="number" placeholder="70000" {...field} value={field.value ?? ''} />
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={(checked) => {
+                              field.onChange(checked);
+                              if (checked) {
+                                form.setValue('salaryMin', null as any);
+                                form.setValue('salaryMax', null as any);
+                              }
+                            }}
+                          />
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="salaryMax"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Maximum Salary (Optional)</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="120000" {...field} value={field.value ?? ''} />
-                        </FormControl>
-                        <FormMessage />
+                        <FormLabel className="text-xs font-medium cursor-pointer">Salary is Negotiable</FormLabel>
                       </FormItem>
                     )}
                   />
                 </div>
+
+                {!form.watch('salaryNegotiable') && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <FormField
+                      control={form.control}
+                      name="salaryMin"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Minimum Salary (Optional)</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="70000" {...field} value={field.value ?? ''} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="salaryMax"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Maximum Salary (Optional)</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="120000" {...field} value={field.value ?? ''} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
