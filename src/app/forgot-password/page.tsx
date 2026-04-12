@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth, useFunctions, httpsCallable } from '@/firebase';
+import { useAuth, useFunctions, httpsCallable, sendPasswordResetEmail } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
 import React from 'react';
@@ -63,12 +63,25 @@ export default function ForgotPasswordPage() {
       const isProduction = process.env.NODE_ENV === 'production';
       const productionUrl = 'https://doveneb--studio-7235955659-7c316.us-central1.hosted.app';
       
-      // Call custom Cloud Function instead of legacy Firebase reset
-      const resetEmailFn = httpsCallable(functions!, 'sendCustomPasswordReset');
-      await resetEmailFn({ 
-        email: values.email,
-        continueUrl: `${isProduction ? productionUrl : window.location.origin}/reset-password`
-      });
+      // Call custom Cloud Function first (Premium Branded Email)
+      try {
+        const resetEmailFn = httpsCallable(functions!, 'sendCustomPasswordReset');
+        await resetEmailFn({ 
+          email: values.email,
+          continueUrl: `${isProduction ? productionUrl : window.location.origin}/reset-password`
+        });
+        console.log('Custom branded email reset triggered');
+      } catch (fnError: any) {
+        console.warn('Custom reset failed, falling back to standard Firebase reset:', fnError);
+        
+        // FALLBACK: Standard Firebase Email Reset
+        const actionCodeSettings = {
+          url: `${isProduction ? productionUrl : window.location.origin}/reset-password`,
+          handleCodeInApp: true,
+        };
+        await sendPasswordResetEmail(auth, values.email, actionCodeSettings);
+        console.log('Standard Firebase email reset triggered as fallback');
+      }
       setEmailSent(true);
       toast({
         title: 'Reset Link Processed',

@@ -20,6 +20,8 @@ export const sendCustomPasswordReset = onCall({
   const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
   if (SENDGRID_API_KEY) {
     sgMail.setApiKey(SENDGRID_API_KEY);
+  } else {
+    console.error('CRITICAL: SENDGRID_API_KEY is missing from environment. Did you set it in Firebase Secrets?');
   }
 
   if (!email) {
