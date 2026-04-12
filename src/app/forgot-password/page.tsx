@@ -130,6 +130,10 @@ export default function ForgotPasswordPage() {
           <CardDescription className="text-base mt-2">
             We've sent a password reset link to <strong>{form.getValues('email')}</strong>.
             Please follow the instructions in the email to regain access to your account.
+            <br /><br />
+            <span className="text-xs font-semibold text-amber-600 block bg-amber-50 rounded-lg p-2 border border-amber-100">
+              NOTE: CHECK YOUR SPAM IF YOU DID NOT RECEIVE IT IN YOUR INBOX
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0 space-y-4">
