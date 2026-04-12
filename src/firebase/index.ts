@@ -53,6 +53,8 @@ export {
   signInAnonymously,
   fetchSignInMethodsForEmail,
   linkWithCredential,
+  verifyPasswordResetCode,
+  confirmPasswordReset,
   EmailAuthProvider,
   type Auth,
   type User,

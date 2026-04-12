@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth, sendPasswordResetEmail } from '@/firebase';
+import { useAuth, useFunctions, httpsCallable } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
 import React from 'react';
@@ -33,6 +33,7 @@ const formSchema = z.object({
 
 export default function ForgotPasswordPage() {
   const auth = useAuth();
+  const functions = useFunctions();
   const { toast } = useToast();
   const [loading, setLoading] = React.useState(false);
   const [emailSent, setEmailSent] = React.useState(false);
@@ -59,7 +60,15 @@ export default function ForgotPasswordPage() {
       // Diagnostic logging
       console.log('Attempting password reset for:', values.email);
       
-      await sendPasswordResetEmail(auth, values.email);
+      const isProduction = process.env.NODE_ENV === 'production';
+      const productionUrl = 'https://doveneb--studio-7235955659-7c316.us-central1.hosted.app';
+      
+      // Call custom Cloud Function instead of legacy Firebase reset
+      const resetEmailFn = httpsCallable(functions!, 'sendCustomPasswordReset');
+      await resetEmailFn({ 
+        email: values.email,
+        continueUrl: `${isProduction ? productionUrl : window.location.origin}/reset-password`
+      });
       setEmailSent(true);
       toast({
         title: 'Reset Link Processed',

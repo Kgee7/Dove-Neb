@@ -9,7 +9,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { fileToBase64, compressImage } from '@/lib/image-utils';
-import { updatePassword, EmailAuthProvider, linkWithCredential, reauthenticateWithCredential } from 'firebase/auth';
+import { updatePassword, EmailAuthProvider, linkWithCredential, reauthenticateWithCredential, UserInfo } from 'firebase/auth';
 import { CardDescription as PasswordCardDescription } from '@/components/ui/card';
 import { Eye, EyeOff } from 'lucide-react';
 
@@ -399,7 +399,7 @@ function PasswordSetupSection() {
 
     useEffect(() => {
         if (user) {
-            const isEmailPass = user.providerData.some(p => p.providerId === 'password');
+            const isEmailPass = user.providerData.some((p: UserInfo) => p.providerId === 'password');
             setHasPassword(isEmailPass);
         }
     }, [user]);
@@ -419,7 +419,7 @@ function PasswordSetupSection() {
         setLoading(true);
         try {
             // Re-verify if password provider exists in data (real-time check)
-            const isEmailPassUser = user.providerData.some(p => p.providerId === 'password');
+            const isEmailPassUser = user.providerData.some((p: UserInfo) => p.providerId === 'password');
             
             if (isEmailPassUser) {
                 await updatePassword(user, password);

@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext } from 'react';
 import type { FirebaseApp } from 'firebase/app';
-import type { Auth } from 'firebase/auth';
+import type { Auth, User } from 'firebase/auth';
 import type { Firestore } from 'firebase/firestore';
 import type { FirebaseStorage } from 'firebase/storage';
 import { Functions } from 'firebase/functions';
@@ -70,7 +70,7 @@ export const useFunctions = (): Functions | null => {
 
 export const useUser = () => {
   const auth = useAuth();
-  const [user, setUser] = React.useState<any>(null);
+  const [user, setUser] = React.useState<User | null>(null);
   const [isUserLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {

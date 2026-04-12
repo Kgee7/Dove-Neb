@@ -1,0 +1,7 @@
+# Firebase Functions ignores
+/node_modules/
+/lib/
+/package-lock.json
+firebase-debug.log
+firestore-debug.log
+functions-debug.log
