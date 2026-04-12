@@ -11,6 +11,7 @@ import React from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
+  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -119,79 +120,142 @@ export default function ForgotPasswordPage() {
 
   if (emailSent) {
     return (
-      <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <CardHeader className="p-0 mb-6">
-          <div className="flex justify-center mb-4">
-            <div className="bg-green-100 p-3 rounded-full">
-              <CheckCircle2 className="h-10 w-10 text-green-600" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl font-bold">Check Your Email</CardTitle>
-          <CardDescription className="text-base mt-2">
-            We've sent a password reset link to <strong>{form.getValues('email')}</strong>.
-            Please follow the instructions in the email to regain access to your account.
-            <br /><br />
-            <span className="text-xs font-semibold text-amber-600 block bg-amber-50 rounded-lg p-2 border border-amber-100">
-              NOTE: CHECK YOUR SPAM IF YOU DID NOT RECEIVE IT IN YOUR INBOX
-            </span>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0 space-y-4">
-          <Link href="/login" className="block">
-            <Button variant="default" className="w-full h-11 font-bold">
-              Return to Sign In
-            </Button>
-          </Link>
-          <Button 
-            variant="ghost" 
-            className="text-muted-foreground hover:text-primary text-sm"
-            onClick={() => setEmailSent(false)}
-          >
-            Didn't get the email? Try again.
-          </Button>
-        </CardContent>
-      </div>
+      <main className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-slate-50 px-4">
+        {/* Animated Background Elements */}
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/10 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-0 -right-4 w-96 h-96 bg-secondary/10 rounded-full blur-[150px] animate-pulse" style={{ animationDelay: '2s' }} />
+
+        <div className="w-full max-w-md relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <Card className="border-0 shadow-2xl bg-white/70 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-primary via-blue-400 to-secondary" />
+            
+            <CardHeader className="pt-10 pb-6 px-8 flex flex-col items-center">
+              <Link href="/" className="mb-6 hover:scale-110 transition-transform duration-500">
+                <div className="p-3 bg-white rounded-2xl shadow-lg ring-1 ring-slate-100">
+                  <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
+                </div>
+              </Link>
+              
+              <div className="text-center space-y-2">
+                <div className="flex justify-center mb-4">
+                  <div className="bg-green-100 p-3 rounded-full ring-8 ring-green-50">
+                    <CheckCircle2 className="h-8 w-8 text-green-600" />
+                  </div>
+                </div>
+                <CardTitle className="text-2xl font-bold tracking-tight text-slate-900">Check Your Email</CardTitle>
+                <CardDescription className="text-base font-medium">
+                  We've sent a link to <span className="text-primary font-bold">{form.getValues('email')}</span>
+                </CardDescription>
+              </div>
+            </CardHeader>
+
+            <CardContent className="px-8 pb-10 space-y-6">
+              <div className="space-y-4">
+                <p className="text-sm text-center text-muted-foreground leading-relaxed">
+                  Please follow the instructions in the email to regain access to your account.
+                </p>
+                <div className="text-xs font-semibold text-amber-600 bg-amber-50/50 rounded-xl p-4 border border-amber-100/50 text-center">
+                  NOTE: CHECK YOUR SPAM IF YOU DID NOT RECEIVE IT IN YOUR INBOX
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Link href="/login" className="block">
+                  <Button variant="default" className="w-full h-12 font-bold text-md shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all rounded-xl">
+                    Return to Sign In
+                  </Button>
+                </Link>
+                <Button 
+                  variant="ghost" 
+                  className="w-full h-12 text-muted-foreground hover:text-primary transition-all rounded-xl text-sm font-medium"
+                  onClick={() => setEmailSent(false)}
+                >
+                  Didn't get the email? Try again.
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     );
   }
 
   return (
-    <>
-      <CardHeader className="p-0 mb-8 text-center">
-        <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
-        <CardDescription className="text-base mt-2">
-          Enter your email address and we'll send you a secure link to reset your password.
-        </CardDescription>
-      </CardHeader>
-      
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email Address</FormLabel>
-                <FormControl>
-                  <Input placeholder="name@example.com" className="h-11" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <div className="space-y-4">
-            <Button type="submit" className="w-full h-11 font-bold" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Send Reset Link
-            </Button>
+    <main className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-slate-50 px-4">
+        {/* Animated Background Elements */}
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/10 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-0 -right-4 w-96 h-96 bg-secondary/20 rounded-full blur-[150px] animate-pulse" style={{ animationDelay: '2s' }} />
+
+        <div className="w-full max-w-md relative z-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+            <Card className="border-0 shadow-2xl bg-white/70 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-primary via-blue-400 to-secondary" />
+                
+                <CardHeader className="pt-10 pb-6 px-8 flex flex-col items-center">
+                    <Link href="/" className="mb-6 hover:scale-110 transition-transform duration-500">
+                        <div className="p-2.5 bg-white rounded-2xl shadow-lg ring-1 ring-slate-100">
+                            <img src="/logo.png" alt="Logo" className="w-7 h-7 object-contain" />
+                        </div>
+                    </Link>
+                    <div className="text-center space-y-2">
+                        <CardTitle className="text-3xl font-extrabold tracking-tight text-slate-900">Reset Password</CardTitle>
+                        <CardDescription className="text-base font-medium">
+                            We'll send you a secure link to reset access.
+                        </CardDescription>
+                    </div>
+                </CardHeader>
+                
+                <CardContent className="px-8 pb-10">
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                            <FormField
+                                control={form.control}
+                                name="email"
+                                render={({ field }) => (
+                                    <FormItem className="space-y-2">
+                                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Email Address</FormLabel>
+                                        <FormControl>
+                                            <div className="relative group">
+                                                <Input 
+                                                    placeholder="name@example.com" 
+                                                    className="h-12 bg-muted/30 border-muted-foreground/10 focus:border-primary/50 transition-all rounded-xl px-4" 
+                                                    {...field} 
+                                                />
+                                                <div className="absolute inset-0 rounded-xl bg-primary/5 opacity-0 group-focus-within:opacity-100 pointer-events-none transition-opacity" />
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage className="text-[10px] ml-1" />
+                                    </FormItem>
+                                )}
+                            />
+                            
+                            <div className="space-y-4 pt-2">
+                                <Button 
+                                    type="submit" 
+                                    className="w-full h-12 font-bold text-md shadow-xl shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 transition-all rounded-xl" 
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Securing Access...
+                                        </>
+                                    ) : 'Send Reset Link'}
+                                </Button>
+                                
+                                <Link href="/login" className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-all group py-2">
+                                    <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                                    Back to Sign In
+                                </Link>
+                            </div>
+                        </form>
+                    </Form>
+                </CardContent>
+            </Card>
             
-            <Link href="/login" className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors py-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Sign In
-            </Link>
-          </div>
-        </form>
-      </Form>
-    </>
+            <div className="mt-8 text-center text-[10px] text-muted-foreground/60 uppercase tracking-widest font-bold">
+                Dove Neb Security &bull; Trusted Verification System
+            </div>
+        </div>
+    </main>
   );
 }
